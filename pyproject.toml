@@ -7,7 +7,7 @@ name = "cybersentinel"
 version = "0.1.0"
 description = "Agente defensivo de ciberseguridad (blue team): analiza, predice y ayuda a contrarrestar amenazas con explicabilidad y gobernanza etica."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.13"
 authors = [{ name = "Luis Emir" }]
 dependencies = [
     "scikit-learn>=1.3",

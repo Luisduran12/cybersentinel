@@ -5,8 +5,14 @@ severity: medium
 mitre_technique: T1053
 mitre_tactic: persistence
 conditions:
+  - field: category
+    op: equals
+    value: process
   - field: command_line
-    op: contains
-    value: "schtasks /create"
+    op: regex
+    value: "schtasks(\\.exe)?\\b.*?/create\\b"
+false_positives:
+  - Instaladores de software legitimo que registran tareas de actualizacion.
+  - Scripts de mantenimiento programados por el propio equipo de sistemas.
 references:
-  - https://attack.mitre.org/techniques/T1053/
+  - https://attack.mitre.org/techniques/T1053/005/

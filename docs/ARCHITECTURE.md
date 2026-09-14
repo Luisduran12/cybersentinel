@@ -31,10 +31,35 @@ completa y *streaming* para archivos grandes.
 ### 2.2 Detección (`detection/`)
 Enfoque **híbrido**:
 - **Reglas (estilo Sigma)** en YAML, con técnica ATT&CK asociada. Capturan
-  patrones *conocidos* con alta precisión.
+  patrones *conocidos* con alta precisión. Soportan **agregación temporal**
+  (`count` coincidencias en `timeframe_minutes` agrupadas por entidad), que es lo
+  que distingue "un login fallido" de "fuerza bruta" y lo que evita emitir ocho
+  alertas donde hay un solo ataque.
 - **Anomalías (Isolation Forest)**. Aprenden una línea base de comportamiento y
   marcan lo que se desvía. Capturan lo *desconocido*. Cada anomalía es explicable
   a nivel de característica (qué features empujaron el score).
+
+Tres decisiones de esta capa condicionan la validez de los números y conviene
+poder defenderlas:
+
+1. **La puntuación de anomalía es absoluta**, no relativa al lote. Se usa
+   directamente `-score_samples` de Isolation Forest, acotada en (0, 1) y con 0.5
+   como frontera de decisión del algoritmo. Una normalización min-max dentro del
+   lote haría que el evento más raro de *cualquier* lote recibiera 1.0 —aunque el
+   lote fuera inofensivo— y que los scores de dos ejecuciones no fueran
+   comparables.
+2. **`contamination="auto"`**. Fijar una contaminación (p. ej. 0.08) obliga al
+   modelo a marcar esa proporción de eventos como anómalos *por construcción*,
+   haya ataques o no.
+3. **Una anomalía sola no puede ser CRITICAL.** Sin corroboración de ninguna
+   regla es una *pista*, no un veredicto; su severidad tiene techo en MEDIUM. El
+   riesgo sí sube por la vía correcta cuando la correlación la agrupa con
+   hallazgos de reglas y progresión en la cadena de ataque.
+
+Las características son interpretables por diseño (rareza de la entidad frente a
+la línea base, entropía del comando, hora cíclica). Codificar el usuario o la IP
+como un entero —un hash— mete un orden numérico sin significado en el modelo y
+produce explicaciones vacías del tipo "la característica user_hash se desvió".
 
 ### 2.3 Correlación y predicción (`correlation/`)
 - Agrupa hallazgos por **entidad** (host/usuario/IP) y **ventana temporal** en
@@ -54,8 +79,20 @@ para un resumen ejecutivo más fluido, con *fallback* automático.
 - **Política**: clasifica cada contramedida en *permitida / requiere aprobación /
   prohibida*. Las acciones destructivas u ofensivas están **prohibidas por
   diseño**.
-- **Auditoría inmutable**: cadena de entradas encadenadas por hash SHA-256. Si se
-  altera una entrada pasada, `verify()` lo detecta.
+- **Auditoría verificable**: cadena de entradas encadenadas por hash, con dos
+  defensas sobre la cadena desnuda:
+  - **Firma HMAC-SHA256** con clave fuera del archivo (`CYBERSENTINEL_AUDIT_KEY`).
+    Sin clave, quien edite el log puede recalcular la cadena entera y la
+    verificación pasa; con clave, falsificarla exige el secreto.
+  - **Ancla externa** (`<log>.anchor`) con el número de entradas y el último
+    hash. La cadena por sí sola no detecta el **truncado**: si se borran las
+    últimas entradas, lo que queda sigue siendo una cadena válida.
+
+  Límite declarado: el ancla vive en el mismo disco. Un atacante con escritura
+  sobre ambos archivos *y* la clave puede reescribirlo todo. La defensa completa
+  exige publicar el ancla en un medio independiente (otro host, almacenamiento
+  WORM o un servicio de sellado de tiempo). Por eso el término correcto es
+  *auditoría verificable con detección de manipulación*, no *inmutable*.
 
 ### 2.6 Respuesta (`response/`)
 Propone contramedidas priorizadas según tácticas y riesgo. En este entregable
@@ -81,6 +118,13 @@ JSONL ─► Normalizer ─► [SecurityEvent] ─► RulesEngine ─┐
 - Corre de punta a punta sobre datos sintéticos y es adaptable a datasets reales.
 
 **Lo que NO es (y no debe venderse como tal):**
+- La confianza de una regla **no es una probabilidad calibrada**: se deriva de la
+  severidad que le puso su autor, es decir, de cuánto "pesa" la regla, no de
+  cuántas veces acierta. Calibrarla exige medir contra un dataset etiquetado.
+- El detector de anomalías entrena y puntúa sobre el mismo lote. Es aceptable
+  para una demo no supervisada, pero **no para medir**: la evaluación
+  cuantitativa exige entrenar sobre una línea base y puntuar sobre un conjunto
+  separado.
 - No es un IDS/EDR de producción ni sustituye a un SOC. Es un **prototipo de
   investigación** de laboratorio.
 - La predicción es **probabilística y heurística**, no una garantía. Un atacante
@@ -109,7 +153,10 @@ del problema real.
 - **Demo en vivo**: corre `analyze` sobre `sample_logs.jsonl`; muestra cómo la
   cadena completa se detecta, se explica y se predice "Impacto" como fase
   siguiente.
-- **Integridad**: manipula una línea del `audit_log.jsonl` y corre `verify-audit`
-  para mostrar que el sistema detecta la alteración.
+- **Integridad**: tres demos, en orden creciente de sofisticación del atacante.
+  1. Edita una línea del `audit_log.jsonl` -> `verify-audit` detecta la alteración.
+  2. Borra las últimas líneas -> el ancla detecta el truncado.
+  3. Recalcula toda la cadena con SHA-256 -> con `CYBERSENTINEL_AUDIT_KEY`
+     definida, la firma HMAC no cuadra y también se detecta.
 - **Ética**: enseña la política y muestra que una acción como `hack_back` queda
   *prohibida* automáticamente.

@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from .config import Settings
 from .ingestion import Normalizer
 from .detection import RulesEngine, AnomalyDetector
 from .correlation import Correlator, Incident
@@ -44,6 +45,8 @@ class PipelineReport:
     total_findings: int
     results: list[IncidentResult] = field(default_factory=list)
     audit_integrity: bool = True
+    #: Umbral de anomalia realmente aplicado (util para reproducir un analisis).
+    anomaly_threshold_used: float | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -51,6 +54,10 @@ class PipelineReport:
             "total_findings": self.total_findings,
             "num_incidents": len(self.results),
             "audit_integrity_ok": self.audit_integrity,
+            "anomaly_threshold_used": (
+                round(self.anomaly_threshold_used, 4)
+                if self.anomaly_threshold_used is not None else None
+            ),
             "incidents": [r.to_dict() for r in self.results],
         }
 
@@ -63,20 +70,46 @@ class Pipeline:
         rules_dir: str | Path,
         policy: GovernancePolicy | None = None,
         audit_path: str | Path = "audit_log.jsonl",
-        use_llm: bool = False,
-        contamination: float = 0.08,
-        time_window_minutes: int = 30,
-        anomaly_threshold: float = 0.6,
+        use_llm: bool | None = None,
+        contamination: float | str | None = None,
+        time_window_minutes: int | None = None,
+        anomaly_threshold: float | None = None,
+        settings: Settings | None = None,
     ) -> None:
+        """
+        Los argumentos explícitos tienen prioridad sobre `settings`, que a su vez
+        tiene prioridad sobre los valores por defecto embebidos. Pasar `None`
+        (el valor por defecto) significa "usa la configuración".
+        """
+        cfg = settings or Settings.load()
+
         self.normalizer = Normalizer()
         self.rules_engine = RulesEngine.from_directory(rules_dir)
-        self.anomaly_detector = AnomalyDetector(contamination=contamination)
-        self.correlator = Correlator(time_window_minutes=time_window_minutes)
-        self.explainer = Explainer(use_llm=use_llm)
+        self.anomaly_detector = AnomalyDetector(
+            contamination=(
+                contamination if contamination is not None
+                else cfg.detection.anomaly_contamination
+            )
+        )
+        self.correlator = Correlator(
+            time_window_minutes=(
+                time_window_minutes if time_window_minutes is not None
+                else cfg.correlation.time_window_minutes
+            )
+        )
+        self.explainer = Explainer(
+            use_llm=use_llm if use_llm is not None else cfg.explanation.use_llm,
+            model=cfg.explanation.model,
+        )
         self.policy = policy or GovernancePolicy()
         self.planner = ResponsePlanner(self.policy)
         self.audit = AuditLog(audit_path)
-        self.anomaly_threshold = anomaly_threshold
+        # None => se resuelve tras entrenar, con el umbral que sugiere la linea base.
+        self.anomaly_threshold = (
+            anomaly_threshold if anomaly_threshold is not None
+            else cfg.detection.anomaly_threshold
+        )
+        self.settings = cfg
 
     def run_events(self, events: list[SecurityEvent]) -> PipelineReport:
         # 1. Detección por reglas
@@ -85,9 +118,13 @@ class Pipeline:
         # 2. Detección de anomalías (entrena línea base con los mismos datos del lab)
         self.anomaly_detector.fit(events)
         anomalies = self.anomaly_detector.score(events)
+        threshold = (
+            self.anomaly_threshold if self.anomaly_threshold is not None
+            else self.anomaly_detector.suggested_threshold
+        )
 
         # 3. Correlación + predicción
-        findings = self.correlator.build_findings(rule_hits, anomalies, self.anomaly_threshold)
+        findings = self.correlator.build_findings(rule_hits, anomalies, threshold)
         incidents = self.correlator.correlate(findings)
 
         # 4-6. Explicación, recomendación y auditoría por incidente
@@ -116,6 +153,7 @@ class Pipeline:
             total_findings=len(findings),
             results=results,
             audit_integrity=integrity,
+            anomaly_threshold_used=threshold,
         )
 
     def run_file(self, jsonl_path: str | Path) -> PipelineReport:

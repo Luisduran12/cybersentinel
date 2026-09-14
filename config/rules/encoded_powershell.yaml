@@ -1,12 +1,21 @@
 id: RULE-0002
-title: PowerShell ofuscado / codificado
-description: Ejecucion de PowerShell con banderas de ocultamiento y comando codificado en base64.
+title: PowerShell ofuscado o codificado
+description: >-
+  Ejecucion de PowerShell con banderas de ocultamiento o con un comando
+  codificado en base64. La alternativa va agrupada para exigir que el proceso sea
+  PowerShell: sin agrupar, un argumento como -nopause disparaba la regla.
 severity: high
 mitre_technique: T1059
 mitre_tactic: execution
 conditions:
+  - field: category
+    op: equals
+    value: process
   - field: command_line
     op: regex
-    value: "powershell.*-enc|-nop|-w hidden|-EncodedCommand"
+    value: "powershell(\\.exe)?\\b.*?(\\s-enc\\b|\\s-e\\b|-encodedcommand\\b|-nop\\b|-noprofile\\b|-w\\s+hidden\\b|-windowstyle\\s+hidden\\b)"
+false_positives:
+  - Scripts de despliegue o de administracion que usan -NoProfile por rendimiento.
+  - Herramientas de inventario que invocan PowerShell con ventana oculta.
 references:
-  - https://attack.mitre.org/techniques/T1059/
+  - https://attack.mitre.org/techniques/T1059/001/

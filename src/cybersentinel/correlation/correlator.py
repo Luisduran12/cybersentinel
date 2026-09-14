@@ -163,7 +163,7 @@ class Correlator:
             ))
         for anom in anomalies:
             if anom.is_anomaly and anom.anomaly_score >= anomaly_threshold:
-                feats = ", ".join(f"{k}(+{v:.2f})" for k, v in anom.top_features)
+                feats = ", ".join(anom.top_features_es)
                 findings.append(Finding(
                     kind="anomaly",
                     event=anom.event,
@@ -172,7 +172,10 @@ class Correlator:
                     mitre_technique="unknown",
                     mitre_tactic="unknown",
                     title="Comportamiento anómalo detectado por ML",
-                    detail=f"Score {anom.anomaly_score:.2f}. Características desviadas: {feats}",
+                    detail=(
+                        f"Score {anom.anomaly_score:.2f} sobre un umbral de "
+                        f"{anomaly_threshold:.2f}. Se desvía de la línea base en: {feats}."
+                    ),
                 ))
         return findings
 

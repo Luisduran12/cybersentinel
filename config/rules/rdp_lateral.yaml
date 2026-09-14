@@ -1,12 +1,27 @@
 id: RULE-0005
-title: Conexion RDP (posible movimiento lateral)
-description: Conexion entrante/saliente al puerto 3389 (RDP) entre hosts internos.
+title: Conexion RDP entre hosts internos (posible movimiento lateral)
+description: >-
+  Sesion RDP de un host interno a otro host interno. Se exige que ambos extremos
+  sean RFC1918 para no marcar el acceso RDP legitimo desde fuera ni el trafico
+  saliente a servicios en la nube.
 severity: medium
 mitre_technique: T1021
 mitre_tactic: lateral-movement
 conditions:
-  - field: dst_port
+  - field: category
     op: equals
-    value: 3389
+    value: network
+  - field: dst_port
+    op: in
+    value: [3389]
+  - field: src_ip
+    op: regex
+    value: "^(10\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)"
+  - field: dst_ip
+    op: regex
+    value: "^(10\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.)"
+false_positives:
+  - Administracion remota rutinaria desde el salto de gestion.
+  - Herramientas de soporte que usan RDP para asistencia interna.
 references:
-  - https://attack.mitre.org/techniques/T1021/
+  - https://attack.mitre.org/techniques/T1021/001/

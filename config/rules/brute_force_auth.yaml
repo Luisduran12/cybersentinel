@@ -1,6 +1,9 @@
 id: RULE-0001
-title: Fuerza bruta de autenticación (múltiples fallos)
-description: Un login fallido desde una IP; correlacionado con otros fallos indica fuerza bruta.
+title: Fuerza bruta de autenticacion
+description: >-
+  Varios intentos de autenticacion fallidos contra la misma cuenta desde la misma
+  IP en una ventana corta. El umbral de volumen es lo que distingue un ataque de
+  un usuario que se equivoco al teclear la contrasena.
 severity: high
 mitre_technique: T1110
 mitre_tactic: credential-access
@@ -11,5 +14,13 @@ conditions:
   - field: outcome
     op: contains_any
     value: [failure, failed, denied]
+aggregation:
+  count: 5
+  timeframe_minutes: 5
+  group_by: [src_ip, user]
+false_positives:
+  - Usuario legitimo que olvido su contrasena tras un cambio de politica.
+  - Servicio mal configurado reintentando con credenciales caducadas.
+  - Escaner de vulnerabilidades autorizado durante una ventana de pruebas.
 references:
   - https://attack.mitre.org/techniques/T1110/

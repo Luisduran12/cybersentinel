@@ -1,12 +1,21 @@
 id: RULE-0004
 title: Escaneo de servicios de red
-description: Uso de herramientas de escaneo (nmap) para descubrir servicios.
+description: >-
+  Uso de herramientas de escaneo para descubrir servicios. Se exige que el evento
+  sea de proceso: el normalizador reutiliza command_line para la URL en eventos
+  web, y sin esta condicion una URL que mencionara nmap disparaba la regla.
 severity: medium
 mitre_technique: T1046
 mitre_tactic: discovery
 conditions:
+  - field: category
+    op: equals
+    value: process
   - field: command_line
     op: regex
-    value: "nmap|masscan|-sS|-p-"
+    value: "\\b(nmap|masscan|zmap|rustscan)\\b|\\s-sS\\b|\\s-p-(\\s|$)"
+false_positives:
+  - Inventario de red autorizado por el equipo de infraestructura.
+  - Pruebas de conectividad de un administrador durante una incidencia.
 references:
   - https://attack.mitre.org/techniques/T1046/

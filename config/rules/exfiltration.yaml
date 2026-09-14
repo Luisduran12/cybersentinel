@@ -5,8 +5,14 @@ severity: critical
 mitre_technique: T1048
 mitre_tactic: exfiltration
 conditions:
+  - field: category
+    op: equals
+    value: network
   - field: bytes_out
     op: gt
     value: 104857600
+false_positives:
+  - Copias de seguridad o sincronizacion con almacenamiento en la nube.
+  - Transferencia autorizada de un conjunto de datos grande.
 references:
   - https://attack.mitre.org/techniques/T1048/

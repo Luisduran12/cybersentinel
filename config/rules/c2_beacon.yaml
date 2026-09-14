@@ -1,12 +1,26 @@
 id: RULE-0006
-title: Posible baliza C2 a puerto no estandar
-description: Conexion saliente a puerto tipico de C2 (4444).
+title: Posible baliza C2 (conexiones repetidas a puerto de herramientas ofensivas)
+description: >-
+  Conexiones salientes repetidas al mismo destino y puerto asociado a frameworks
+  de post-explotacion. La repeticion es la senal: una unica conexion no es una
+  baliza. El operador "in" compara el puerto por igualdad, para que 14444 no
+  cuente como 4444.
 severity: high
 mitre_technique: T1071
 mitre_tactic: command-and-control
 conditions:
-  - field: dst_port
+  - field: category
     op: equals
-    value: 4444
+    value: network
+  - field: dst_port
+    op: in
+    value: [4444, 4445, 1337, 31337]
+aggregation:
+  count: 3
+  timeframe_minutes: 10
+  group_by: [src_ip, dst_ip, dst_port]
+false_positives:
+  - Laboratorio propio ejecutando herramientas de red en esos puertos.
+  - Aplicacion interna que eligio un puerto alto coincidente.
 references:
   - https://attack.mitre.org/techniques/T1071/

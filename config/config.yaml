@@ -1,9 +1,20 @@
 # Configuracion general de CyberSentinel.
+# La lee src/cybersentinel/config.py; los argumentos de la CLI tienen prioridad.
+
 detection:
-  anomaly_contamination: 0.08     # proporcion esperada de anomalias en la linea base
-  anomaly_threshold: 0.6          # score minimo para convertir anomalia en hallazgo
+  # "auto" deja que Isolation Forest use su umbral estandar de decision.
+  # Un numero (p.ej. 0.08) fuerza esa proporcion de anomalias por construccion,
+  # haya ataques o no: util solo para experimentos controlados.
+  anomaly_contamination: auto
+
+  # Score minimo para convertir una anomalia en hallazgo.
+  # Vacio (null) = usar el umbral sugerido por la linea base (percentil 99),
+  # que se adapta a los datos en vez de ser una constante magica.
+  anomaly_threshold: null
+
 correlation:
-  time_window_minutes: 30         # ventana para agrupar hallazgos en un incidente
+  time_window_minutes: 30   # ventana para agrupar hallazgos en un incidente
+
 explanation:
-  use_llm: false                  # true = enriquecer con Claude (requiere API key)
-  model: claude-sonnet-4-6
+  use_llm: false            # true = enriquecer con Claude (requiere API key)
+  model: claude-opus-5

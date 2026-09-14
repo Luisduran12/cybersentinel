@@ -18,15 +18,15 @@ from rich.panel import Panel
 from rich.table import Table
 from rich import box
 
+from .config import Settings, DEFAULT_POLICY_PATH, DEFAULT_RULES_DIR
+from .correlation import mitre
 from .pipeline import Pipeline, PipelineReport
 from .governance import GovernancePolicy, AuditLog
 
 console = Console()
 
-# Rutas por defecto relativas a la raíz del proyecto.
-ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_RULES = ROOT / "config" / "rules"
-DEFAULT_POLICY = ROOT / "config" / "governance_policy.yaml"
+DEFAULT_RULES = DEFAULT_RULES_DIR
+DEFAULT_POLICY = DEFAULT_POLICY_PATH
 
 DECISION_STYLE = {
     "allowed": "green",
@@ -57,11 +57,14 @@ def cmd_analyze(args: argparse.Namespace) -> int:
         box=box.ROUNDED,
     ))
 
+    settings = Settings.load(args.config)
     pipeline = Pipeline(
         rules_dir=DEFAULT_RULES,
         policy=_load_policy(),
         audit_path=args.audit,
-        use_llm=args.use_llm,
+        # --use-llm solo fuerza el modo si se pide; si no, manda la configuracion.
+        use_llm=True if args.use_llm else None,
+        settings=settings,
     )
     report = pipeline.run_file(input_path)
     _render_report(report)
@@ -80,8 +83,14 @@ def _render_report(report: PipelineReport) -> None:
         f"[bold]Hallazgos:[/bold] {report.total_findings}   "
         f"[bold]Incidentes:[/bold] {len(report.results)}   "
         f"[bold]Integridad auditoría:[/bold] "
-        f"{'[green]OK[/green]' if report.audit_integrity else '[red]COMPROMETIDA[/red]'}\n"
+        f"{'[green]OK[/green]' if report.audit_integrity else '[red]COMPROMETIDA[/red]'}"
     )
+    if report.anomaly_threshold_used is not None:
+        console.print(
+            f"[dim]Umbral de anomalía aplicado: {report.anomaly_threshold_used:.3f} "
+            f"(percentil 99 de la línea base)[/dim]"
+        )
+    console.print()
 
     if not report.results:
         console.print("[dim]No se detectaron incidentes.[/dim]")
@@ -106,7 +115,9 @@ def _render_report(report: PipelineReport) -> None:
 
         # Técnicas ATT&CK
         if inc.techniques:
-            techs = ", ".join(f"{t} ({__import__('cybersentinel.correlation.mitre', fromlist=['technique_name']).technique_name(t)})" for t in inc.techniques)
+            techs = ", ".join(
+                f"{t} ({mitre.technique_name(t)})" for t in inc.techniques
+            )
             console.print(f"[bold]MITRE ATT&CK:[/bold] {techs}")
 
         # Evidencia
@@ -139,11 +150,13 @@ def cmd_verify_audit(args: argparse.Namespace) -> int:
         console.print(f"[red]No existe el log de auditoría: {path}[/red]")
         return 1
     log = AuditLog(path)
-    ok, bad_index = log.verify()
+    ok, bad_index, detail = log.verify_detailed()
+    modo = "firmada con clave (HMAC-SHA256)" if log.is_signed else "sin clave (SHA-256)"
+    console.print(f"[dim]Modo: {modo} · {len(log.entries)} entradas[/dim]")
     if ok:
-        console.print(f"[green]Cadena de auditoría íntegra[/green] ({len(log.entries)} entradas).")
+        console.print(f"[green]Cadena de auditoría íntegra.[/green] {detail}")
         return 0
-    console.print(f"[red]Integridad COMPROMETIDA en la entrada #{bad_index}[/red]")
+    console.print(f"[red]Integridad COMPROMETIDA (entrada #{bad_index}).[/red] {detail}")
     return 2
 
 
@@ -158,6 +171,7 @@ def main(argv: list[str] | None = None) -> int:
     p_an.add_argument("--input", "-i", required=True, help="Ruta al archivo JSONL de logs.")
     p_an.add_argument("--audit", default="audit_log.jsonl", help="Ruta del log de auditoría.")
     p_an.add_argument("--json", help="Ruta para volcar el reporte en JSON.")
+    p_an.add_argument("--config", help="Ruta a config.yaml (por defecto config/config.yaml).")
     p_an.add_argument("--use-llm", action="store_true",
                       help="Enriquecer narrativas con Claude (requiere ANTHROPIC_API_KEY).")
     p_an.set_defaults(func=cmd_analyze)

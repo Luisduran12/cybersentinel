@@ -32,8 +32,11 @@ Cada capa es independiente: añadir una fuente de logs, una regla o una acción 
 
 ## Instalación
 
+Requiere **Python 3.10–3.12** (el ecosistema de seguridad que se integra en las
+fases siguientes —pySigma, mitreattack-python— aún no cubre 3.13+).
+
 ```bash
-python -m venv .venv && source .venv/bin/activate   # opcional
+python3.11 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -53,6 +56,32 @@ PYTHONPATH=src python -m cybersentinel.cli analyze -i data/sample_logs.jsonl --j
 PYTHONPATH=src python -m cybersentinel.cli verify-audit --audit audit_log.jsonl
 ```
 
+### Firmar el log de auditoría (recomendado)
+
+Sin clave, la cadena de hashes detecta una edición ingenua, pero **no** una
+reescritura completa: quien edite el archivo puede recalcular todos los hashes.
+Con clave, la firma es un HMAC-SHA256 que exige un secreto que no está en el
+archivo:
+
+```bash
+export CYBERSENTINEL_AUDIT_KEY='una-clave-larga-y-secreta'
+```
+
+Junto al log se escribe un **ancla** (`audit_log.jsonl.anchor`) con el número de
+entradas y el último hash: es lo que permite detectar que se borraron entradas
+del final. Límite honesto: el ancla vive en el mismo disco. La defensa completa
+exige publicarla en un medio independiente (otro host, almacenamiento WORM o un
+servicio de sellado de tiempo).
+
+### Configuración
+
+`config/config.yaml` es la fuente de verdad de los parámetros (umbrales de
+anomalía, ventana de correlación, modelo del LLM). Precedencia:
+
+```
+argumento de CLI  >  config.yaml  >  default embebido
+```
+
 ### Enriquecer las narrativas con Claude (opcional)
 
 ```bash
@@ -68,6 +97,14 @@ Sin API key el sistema funciona igual con narrativas generadas localmente (deter
 ```bash
 PYTHONPATH=src python -m pytest -q
 ```
+
+La suite cubre tres cosas distintas:
+
+| Archivo | Qué comprueba |
+|---|---|
+| `tests/test_pipeline.py` | Que el flujo completo funciona de punta a punta. |
+| `tests/test_detection_quality.py` | Que se detecta lo que se dice detectar y, sobre todo, que el tráfico benigno **no** genera incidentes graves. |
+| `tests/test_audit_integrity.py` | Que la manipulación del log (edición, truncado, reescritura completa) se detecta. |
 
 ## Datasets reales para tu tesis
 
