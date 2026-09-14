@@ -1,0 +1,4 @@
+id,dur,proto,service,state,spkts,dpkts,sbytes,dbytes,rate,sttl,dttl,sload,dload,sloss,dloss,sinpkt,dinpkt,sjit,djit,swin,stcpb,dtcpb,dwin,tcprtt,synack,ackdat,smean,dmean,trans_depth,response_body_len,ct_srv_src,ct_state_ttl,ct_dst_ltm,ct_src_dport_ltm,ct_dst_sport_ltm,ct_dst_src_ltm,is_ftp_login,ct_ftp_cmd,ct_flw_http_mthd,ct_src_ltm,ct_srv_dst,is_sm_ips_ports,attack_cat,label
+1,0.121478,tcp,-,FIN,6,4,258,172,74.08,252,254,14158.9,8495.4,0,0,24.29,8.37,30.17,11.83,255,621772692,2202533631,255,0.111,0.057,0.054,43,43,0,0,1,0,1,1,1,1,0,0,0,1,1,0,Normal,0
+2,0.649902,tcp,-,FIN,14,38,734,42014,78.47,252,254,8395.1,508316.1,2,17,49.91,17.55,111.44,1387.78,255,1417884146,3077387971,255,0.123,0.068,0.055,52,1106,0,0,1,0,1,1,1,1,0,0,0,2,1,0,Normal,0
+3,1.623129,tcp,http,FIN,10,8,528,304,11.09,31,29,2168.99,1123.45,0,0,180.3,160.1,12.3,8.9,255,1234,5678,255,0.09,0.04,0.05,52,38,1,166,2,1,2,1,1,2,0,0,1,2,4,0,Exploits,1

@@ -173,13 +173,48 @@ La suite cubre tres cosas distintas:
 | `tests/test_sequence_model.py` | Que la cadena de Markov aprende, que las métricas miden lo que dicen, y que la predicción nunca retrocede en la cadena. |
 | `tests/test_ingestion.py` | Que ningún registro se pierde ni se falsea en silencio (fuente desconocida, timestamp ilegible, línea corrupta). |
 | `tests/test_explainer_safety.py` | Que la telemetría del atacante llega al LLM como datos delimitados y que la narrativa no puede alterar ninguna decisión. |
+| `tests/test_datasets.py` | Que los cargadores digieren los formatos reales (CSV sin cabecera, cp1252, columnas con espacios). |
+| `tests/test_detection_evaluation.py` | Que el protocolo de medición es correcto: ningún ataque en el entrenamiento, nada medido sobre datos vistos. |
 
-## Datasets reales para tu tesis
+## Evaluación con datasets reales
 
-El generador sintético sirve para demostrar el flujo. Para evaluación rigurosa, adapta un parser en `ingestion/normalizer.py` a datasets públicos:
+El detector de anomalías se mide contra datasets públicos etiquetados. Hay
+cargadores para los cuatro formatos y un comando que entrena, mide y dibuja:
 
-- **CICIDS2017**, **UNSW-NB15** (flows de red etiquetados).
-- Logs de laboratorio con **Sysmon** + **Atomic Red Team** (ejecutas técnicas ATT&CK controladas en tu propia VM).
+```bash
+# UNSW-NB15 (acepta los CSV crudos sin cabecera y la particion con cabecera)
+PYTHONPATH=src python -m cybersentinel.cli evaluate-detection \
+    --dataset unsw-nb15 -i UNSW-NB15_1.csv --curves docs/figuras/roc.png --json eval.json
+
+# CICIDS2017
+PYTHONPATH=src python -m cybersentinel.cli evaluate-detection \
+    --dataset cicids2017 -i "TrafficLabelling/Friday-WorkingHours-Afternoon-DDos.pcap_ISCX.csv"
+
+# Telemetria Windows por tecnica ATT&CK (Security-Datasets / OTRF)
+PYTHONPATH=src python -m cybersentinel.cli evaluate-detection \
+    --dataset security-datasets -i psh_cmd.json --technique T1059.001
+```
+
+**Sin haber descargado nada todavía**, puedes validar toda la tubería con flujos
+sintéticos en formato UNSW-NB15:
+
+```bash
+python data/generate_flow_sample.py
+PYTHONPATH=src python -m cybersentinel.cli evaluate-detection \
+    --dataset unsw-nb15 -i data/synthetic_flows_unsw_format.csv
+```
+
+El comando avisa solo de que esos números no valen para la memoria.
+
+**Protocolo**: el detector es no supervisado, así que se entrena **solo con
+tráfico benigno** y se mide sobre eventos que no vio, con **todos** los ataques en
+el conjunto de evaluación. Se reportan precisión, exhaustividad, F1, tasa de
+falsos positivos, matriz de confusión, AUC-ROC, **AUC-PR**, exhaustividad por
+familia de ataque y una tabla de puntos de operación.
+
+Las instrucciones de descarga de cada dataset, las trampas de formato de cada uno
+y el flujo de laboratorio con **Atomic Red Team** están en
+[`docs/DATASETS.md`](docs/DATASETS.md).
 
 ## Ética y alcance
 
@@ -194,7 +229,9 @@ cybersentinel/
 ├── src/cybersentinel/
 │   ├── schema.py            # esquema común de eventos (ECS/OCSF)
 │   ├── ingestion/           # normalización (sysmon, auth, firewall, netflow, web)
+│   │   └── datasets.py         # UNSW-NB15, CICIDS2017, Security-Datasets, Atomic
 │   ├── detection/           # reglas (Sigma) + anomalías (Isolation Forest)
+│   │   └── evaluation.py       # precision/recall/F1, ROC y precisión-exhaustividad
 │   ├── correlation/         # incidentes, MITRE ATT&CK, predicción kill-chain
 │   │   ├── sequence_model.py   # Markov / línea base / interfaz para LSTM
 │   │   └── evaluation.py       # precisión@k, matriz de confusión, F1
@@ -204,7 +241,7 @@ cybersentinel/
 │   ├── pipeline.py          # orquestador
 │   └── cli.py               # interfaz de línea de comandos
 ├── config/                  # reglas YAML + política + config
-├── data/                    # generadores de telemetría y de campañas sintéticas
+├── data/                    # generadores de telemetría, campañas y flujos sintéticos
 ├── models/                  # modelos entrenados + reporte de métricas
 ├── tests/                   # pruebas unitarias
 └── docs/                    # arquitectura y hoja de ruta

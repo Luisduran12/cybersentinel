@@ -4,6 +4,8 @@ Interfaz de línea de comandos de CyberSentinel.
 Uso:
     python -m cybersentinel.cli analyze --input data/sample_logs.jsonl
     python -m cybersentinel.cli analyze --input logs.jsonl --json report.json
+    python -m cybersentinel.cli train-prediction --save-model models/markov.json
+    python -m cybersentinel.cli evaluate-detection --dataset unsw-nb15 -i flows.csv
     python -m cybersentinel.cli verify-audit --audit audit_log.jsonl
 """
 from __future__ import annotations
@@ -12,6 +14,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 from rich.console import Console
 from rich.panel import Panel
@@ -260,6 +263,140 @@ def cmd_train_prediction(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_evaluate_detection(args: argparse.Namespace) -> int:
+    """Mide el detector de anomalías contra las etiquetas de un dataset real."""
+    from .detection.evaluation import evaluate_anomaly_detector, save_curves
+    from .ingestion.datasets import LOADERS
+
+    rutas = [Path(p) for p in args.input]
+    faltan = [p for p in rutas if not p.exists()]
+    if faltan:
+        console.print(f"[red]No existen estos archivos:[/red] {', '.join(map(str, faltan))}")
+        return 1
+
+    console.print(Panel.fit(
+        "[bold cyan]CyberSentinel[/bold cyan] — Evaluación del detector\n"
+        f"[dim]Dataset: {args.dataset} · {len(rutas)} archivo(s)[/dim]",
+        box=box.ROUNDED,
+    ))
+
+    # Nombre con el que se rotulan el reporte y las figuras. Por defecto el del
+    # dataset, pero conviene distinguirlo cuando la entrada no es el dataset real.
+    nombre = args.name or args.dataset
+    if any("sintetic" in p.name.lower() or "synthetic" in p.name.lower() for p in rutas):
+        nombre = args.name or f"{args.dataset} (SINTETICO)"
+        console.print(
+            "\n[yellow]Aviso:[/yellow] [dim]la entrada parece un archivo sintético. "
+            "Estas métricas validan la tubería de evaluación, no la eficacia del "
+            "detector: para la memoria hacen falta los datasets reales "
+            "(ver docs/DATASETS.md).[/dim]"
+        )
+
+    kwargs = {"technique": args.technique} if args.dataset == "security-datasets" else {}
+    loader = LOADERS[args.dataset](**kwargs)
+    with console.status("[dim]Cargando y normalizando…[/dim]"):
+        labeled = list(loader.load_many(rutas, limit=args.limit))
+
+    if not labeled:
+        console.print("[red]El dataset no contiene eventos legibles.[/red]")
+        return 1
+
+    n_ataques = sum(item.label for item in labeled)
+    console.print(
+        f"\n[bold]Eventos:[/bold] {len(labeled)}   "
+        f"[bold]Ataques:[/bold] {n_ataques} ({n_ataques / len(labeled):.1%})   "
+        f"[bold]Benignos:[/bold] {len(labeled) - n_ataques}"
+    )
+    if n_ataques == 0 or n_ataques == len(labeled):
+        console.print("[red]Se necesitan ambas clases para evaluar.[/red]")
+        return 1
+
+    with console.status("[dim]Entrenando la línea base y midiendo…[/dim]"):
+        evaluation = evaluate_anomaly_detector(
+            labeled, dataset=nombre, train_ratio=args.train_ratio,
+            threshold=args.threshold, seed=args.seed,
+        )
+
+    _render_evaluation(evaluation)
+
+    if args.curves:
+        ruta = save_curves(evaluation, args.curves)
+        if ruta:
+            console.print(f"\n[green]Curvas ROC y precisión-exhaustividad en:[/green] {ruta}")
+        else:
+            console.print(
+                "\n[yellow]matplotlib no está instalado[/yellow] [dim](pip install "
+                "'matplotlib>=3.7'); los puntos de ambas curvas están en el JSON.[/dim]"
+            )
+
+    if args.json:
+        Path(args.json).write_text(
+            json.dumps(evaluation.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+        console.print(f"[green]Reporte de métricas en:[/green] {args.json}")
+    return 0
+
+
+def _render_evaluation(evaluation: Any) -> None:
+    """Presenta las métricas con el contexto que hace falta para interpretarlas."""
+    c = evaluation.confusion
+    console.print(
+        f"[dim]Protocolo: entrenamiento con {evaluation.n_train_benign} eventos benignos; "
+        f"evaluación sobre {evaluation.n_test} eventos no vistos "
+        f"({evaluation.n_test_attacks} ataques, {evaluation.attack_ratio:.1%}). "
+        f"Umbral aplicado: {evaluation.threshold:.3f}.[/dim]\n"
+    )
+
+    tabla = Table(title="Detector de anomalías en el punto de operación", box=box.SIMPLE_HEAVY)
+    for columna in ("Precisión", "Exhaustividad", "F1", "Tasa FP", "AUC-ROC", "AUC-PR"):
+        tabla.add_column(columna, justify="right")
+    tabla.add_row(
+        f"{c.precision:.3f}", f"{c.recall:.3f}", f"{c.f1:.3f}",
+        f"{c.false_positive_rate:.3f}", f"{evaluation.roc_auc:.3f}", f"{evaluation.pr_auc:.3f}",
+    )
+    console.print(tabla)
+
+    matriz = Table(title="Matriz de confusión", box=box.SIMPLE)
+    matriz.add_column("")
+    matriz.add_column("Predicho: ataque", justify="right")
+    matriz.add_column("Predicho: benigno", justify="right")
+    matriz.add_row("Real: ataque", f"[green]{c.true_positives}[/green]", f"[red]{c.false_negatives}[/red]")
+    matriz.add_row("Real: benigno", f"[red]{c.false_positives}[/red]", f"[green]{c.true_negatives}[/green]")
+    console.print(matriz)
+
+    if evaluation.per_category:
+        por_familia = Table(title="Exhaustividad por familia de ataque", box=box.SIMPLE)
+        por_familia.add_column("Familia")
+        por_familia.add_column("Detectados", justify="right")
+        por_familia.add_column("Total", justify="right")
+        por_familia.add_column("Recall", justify="right")
+        for categoria in sorted(evaluation.per_category, key=lambda c: -c.total):
+            estilo = "green" if categoria.recall >= 0.7 else "yellow" if categoria.recall >= 0.3 else "red"
+            por_familia.add_row(
+                categoria.category, str(categoria.detected), str(categoria.total),
+                f"[{estilo}]{categoria.recall:.2f}[/{estilo}]",
+            )
+        console.print(por_familia)
+        console.print(
+            "[dim]Un F1 global aceptable puede esconder una familia entera que no se "
+            "detecta nunca; por eso se desglosa.[/dim]\n"
+        )
+
+    barrido = Table(title="Puntos de operación posibles", box=box.SIMPLE)
+    for columna in ("Percentil", "Umbral", "Precisión", "Exhaustividad", "F1", "Tasa FP"):
+        barrido.add_column(columna, justify="right")
+    for fila in evaluation.threshold_sweep:
+        barrido.add_row(
+            f"p{fila['percentile']}", f"{fila['threshold']:.3f}", f"{fila['precision']:.3f}",
+            f"{fila['recall']:.3f}", f"{fila['f1']:.3f}", f"{fila['false_positive_rate']:.3f}",
+        )
+    console.print(barrido)
+    console.print(
+        "[dim]Elegir el punto de operación es una decisión del equipo —cuántos falsos "
+        "positivos se toleran a cambio de cuánta cobertura—, no un valor por defecto.[/dim]"
+    )
+
+
 def cmd_verify_audit(args: argparse.Namespace) -> int:
     path = Path(args.audit)
     if not path.exists():
@@ -312,6 +449,28 @@ def main(argv: list[str] | None = None) -> int:
     p_tp.add_argument("--save-model", help="Ruta donde guardar el modelo entrenado (JSON).")
     p_tp.add_argument("--json", help="Ruta para volcar el reporte de métricas en JSON.")
     p_tp.set_defaults(func=cmd_train_prediction)
+
+    p_ed = sub.add_parser(
+        "evaluate-detection",
+        help="Mide el detector de anomalías contra un dataset público etiquetado.",
+    )
+    p_ed.add_argument("--dataset", required=True,
+                      choices=("unsw-nb15", "cicids2017", "security-datasets"),
+                      help="Dataset de entrada.")
+    p_ed.add_argument("--input", "-i", required=True, nargs="+",
+                      help="Uno o varios archivos del dataset.")
+    p_ed.add_argument("--limit", type=int, help="Máximo de eventos a cargar.")
+    p_ed.add_argument("--name", help="Nombre con el que rotular el reporte y las figuras.")
+    p_ed.add_argument("--train-ratio", type=float, default=0.5,
+                      help="Proporción del tráfico benigno usada como línea base.")
+    p_ed.add_argument("--threshold", type=float,
+                      help="Umbral fijo. Por defecto, el que sugiere la línea base.")
+    p_ed.add_argument("--seed", type=int, default=42, help="Semilla de la partición.")
+    p_ed.add_argument("--technique", default="unknown",
+                      help="Técnica ATT&CK del archivo (solo para security-datasets).")
+    p_ed.add_argument("--curves", help="Ruta del PNG con las curvas ROC y precisión-exhaustividad.")
+    p_ed.add_argument("--json", help="Ruta para volcar las métricas en JSON.")
+    p_ed.set_defaults(func=cmd_evaluate_detection)
 
     p_va = sub.add_parser("verify-audit", help="Verifica la integridad del log de auditoría.")
     p_va.add_argument("--audit", default="audit_log.jsonl")

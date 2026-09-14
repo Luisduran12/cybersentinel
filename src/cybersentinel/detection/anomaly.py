@@ -41,6 +41,8 @@ FEATURE_LABELS_ES: dict[str, str] = {
     "cmd_special_chars": "caracteres especiales en el comando",
     "cmd_entropy": "entropia del comando (ofuscacion)",
     "bytes_out_log": "volumen de datos saliente",
+    "bytes_in_log": "volumen de datos entrante",
+    "bytes_ratio": "asimetria entre datos enviados y recibidos",
     "is_rare_port": "puerto de destino poco comun",
     "port_rarity": "rareza del puerto en la linea base",
     "user_rarity": "rareza del usuario en la linea base",
@@ -89,7 +91,8 @@ class FeatureExtractor:
     FEATURE_NAMES = [
         "hour_sin", "hour_cos", "is_night", "is_failure",
         "cmd_len", "cmd_special_chars", "cmd_entropy",
-        "bytes_out_log", "is_rare_port", "port_rarity",
+        "bytes_out_log", "bytes_in_log", "bytes_ratio",
+        "is_rare_port", "port_rarity",
         "user_rarity", "src_ip_rarity",
     ]
 
@@ -137,6 +140,10 @@ class FeatureExtractor:
             float(sum(1 for ch in cmd if not ch.isalnum() and not ch.isspace())),
             _shannon_entropy(cmd),
             float(np.log1p(event.bytes_out or 0)),
+            float(np.log1p(event.bytes_in or 0)),
+            # Asimetria del flujo: una exfiltracion envia mucho y recibe poco;
+            # una descarga hace lo contrario. 0.5 = simetrico o sin datos.
+            _ratio(event.bytes_out, event.bytes_in),
             1.0 if (port and port not in self.COMMON_PORTS) else 0.0,
             self._rarity(self._ports, str(port or "")),
             self._rarity(self._users, event.user or ""),
@@ -287,6 +294,12 @@ def severity_from_anomaly(score: float) -> Severity:
         if score >= threshold:
             return severity
     return Severity.INFO
+
+
+def _ratio(out_bytes: int | None, in_bytes: int | None) -> float:
+    """Proporción de bytes salientes sobre el total del flujo."""
+    total = (out_bytes or 0) + (in_bytes or 0)
+    return (out_bytes or 0) / total if total else 0.5
 
 
 def _shannon_entropy(text: str) -> float:

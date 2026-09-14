@@ -1,0 +1,5 @@
+Flow ID, Source IP, Source Port, Destination IP, Destination Port, Protocol, Timestamp, Flow Duration, Total Fwd Packets, Total Backward Packets,Total Length of Fwd Packets, Total Length of Bwd Packets, Flow Bytes/s, Label
+192.168.10.5-104.16.207.165-54865-443-6, 192.168.10.5, 54865, 104.16.207.165, 443, 6, 5/7/2017 8:55, 3, 2, 0, 12, 0, 4000000.0, BENIGN
+192.168.10.8-52.7.235.158-49188-80-6, 192.168.10.8, 49188, 52.7.235.158, 80, 6, 5/7/2017 8:55, 109, 1, 1, 6, 6, Infinity, BENIGN
+172.16.0.1-192.168.10.50-2158-80-6, 172.16.0.1, 2158, 192.168.10.50, 80, 6, 7/7/2017 3:30:00 PM, 1, 2, 0, 0, 0, NaN, Web Attack – Brute Force
+172.16.0.1-192.168.10.50-1234-80-6, 172.16.0.1, 1234, 192.168.10.50, 80, 6, 7/7/2017 3:31:00 PM, 4, 5, 2, 500, 20, 130000.0, DDoS

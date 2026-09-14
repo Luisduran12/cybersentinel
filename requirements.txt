@@ -5,3 +5,6 @@ PyYAML>=6.0
 rich>=13.0
 # Opcional: solo si se usa --use-llm
 # anthropic>=0.40
+
+# Opcional: solo para exportar las curvas ROC / precision-exhaustividad a PNG
+# matplotlib>=3.7

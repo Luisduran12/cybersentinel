@@ -38,7 +38,13 @@ timestamp ilegible por la hora actual sin dejar rastro desplaza el evento dentro
 de la ventana de correlación y puede meterlo en un incidente al que no pertenece.
 
 El parser de `netflow` acepta además las convenciones de nombres de UNSW-NB15
-(`srcip`, `sbytes`) y Zeek (`id.orig_h`): es la puerta de entrada de la Fase 4.
+(`srcip`, `sbytes`) y Zeek (`id.orig_h`).
+
+`ingestion/datasets.py` añade los cargadores de datasets **etiquetados**, que es
+lo que permite medir en lugar de solo demostrar: UNSW-NB15 (en sus dos formatos,
+incluidos los CSV crudos sin cabecera), CICIDS2017, Security-Datasets de OTRF y
+la verdad-terreno temporal de Atomic Red Team. Cada uno devuelve `LabeledEvent`:
+el evento normalizado más su etiqueta.
 
 ### 2.2 Detección (`detection/`)
 Enfoque **híbrido**:
@@ -167,7 +173,9 @@ JSONL ─► Normalizer ─► [SecurityEvent] ─► RulesEngine ─┐
 **Lo que SÍ hace hoy, de forma funcional y verificable:**
 - Ingesta multi-fuente, detección híbrida, correlación, mapeo ATT&CK, predicción
   de fase siguiente, narrativa explicable, política ética y auditoría íntegra.
-- Corre de punta a punta sobre datos sintéticos y es adaptable a datasets reales.
+- Corre de punta a punta sobre datos sintéticos y **ingiere datasets públicos
+  etiquetados** (UNSW-NB15, CICIDS2017, Security-Datasets) para medirse con
+  precisión, exhaustividad, F1, ROC y precisión-exhaustividad.
 
 **Lo que NO es (y no debe venderse como tal):**
 - La confianza de una regla **no es una probabilidad calibrada**: se deriva de la
@@ -217,6 +225,54 @@ Límites de esta evaluación, en orden de importancia:
 3. La comparación con la línea base sí es sólida: mismas campañas retenidas,
    mismo criterio de acierto, y ninguno de los dos modelos conoce el generador.
 
+## 4.ter Evaluación del detector de anomalías
+
+**Protocolo.** El detector es no supervisado, lo que impone dos condiciones que la
+demostración no cumplía y la evaluación sí:
+
+1. Se entrena **solo con tráfico benigno**. Entrenar con los ataques dentro hace
+   que el modelo los aprenda como parte de la normalidad.
+2. Se mide sobre eventos **que no vio**, con todos los ataques en el conjunto de
+   evaluación.
+
+**Métricas y por qué estas.** Las clases están muy desbalanceadas, así que la
+exactitud engaña: con un 1% de ataques, no marcar nada acierta el 99%. Se
+reportan precisión y exhaustividad por separado, matriz de confusión, AUC-ROC y
+**AUC-PR**, exhaustividad **por familia de ataque** y una tabla de puntos de
+operación.
+
+Resultado de referencia sobre flujos sintéticos en formato UNSW-NB15 (5000
+flujos, 10% de ataques; sirve para validar la tubería, no para la memoria):
+
+| Métrica | Valor |
+|---|---:|
+| Precisión | 0.894 |
+| Exhaustividad | 0.304 |
+| F1 | 0.454 |
+| Tasa de falsos positivos | 0.008 |
+| AUC-ROC | 0.958 |
+| AUC-PR | 0.826 |
+
+Tres lecturas que conviene llevar preparadas a la defensa:
+
+- **El AUC-ROC de 0.958 no significa que el detector funcione bien.** En el punto
+  de operación por defecto, la exhaustividad es 0.30: encuentra tres de cada diez
+  ataques. La distancia entre el AUC-ROC y el AUC-PR (0.826) es exactamente el
+  efecto del desbalance que la ROC disimula.
+- **El desglose por familia explica el promedio.** La exfiltración se detecta al
+  100% y el canal de mando al 81%, pero la explotación web al 9% y la denegación
+  de servicio al 14%. El detector ve lo volumétrico y lo de puerto raro; no ve lo
+  que imita tráfico normal.
+- **Eso es el argumento a favor de la detección híbrida**, no un defecto que
+  esconder: lo que el modelo no supervisado no ve, lo ven las reglas; lo que las
+  reglas no conocen, lo ve el modelo. El proyecto defiende esa combinación y aquí
+  está la evidencia numérica de por qué hace falta.
+
+El punto de operación es una decisión con criterio operativo. Con el mismo
+detector, el percentil 75 da F1 = 0.717 con un 11.6% de falsos positivos, y el
+percentil 99 da precisión 1.000 con exhaustividad 0.056. No hay un valor por
+defecto correcto: depende de cuántos falsos positivos tolere el equipo.
+
 ## 5. Hoja de ruta (trabajo futuro)
 
 1. Matriz ATT&CK completa desde el STIX oficial de MITRE.
@@ -224,8 +280,12 @@ Límites de esta evaluación, en orden de importancia:
 3. ~~Modelo de secuencia entrenable para la predicción, con métricas~~ **hecho**
    (Markov de orden 1 + precisión@k, matriz de confusión y F1). Siguiente paso:
    orden 2 o LSTM, y reentrenar con secuencias observadas en vez de sintéticas.
-4. Evaluación cuantitativa sobre CICIDS2017 / UNSW-NB15 con matriz de confusión y
-   curvas ROC.
+4. ~~Evaluación cuantitativa sobre CICIDS2017 / UNSW-NB15 con matriz de confusión
+   y curvas ROC~~ **hecho** (cargadores, protocolo de medición, precision/recall/
+   F1, ROC y precisión-exhaustividad, desglose por familia). Siguiente paso:
+   ejecutarla sobre los datasets reales descargados y sobre telemetría propia de
+   Atomic Red Team, y usar los resultados para calibrar la confianza de las
+   reglas, que hoy se deriva de la severidad y no está calibrada.
 5. Panel web (FastAPI + frontend) para el flujo de aprobación humana.
 6. Conectores de respuesta reales (firewall/EDR) con doble confirmación.
 

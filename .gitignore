@@ -7,3 +7,5 @@ report.json
 .pytest_cache/
 data/campaigns.jsonl
 *.jsonl.anchor
+data/synthetic_flows_unsw_format.csv
+docs/figuras/

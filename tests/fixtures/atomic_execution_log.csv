@@ -1,0 +1,3 @@
+Execution Time (UTC),Execution Time (Local),Technique,Test Number,Test Name,Hostname,Username,GUID,ProcessId,ExitCode
+2025-03-10 10:05:00,2025-03-10 05:05:00,T1059.001,1,Mshta executes JavaScript,WKS-01,lab\analista,f5a0a3d0-0000-0000-0000-000000000001,4242,0
+2025-03-10 10:20:00,2025-03-10 05:20:00,T1053.005,2,Scheduled task startup script,WKS-01,lab\analista,f5a0a3d0-0000-0000-0000-000000000002,4243,0
