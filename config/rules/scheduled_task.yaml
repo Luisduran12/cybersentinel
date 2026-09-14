@@ -1,0 +1,12 @@
+id: RULE-0003
+title: Creacion de tarea programada (posible persistencia)
+description: Uso de schtasks para crear una tarea, tecnica comun de persistencia.
+severity: medium
+mitre_technique: T1053
+mitre_tactic: persistence
+conditions:
+  - field: command_line
+    op: contains
+    value: "schtasks /create"
+references:
+  - https://attack.mitre.org/techniques/T1053/

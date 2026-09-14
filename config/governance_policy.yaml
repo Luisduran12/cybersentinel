@@ -1,0 +1,34 @@
+# Politica de gobernanza etica de CyberSentinel.
+# Clasifica cada contramedida propuesta por el agente.
+#
+# Principio: el agente NUNCA ejecuta acciones destructivas, ofensivas o
+# irreversibles. Las acciones sensibles requieren aprobacion humana explicita.
+
+prohibited:      # nunca se ejecutan, bajo ninguna circunstancia
+  - delete_files
+  - wipe_disk
+  - format
+  - shutdown_production
+  - counter_attack
+  - hack_back
+  - deploy_exploit
+  - exfiltrate
+  - disable_backups
+  - modify_evidence
+
+requires_approval:   # human-in-the-loop obligatorio
+  - isolate_host
+  - block_ip
+  - disable_account
+  - revoke_session
+  - kill_process
+  - quarantine_file
+  - reset_password
+
+allowed:            # reversibles, bajo impacto; ejecutables tras auditoria
+  - notify_analyst
+  - enrich_context
+  - open_ticket
+  - tag_entity
+  - increase_logging
+  - snapshot_evidence

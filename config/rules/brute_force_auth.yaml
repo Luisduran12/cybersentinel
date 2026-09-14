@@ -1,0 +1,15 @@
+id: RULE-0001
+title: Fuerza bruta de autenticación (múltiples fallos)
+description: Un login fallido desde una IP; correlacionado con otros fallos indica fuerza bruta.
+severity: high
+mitre_technique: T1110
+mitre_tactic: credential-access
+conditions:
+  - field: category
+    op: equals
+    value: authentication
+  - field: outcome
+    op: contains_any
+    value: [failure, failed, denied]
+references:
+  - https://attack.mitre.org/techniques/T1110/

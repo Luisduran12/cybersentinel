@@ -1,0 +1,12 @@
+id: RULE-0007
+title: Exfiltracion por gran volumen de datos
+description: Transferencia saliente inusualmente grande (posible exfiltracion).
+severity: critical
+mitre_technique: T1048
+mitre_tactic: exfiltration
+conditions:
+  - field: bytes_out
+    op: gt
+    value: 104857600
+references:
+  - https://attack.mitre.org/techniques/T1048/

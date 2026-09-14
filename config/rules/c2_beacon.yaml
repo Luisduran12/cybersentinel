@@ -1,0 +1,12 @@
+id: RULE-0006
+title: Posible baliza C2 a puerto no estandar
+description: Conexion saliente a puerto tipico de C2 (4444).
+severity: high
+mitre_technique: T1071
+mitre_tactic: command-and-control
+conditions:
+  - field: dst_port
+    op: equals
+    value: 4444
+references:
+  - https://attack.mitre.org/techniques/T1071/

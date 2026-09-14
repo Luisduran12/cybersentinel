@@ -1,0 +1,12 @@
+id: RULE-0004
+title: Escaneo de servicios de red
+description: Uso de herramientas de escaneo (nmap) para descubrir servicios.
+severity: medium
+mitre_technique: T1046
+mitre_tactic: discovery
+conditions:
+  - field: command_line
+    op: regex
+    value: "nmap|masscan|-sS|-p-"
+references:
+  - https://attack.mitre.org/techniques/T1046/

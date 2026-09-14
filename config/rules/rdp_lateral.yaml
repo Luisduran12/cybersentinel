@@ -1,0 +1,12 @@
+id: RULE-0005
+title: Conexion RDP (posible movimiento lateral)
+description: Conexion entrante/saliente al puerto 3389 (RDP) entre hosts internos.
+severity: medium
+mitre_technique: T1021
+mitre_tactic: lateral-movement
+conditions:
+  - field: dst_port
+    op: equals
+    value: 3389
+references:
+  - https://attack.mitre.org/techniques/T1021/

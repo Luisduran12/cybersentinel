@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cybersentinel"
+version = "0.1.0"
+description = "Agente defensivo de ciberseguridad (blue team): analiza, predice y ayuda a contrarrestar amenazas con explicabilidad y gobernanza etica."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Luis Emir" }]
+dependencies = [
+    "scikit-learn>=1.3",
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "PyYAML>=6.0",
+    "rich>=13.0",
+]
+
+[project.optional-dependencies]
+llm = ["anthropic>=0.40"]
+dev = ["pytest>=7.0"]
+
+[project.scripts]
+cybersentinel = "cybersentinel.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

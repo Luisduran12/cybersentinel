@@ -1,0 +1,12 @@
+id: RULE-0002
+title: PowerShell ofuscado / codificado
+description: Ejecucion de PowerShell con banderas de ocultamiento y comando codificado en base64.
+severity: high
+mitre_technique: T1059
+mitre_tactic: execution
+conditions:
+  - field: command_line
+    op: regex
+    value: "powershell.*-enc|-nop|-w hidden|-EncodedCommand"
+references:
+  - https://attack.mitre.org/techniques/T1059/

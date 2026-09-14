@@ -1,0 +1,9 @@
+# Configuracion general de CyberSentinel.
+detection:
+  anomaly_contamination: 0.08     # proporcion esperada de anomalias en la linea base
+  anomaly_threshold: 0.6          # score minimo para convertir anomalia en hallazgo
+correlation:
+  time_window_minutes: 30         # ventana para agrupar hallazgos en un incidente
+explanation:
+  use_llm: false                  # true = enriquecer con Claude (requiere API key)
+  model: claude-sonnet-4-6
