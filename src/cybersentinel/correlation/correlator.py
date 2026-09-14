@@ -5,13 +5,18 @@ Agrupa RuleHits y anomalías que comparten contexto (mismo host, usuario o IP y
 proximidad temporal) en un Incident. Sobre cada incidente:
 
   - Reconstruye la secuencia de tácticas ATT&CK observadas.
-  - Predice la(s) táctica(s) siguiente(s) probable(s) usando una matriz de
-    transición (modelo tipo Markov) combinada con el orden canónico de la
-    cadena de ataque.
+  - Predice la(s) táctica(s) siguiente(s) probable(s) con el modelo de secuencia
+    configurado: heurística del orden canónico por defecto, cadena de Markov
+    entrenada si se le inyecta una.
   - Calcula una puntuación de riesgo agregada.
 
 Esta es la parte diferenciadora del proyecto: pasar de "detecté X" a
 "esto es la fase N de un ataque tipo Y y lo más probable es que siga Z".
+
+La predicción la produce un modelo de secuencia intercambiable
+(`sequence_model.py`): por defecto la heurística del orden canónico, y de forma
+opcional una cadena de Markov entrenada. La interfaz está pensada para que
+sustituirla por un LSTM no obligue a tocar este archivo.
 """
 from __future__ import annotations
 
@@ -24,6 +29,7 @@ from ..detection.anomaly import AnomalyResult, severity_from_anomaly
 from ..detection.rules_engine import RuleHit
 from ..schema import SecurityEvent, Severity
 from . import mitre
+from .sequence_model import CanonicalBaseline, SequenceModel
 
 
 @dataclass
@@ -53,17 +59,34 @@ class KillChainPrediction:
     predicted_next: list[str]
     confidence: float
     rationale: str
+    #: Modelo que produjo la predicción (trazabilidad: dos modelos distintos dan
+    #: resultados distintos y la memoria debe poder decir cuál se usó).
+    model_name: str = "heuristica-canonica"
+    #: Probabilidad estimada de cada táctica de `predicted_next`, en el mismo orden.
+    probabilities: list[float] = field(default_factory=list)
+    #: Qué significa `confidence`: una probabilidad del modelo o una heurística.
+    confidence_basis: str = "heuristica"
+    #: Probabilidad de que el ataque se detenga aquí (0 si el modelo no la estima).
+    probability_of_end: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
+        probabilities = self.probabilities or [None] * len(self.predicted_next)
         return {
             "current_tactic": self.current_tactic,
             "current_tactic_es": mitre.TACTIC_LABELS_ES.get(self.current_tactic, self.current_tactic),
             "stage": f"{self.current_stage_index + 1}/{self.total_stages}",
             "predicted_next": [
-                {"tactic": t, "tactic_es": mitre.TACTIC_LABELS_ES.get(t, t)}
-                for t in self.predicted_next
+                {
+                    "tactic": t,
+                    "tactic_es": mitre.TACTIC_LABELS_ES.get(t, t),
+                    "probability": round(p, 4) if p is not None else None,
+                }
+                for t, p in zip(self.predicted_next, probabilities)
             ],
             "confidence": round(self.confidence, 3),
+            "confidence_basis": self.confidence_basis,
+            "model": self.model_name,
+            "probability_of_end": round(self.probability_of_end, 4),
             "rationale": self.rationale,
         }
 
@@ -140,8 +163,18 @@ class Incident:
 class Correlator:
     """Agrupa hallazgos en incidentes y predice la evolución de la cadena."""
 
-    def __init__(self, time_window_minutes: int = 30) -> None:
+    def __init__(
+        self,
+        time_window_minutes: int = 30,
+        sequence_model: SequenceModel | None = None,
+    ) -> None:
+        """
+        `sequence_model` es opcional: sin él se usa la heurística canónica, que
+        es el comportamiento histórico. Con él (una cadena de Markov entrenada,
+        o mañana un LSTM) la predicción pasa a ser probabilística y medible.
+        """
         self.window = timedelta(minutes=time_window_minutes)
+        self.sequence_model: SequenceModel = sequence_model or CanonicalBaseline()
 
     def build_findings(
         self,
@@ -210,35 +243,65 @@ class Correlator:
         inc.prediction = self._predict(inc)
         return inc
 
-    def _predict(self, incident: Incident) -> KillChainPrediction | None:
-        """Predice la fase siguiente combinando orden canónico + transiciones."""
+    def _predict(self, incident: Incident, k: int = 2) -> KillChainPrediction | None:
+        """
+        Predice la fase siguiente con el modelo de secuencia configurado.
+
+        La fase actual del incidente es la **más profunda** alcanzada, no la
+        última vista en el tiempo: un evento tardío de una fase temprana no
+        devuelve al atacante a esa fase. Tomar la última hacía que un incidente
+        con exfiltración ya observada predijera "descubrimiento" como fase
+        siguiente.
+        """
         tactics = incident.tactics
-        if not tactics:
+        known = [t for t in tactics if mitre.tactic_index(t) >= 0]
+        if not known:
             return None
-        current = tactics[-1]
+
+        current = max(known, key=mitre.tactic_index)
         idx = mitre.tactic_index(current)
-        if idx == -1:
-            return None
 
-        predicted = mitre.next_tactics(current, k=2)
+        ranked = self.sequence_model.predict_next(tactics, k=k)
+        predicted = [t for t, _ in ranked]
+        probabilities = [p for _, p in ranked]
 
-        # Confianza: sube con cuántas fases coherentes ya se observaron.
-        observed_indices = [mitre.tactic_index(t) for t in tactics if mitre.tactic_index(t) >= 0]
-        monotonic = all(x <= y for x, y in zip(observed_indices, observed_indices[1:]))
-        base = 0.55 + 0.1 * min(len(tactics), 3)
-        confidence = min(base + (0.1 if monotonic else 0.0), 0.95)
+        # La confianza es la probabilidad estimada de la mejor hipótesis cuando
+        # el modelo sabe estimarla. Con la heurística canónica no hay tal
+        # estimación: se conserva la puntuación por coherencia de la progresión,
+        # y `confidence_basis` deja constancia de la diferencia.
+        model_name = getattr(self.sequence_model, "name", "desconocido")
+        if isinstance(self.sequence_model, CanonicalBaseline):
+            indices = [mitre.tactic_index(t) for t in known]
+            monotonic = all(x <= y for x, y in zip(indices, indices[1:]))
+            confidence = min(0.55 + 0.1 * min(len(known), 3) + (0.1 if monotonic else 0.0), 0.95)
+            basis = "heuristica: coherencia y longitud de la progresion observada"
+        else:
+            confidence = probabilities[0] if probabilities else 0.0
+            basis = f"probabilidad estimada por {model_name}"
 
+        p_end = self.sequence_model.probability_of_end(tactics)
         chain_es = " → ".join(mitre.TACTIC_LABELS_ES.get(t, t) for t in tactics)
+
         if predicted:
-            nxt_es = " o ".join(mitre.TACTIC_LABELS_ES.get(t, t) for t in predicted)
+            partes = [
+                f"{mitre.TACTIC_LABELS_ES.get(t, t)} ({p:.0%})"
+                for t, p in zip(predicted, probabilities)
+            ]
             rationale = (
-                f"Se observó la progresión: {chain_es}. Según el orden típico de la "
-                f"cadena de ataque (MITRE ATT&CK), la fase siguiente probable es: {nxt_es}."
+                f"Se observó la progresión: {chain_es}. La fase más avanzada alcanzada "
+                f"es «{mitre.TACTIC_LABELS_ES.get(current, current)}» "
+                f"({idx + 1}/{len(mitre.TACTIC_ORDER)}). Según {model_name}, la fase "
+                f"siguiente más probable es: {' o '.join(partes)}."
             )
+            if p_end >= 0.3:
+                rationale += (
+                    f" El modelo estima además un {p_end:.0%} de probabilidad de que la "
+                    "actividad se detenga en esta fase."
+                )
         else:
             rationale = (
-                f"Se observó la progresión: {chain_es}. El ataque parece estar en su "
-                f"fase final (impacto); prioriza contención inmediata."
+                f"Se observó la progresión: {chain_es}. No quedan fases posteriores por "
+                "recorrer: el ataque está en su fase final (impacto). Prioriza la contención."
             )
 
         return KillChainPrediction(
@@ -248,4 +311,8 @@ class Correlator:
             predicted_next=predicted,
             confidence=confidence,
             rationale=rationale,
+            model_name=model_name,
+            probabilities=probabilities,
+            confidence_basis=basis,
+            probability_of_end=p_end,
         )

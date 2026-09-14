@@ -65,9 +65,30 @@ produce explicaciones vacías del tipo "la característica user_hash se desvió"
 - Agrupa hallazgos por **entidad** (host/usuario/IP) y **ventana temporal** en
   `Incident`.
 - Mapea a **MITRE ATT&CK** (tácticas y técnicas).
-- **Predice la fase siguiente** combinando el orden canónico de la cadena de
-  ataque con la coherencia de la progresión observada. La confianza sube cuando
-  las fases observadas son monótonas y numerosas.
+- **Predice la fase siguiente** con un modelo de secuencia intercambiable
+  (`sequence_model.py`). Hay dos implementaciones y una interfaz:
+  - `CanonicalBaseline`: el orden canónico de la cadena. Es la línea base contra
+    la que se mide todo lo demás.
+  - `MarkovChainModel`: cadena de Markov de primer orden sobre tácticas, con
+    suavizado de Laplace, entrenada con campañas etiquetadas. Estima además la
+    probabilidad de que el ataque **se detenga** en la fase actual.
+  - `SequenceModel`: la interfaz. Un LSTM futuro hereda de ella y el correlador
+    no cambia.
+
+  Tres decisiones condicionan la predicción:
+  1. La fase actual del incidente es la **más profunda** alcanzada, no la última
+     vista en el tiempo. Un evento tardío de una fase temprana no devuelve al
+     atacante a esa fase.
+  2. Solo se proponen fases **posteriores** a la actual y no observadas todavía.
+     Sin esa restricción, cuando la fase actual es terminal casi toda la masa de
+     probabilidad se va al estado final, el resto queda repartido por el
+     suavizado y el modelo acaba proponiendo una fase ya superada. Cuesta 0.4
+     puntos de precisión@1 y evita predicciones absurdas: es un intercambio
+     deliberado.
+  3. Las probabilidades **no se renormalizan** sobre las candidatas que quedan.
+     Son la probabilidad condicional de la matriz de transición, de modo que
+     "Impacto 4%" junto a "91% de que el ataque se detenga aquí" es coherente;
+     renormalizar daría un "Impacto 100%" engañoso.
 - Calcula un **riesgo agregado** (severidad + profundidad en la cadena + volumen).
 
 ### 2.4 Explicación (`explanation/`)
@@ -137,12 +158,39 @@ JSONL ─► Normalizer ─► [SecurityEvent] ─► RulesEngine ─┐
 Reconocer estos límites **fortalece** la tesis: demuestra criterio y entendimiento
 del problema real.
 
+## 4.bis Evaluación de la predicción
+
+Protocolo: de cada campaña retenida se derivan ejemplos por **prefijo** (dada
+`[A, B, C, D]` se pregunta la fase siguiente tras `[A]`, tras `[A, B]` y tras
+`[A, B, C]`), de modo que se mide la predicción en cada punto de la cadena y no
+solo al final. Partición 70/30 con semilla fija.
+
+| Modelo | precisión@1 | precisión@3 | F1 macro | F1 ponderado | Cobertura |
+|---|---:|---:|---:|---:|---:|
+| Heurística canónica (línea base) | 0.422 | 0.796 | 0.353 | 0.417 | 0.998 |
+| Cadena de Markov (orden 1) | 0.576 | 0.893 | 0.372 | 0.501 | 0.998 |
+
+Se reporta la **cobertura** junto a la precisión porque un modelo que casi nunca
+responde puede tener buena precisión y ser inútil. La precisión se divide entre
+*todos* los prefijos, no solo los respondidos: no responder cuenta como fallo.
+
+Límites de esta evaluación, en orden de importancia:
+
+1. El corpus es **sintético y propio** (`data/generate_campaigns.py`). Mide
+   capacidad de aprender estructura, no eficacia frente a adversarios reales.
+2. `command-and-control` e `impact` tienen **F1 = 0**: el modelo de orden 1 nunca
+   las propone como primera opción. Un modelo de orden 2 o un LSTM, con contexto
+   más largo, es la vía natural de mejora.
+3. La comparación con la línea base sí es sólida: mismas campañas retenidas,
+   mismo criterio de acierto, y ninguno de los dos modelos conoce el generador.
+
 ## 5. Hoja de ruta (trabajo futuro)
 
 1. Matriz ATT&CK completa desde el STIX oficial de MITRE.
 2. Parser Sigma completo (para reutilizar miles de reglas de la comunidad).
-3. Modelo de secuencia entrenable (p. ej. cadenas de Markov / LSTM) para la
-   predicción, evaluado con métricas (precisión@k de la fase siguiente).
+3. ~~Modelo de secuencia entrenable para la predicción, con métricas~~ **hecho**
+   (Markov de orden 1 + precisión@k, matriz de confusión y F1). Siguiente paso:
+   orden 2 o LSTM, y reentrenar con secuencias observadas en vez de sintéticas.
 4. Evaluación cuantitativa sobre CICIDS2017 / UNSW-NB15 con matriz de confusión y
    curvas ROC.
 5. Panel web (FastAPI + frontend) para el flujo de aprobación humana.

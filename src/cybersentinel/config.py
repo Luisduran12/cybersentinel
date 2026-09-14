@@ -44,6 +44,17 @@ class CorrelationSettings:
 
 
 @dataclass
+class PredictionSettings:
+    """Parámetros del modelo de predicción de kill-chain."""
+
+    #: Ruta a un modelo de secuencia entrenado (JSON). None = heurística canónica.
+    model_path: str | None = None
+
+    #: Cuántas fases siguientes se proponen por incidente.
+    top_k: int = 2
+
+
+@dataclass
 class ExplanationSettings:
     """Parámetros de la capa de explicabilidad."""
     use_llm: bool = False
@@ -55,6 +66,7 @@ class Settings:
     """Configuración completa del sistema."""
     detection: DetectionSettings = field(default_factory=DetectionSettings)
     correlation: CorrelationSettings = field(default_factory=CorrelationSettings)
+    prediction: PredictionSettings = field(default_factory=PredictionSettings)
     explanation: ExplanationSettings = field(default_factory=ExplanationSettings)
 
     @classmethod
@@ -81,6 +93,7 @@ class Settings:
         return cls(
             detection=_section(DetectionSettings, "detection"),
             correlation=_section(CorrelationSettings, "correlation"),
+            prediction=_section(PredictionSettings, "prediction"),
             explanation=_section(ExplanationSettings, "explanation"),
         )
 

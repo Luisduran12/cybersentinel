@@ -15,10 +15,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from .config import Settings
+from .config import ROOT, Settings
 from .ingestion import Normalizer
 from .detection import RulesEngine, AnomalyDetector
 from .correlation import Correlator, Incident
+from .correlation.sequence_model import MarkovChainModel, SequenceModel
 from .explanation import Explainer
 from .governance import GovernancePolicy, AuditLog
 from .response import ResponsePlanner, Recommendation
@@ -62,6 +63,23 @@ class PipelineReport:
         }
 
 
+def _load_sequence_model(model_path: str | None) -> SequenceModel | None:
+    """
+    Carga un modelo de secuencia entrenado si la configuración apunta a uno.
+
+    Si la ruta no existe se devuelve None y el correlador usa la heurística
+    canónica: la ausencia de modelo entrenado nunca debe impedir un análisis.
+    """
+    if not model_path:
+        return None
+    path = Path(model_path)
+    if not path.is_absolute():
+        path = ROOT / path
+    if not path.exists():
+        return None
+    return MarkovChainModel.load(path)
+
+
 class Pipeline:
     """Orquestador principal, configurable e inyectable (facilita las pruebas)."""
 
@@ -75,6 +93,7 @@ class Pipeline:
         time_window_minutes: int | None = None,
         anomaly_threshold: float | None = None,
         settings: Settings | None = None,
+        sequence_model: SequenceModel | None = None,
     ) -> None:
         """
         Los argumentos explícitos tienen prioridad sobre `settings`, que a su vez
@@ -95,7 +114,8 @@ class Pipeline:
             time_window_minutes=(
                 time_window_minutes if time_window_minutes is not None
                 else cfg.correlation.time_window_minutes
-            )
+            ),
+            sequence_model=sequence_model or _load_sequence_model(cfg.prediction.model_path),
         )
         self.explainer = Explainer(
             use_llm=use_llm if use_llm is not None else cfg.explanation.use_llm,
