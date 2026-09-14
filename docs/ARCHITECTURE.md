@@ -82,7 +82,25 @@ produce explicaciones vacías del tipo "la característica user_hash se desvió"
 ### 2.3 Correlación y predicción (`correlation/`)
 - Agrupa hallazgos por **entidad** (host/usuario/IP) y **ventana temporal** en
   `Incident`.
-- Mapea a **MITRE ATT&CK** (tácticas y técnicas).
+- Mapea a **MITRE ATT&CK** desde el STIX oficial de MITRE (`attack_data.py`),
+  resumido en una caché de 81 KB que se versiona con el proyecto. Hay tres
+  niveles de respaldo —caché, STIX, subconjunto embebido— para que el sistema
+  arranque siempre, incluso en un clon recién descargado sin dependencias
+  opcionales.
+
+  Sustituir el subconjunto escrito a mano por la matriz real destapó tres cosas
+  que conviene llevar preparadas a la defensa:
+  1. La táctica `defense-evasion` **ya no existe**: MITRE la dividió en `stealth`
+     y `defense-impairment`, y la matriz pasó de 14 a 15 fases. Un subconjunto
+     manual habría seguido prediciendo sobre una cadena obsoleta.
+  2. **Una técnica puede pertenecer a varias tácticas.** `T1053` está en tres y
+     `T1078` en cuatro. Donde hace falta un valor escalar se toma la fase **más
+     temprana**, para que un único hallazgo no haga parecer que el ataque está
+     más avanzado de lo que demuestra la evidencia.
+  3. Hay técnicas **revocadas** que un subconjunto manual mantiene vivas.
+- Exporta **capas de ATT&CK Navigator** (`navigator.py`): una por incidentes
+  detectados, coloreada por riesgo, y otra de **cobertura**, que muestra qué
+  parte de la matriz es capaz de detectar el sistema.
 - **Predice la fase siguiente** con un modelo de secuencia intercambiable
   (`sequence_model.py`). Hay dos implementaciones y una interfaz:
   - `CanonicalBaseline`: el orden canónico de la cadena. Es la línea base contra
@@ -208,8 +226,15 @@ solo al final. Partición 70/30 con semilla fija.
 
 | Modelo | precisión@1 | precisión@3 | F1 macro | F1 ponderado | Cobertura |
 |---|---:|---:|---:|---:|---:|
-| Heurística canónica (línea base) | 0.422 | 0.796 | 0.353 | 0.417 | 0.998 |
-| Cadena de Markov (orden 1) | 0.576 | 0.893 | 0.372 | 0.501 | 0.998 |
+| Heurística canónica (línea base) | 0.479 | 0.818 | 0.401 | 0.457 | 1.000 |
+| Cadena de Markov (orden 1) | 0.584 | 0.893 | 0.397 | 0.498 | 1.000 |
+
+Medido sobre la matriz ATT&CK oficial de 15 tácticas. Con el subconjunto de 14
+escrito a mano, la heurística daba 0.422 y la ventaja de la Markov era de 15.3
+puntos en lugar de 10.5: **el orden oficial de tácticas es por sí solo una línea
+base mejor de lo que parecía**. En F1 macro la heurística queda marginalmente por
+delante (0.401 frente a 0.397), porque esa métrica pesa todas las tácticas por
+igual y penaliza que la Markov nunca proponga las fases raras.
 
 Se reporta la **cobertura** junto a la precisión porque un modelo que casi nunca
 responde puede tener buena precisión y ser inútil. La precisión se divide entre
@@ -273,10 +298,33 @@ detector, el percentil 75 da F1 = 0.717 con un 11.6% de falsos positivos, y el
 percentil 99 da precisión 1.000 con exhaustividad 0.056. No hay un valor por
 defecto correcto: depende de cuántos falsos positivos tolere el equipo.
 
+## 4.quater Cobertura de ATT&CK
+
+`attack-sync --coverage` responde a la pregunta que un tribunal hará tarde o
+temprano: **¿qué parte de ATT&CK cubre esto?**
+
+| | |
+|---|---:|
+| Técnicas con al menos una regla | 7 |
+| Técnicas de la matriz empresarial | 222 |
+| **Cobertura** | **3.1%** |
+
+Repartidas en seis de las quince tácticas. Sin cobertura: reconocimiento,
+desarrollo de recursos, acceso inicial, sigilo, degradación de defensas,
+recolección e impacto.
+
+Un 3.1% es un resultado honesto para un prototipo de laboratorio con siete reglas
+escritas a mano, y es la justificación numérica de la siguiente fase: integrar
+las más de 3000 reglas Sigma de la comunidad multiplica esa cifra sin escribir
+detecciones una a una. La capa de cobertura de Navigator convierte ese número en
+una figura donde el hueco se ve de un vistazo.
+
 ## 5. Hoja de ruta (trabajo futuro)
 
-1. Matriz ATT&CK completa desde el STIX oficial de MITRE.
+1. ~~Matriz ATT&CK completa desde el STIX oficial de MITRE~~ **hecho**
+   (`attack_data.py`, caché versionada, capas de Navigator).
 2. Parser Sigma completo (para reutilizar miles de reglas de la comunidad).
+   Justificación medida: la cobertura actual es del 3.1% de la matriz.
 3. ~~Modelo de secuencia entrenable para la predicción, con métricas~~ **hecho**
    (Markov de orden 1 + precisión@k, matriz de confusión y F1). Siguiente paso:
    orden 2 o LSTM, y reentrenar con secuencias observadas en vez de sintéticas.

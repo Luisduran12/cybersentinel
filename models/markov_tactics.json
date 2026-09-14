@@ -5,129 +5,140 @@
   "monotonic": true,
   "n_sequences": 280,
   "transitions": {
+    "reconnaissance": {
+      "initial-access": 63,
+      "execution": 11,
+      "resource-development": 21,
+      "credential-access": 12,
+      "persistence": 2,
+      "discovery": 4,
+      "<END>": 1
+    },
     "initial-access": {
-      "execution": 108,
-      "credential-access": 45,
-      "persistence": 19,
-      "command-and-control": 9,
-      "discovery": 8,
-      "privilege-escalation": 4,
-      "<END>": 3,
-      "reconnaissance": 3,
-      "defense-evasion": 2,
-      "lateral-movement": 1,
+      "credential-access": 29,
+      "execution": 111,
+      "persistence": 27,
+      "stealth": 2,
+      "reconnaissance": 5,
+      "discovery": 9,
+      "<END>": 9,
+      "collection": 2,
+      "command-and-control": 3,
+      "impact": 1,
+      "privilege-escalation": 4
+    },
+    "credential-access": {
+      "discovery": 37,
+      "<END>": 5,
+      "lateral-movement": 5,
+      "exfiltration": 2,
+      "collection": 10,
+      "initial-access": 2,
+      "stealth": 1,
+      "command-and-control": 2
+    },
+    "discovery": {
+      "collection": 68,
+      "lateral-movement": 49,
+      "defense-impairment": 1,
+      "<END>": 9,
+      "credential-access": 4,
+      "exfiltration": 9,
+      "stealth": 1,
+      "impact": 1,
+      "initial-access": 1,
+      "command-and-control": 1
+    },
+    "collection": {
+      "exfiltration": 55,
+      "impact": 38,
+      "<END>": 26,
+      "command-and-control": 12,
+      "discovery": 2,
+      "lateral-movement": 4
+    },
+    "exfiltration": {
+      "<END>": 106,
+      "command-and-control": 2,
+      "discovery": 1,
       "collection": 2
     },
     "execution": {
-      "persistence": 84,
-      "impact": 7,
-      "command-and-control": 29,
-      "defense-evasion": 3,
-      "<END>": 14,
-      "privilege-escalation": 4,
-      "resource-development": 1,
-      "initial-access": 3,
-      "reconnaissance": 2,
-      "discovery": 1,
+      "persistence": 82,
+      "command-and-control": 21,
+      "<END>": 12,
+      "impact": 8,
+      "stealth": 9,
+      "lateral-movement": 1,
+      "privilege-escalation": 9,
+      "exfiltration": 4,
+      "reconnaissance": 1,
+      "initial-access": 4,
       "credential-access": 1
     },
     "persistence": {
-      "privilege-escalation": 34,
+      "privilege-escalation": 41,
+      "command-and-control": 28,
+      "discovery": 5,
+      "stealth": 22,
+      "exfiltration": 6,
       "<END>": 7,
-      "command-and-control": 31,
-      "credential-access": 9,
-      "defense-evasion": 22,
-      "lateral-movement": 2,
-      "exfiltration": 5,
-      "discovery": 1,
-      "initial-access": 2,
-      "execution": 4
+      "execution": 4,
+      "credential-access": 5,
+      "defense-impairment": 1
     },
     "privilege-escalation": {
-      "defense-evasion": 26,
-      "discovery": 15,
-      "persistence": 1,
-      "lateral-movement": 3,
-      "<END>": 1
+      "stealth": 37,
+      "discovery": 3,
+      "defense-impairment": 12,
+      "persistence": 3,
+      "<END>": 1,
+      "execution": 1
     },
-    "defense-evasion": {
+    "stealth": {
+      "defense-impairment": 45,
+      "credential-access": 12,
+      "privilege-escalation": 3,
+      "lateral-movement": 3,
+      "discovery": 10,
+      "collection": 1
+    },
+    "defense-impairment": {
+      "discovery": 45,
       "lateral-movement": 9,
-      "credential-access": 10,
-      "discovery": 29,
-      "privilege-escalation": 4,
+      "impact": 2,
       "collection": 1,
-      "<END>": 2
+      "<END>": 1,
+      "stealth": 2
     },
     "lateral-movement": {
-      "collection": 52,
-      "discovery": 1,
-      "<END>": 4,
-      "impact": 9,
-      "command-and-control": 2,
-      "exfiltration": 3
-    },
-    "collection": {
-      "impact": 35,
-      "<END>": 27,
-      "exfiltration": 49,
-      "command-and-control": 11,
-      "lateral-movement": 1,
-      "discovery": 3,
-      "credential-access": 1
+      "collection": 47,
+      "exfiltration": 2,
+      "<END>": 8,
+      "discovery": 4,
+      "defense-impairment": 1,
+      "impact": 8,
+      "command-and-control": 2
     },
     "impact": {
-      "<END>": 66,
-      "collection": 1,
-      "command-and-control": 1
-    },
-    "reconnaissance": {
-      "initial-access": 78,
-      "resource-development": 16,
-      "execution": 12,
-      "persistence": 5,
-      "credential-access": 7,
-      "discovery": 2,
-      "command-and-control": 1
-    },
-    "credential-access": {
-      "discovery": 50,
-      "collection": 6,
-      "lateral-movement": 5,
-      "<END>": 4,
-      "initial-access": 2,
+      "<END>": 63,
       "command-and-control": 3,
-      "exfiltration": 4,
-      "execution": 1,
-      "reconnaissance": 1
-    },
-    "discovery": {
-      "<END>": 9,
-      "collection": 53,
-      "lateral-movement": 49,
-      "exfiltration": 14,
-      "command-and-control": 2,
-      "defense-evasion": 2,
-      "credential-access": 1
-    },
-    "exfiltration": {
-      "<END>": 111,
-      "collection": 3,
-      "command-and-control": 1
-    },
-    "resource-development": {
-      "initial-access": 14,
-      "reconnaissance": 3,
-      "execution": 3,
-      "<END>": 1,
-      "persistence": 5
+      "collection": 1
     },
     "command-and-control": {
+      "impact": 9,
       "<END>": 31,
-      "exfiltration": 40,
-      "impact": 17,
-      "persistence": 1,
-      "execution": 2,
+      "exfiltration": 32,
+      "initial-access": 1,
+      "collection": 1,
       "lateral-movement": 1
+    },
+    "resource-development": {
+      "initial-access": 20,
+      "reconnaissance": 1,
+      "execution": 3,
+      "<END>": 1,
+      "persistence": 1
     }
   }
 }

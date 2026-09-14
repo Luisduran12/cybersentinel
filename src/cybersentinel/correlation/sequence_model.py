@@ -54,9 +54,24 @@ END_STATE = "<END>"
 ConditionOn = Literal["deepest", "last"]
 
 
+def normalized_tactics(history: Sequence[str]) -> list[str]:
+    """
+    Descarta las tácticas desconocidas y traduce los nombres retirados.
+
+    Es necesario porque MITRE renombra tácticas entre versiones: un corpus o un
+    modelo guardado con `defense-evasion` debe seguir funcionando cuando la
+    matriz vigente la llama `stealth`. Sin esta traducción, las filas de la
+    matriz de transición dejan de sumar 1, porque hay conteos hacia estados que
+    ya no existen.
+    """
+    return [
+        mitre.normalize_tactic(t) for t in history if mitre.tactic_index(t) >= 0
+    ]
+
+
 def _conditioning_state(history: Sequence[str], condition_on: ConditionOn) -> str | None:
     """Elige sobre qué táctica de la historia se condiciona la predicción."""
-    known = [t for t in history if mitre.tactic_index(t) >= 0]
+    known = normalized_tactics(history)
     if not known:
         return None
     if condition_on == "last":
@@ -149,7 +164,7 @@ class MarkovChainModel(SequenceModel):
         counts: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
         total = 0
         for raw in sequences:
-            seq = [t for t in raw if mitre.tactic_index(t) >= 0]
+            seq = normalized_tactics(raw)
             if not seq:
                 continue
             total += 1
@@ -181,7 +196,7 @@ class MarkovChainModel(SequenceModel):
         probabilities = self.transition_probabilities(origin)
         probabilities.pop(END_STATE, None)
         if exclude_observed:
-            for seen in set(history):
+            for seen in set(normalized_tactics(history)):
                 probabilities.pop(seen, None)
         if self.monotonic:
             frontier = mitre.tactic_index(origin)
@@ -272,9 +287,10 @@ class CanonicalBaseline(SequenceModel):
         if origin is None:
             return []
         index = mitre.tactic_index(origin)
+        observed = set(normalized_tactics(history))
         candidates = [
             t for t in mitre.TACTIC_ORDER[index + 1:]
-            if not (exclude_observed and t in set(history))
+            if not (exclude_observed and t in observed)
         ][:k]
         if not candidates:
             return []

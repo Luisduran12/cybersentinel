@@ -19,7 +19,8 @@ dependencies = [
 
 [project.optional-dependencies]
 llm = ["anthropic>=0.40"]
-viz = ["matplotlib>=3.7"]      # curvas ROC y precision-exhaustividad
+viz = ["matplotlib>=3.7"]              # curvas ROC y precision-exhaustividad
+attack = ["mitreattack-python>=3.0"]   # solo para regenerar la cache de ATT&CK
 dev = ["pytest>=7.0", "matplotlib>=3.7"]
 
 [project.scripts]

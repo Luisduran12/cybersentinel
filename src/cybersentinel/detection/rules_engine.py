@@ -80,6 +80,11 @@ class DetectionRule:
         comprueba cuando sí lo hace: tener el mismo dato escrito en dos sitios es
         la receta para que se desincronicen. Una discrepancia se avisa en vez de
         aceptarse en silencio, porque contamina la predicción de kill-chain.
+
+        La comprobación es de **pertenencia**, no de igualdad: en ATT&CK una
+        técnica puede estar en varias tácticas a la vez (T1053 está en ejecución,
+        persistencia y escalada de privilegios), así que una regla que declare
+        cualquiera de ellas es correcta.
         """
         # Import local: `correlation` importa este módulo, así que hacerlo arriba
         # crearía un ciclo. Aquí ya está todo cargado.
@@ -87,13 +92,14 @@ class DetectionRule:
 
         technique = d.get("mitre_technique", "unknown")
         declared = d.get("mitre_tactic")
-        derived = mitre.tactic_of(technique)
-        if declared and derived != "unknown" and declared != derived:
+        posibles = mitre.tactics_of(technique)
+        if declared and posibles and mitre.normalize_tactic(declared) not in posibles:
             logger.warning(
-                "La regla %s declara la táctica '%s' pero %s pertenece a '%s'; "
-                "se usa la declarada.", d.get("id"), declared, technique, derived,
+                "La regla %s declara la táctica '%s', pero %s pertenece a %s; "
+                "se usa la declarada.",
+                d.get("id"), declared, technique, ", ".join(posibles) or "ninguna",
             )
-        tactic = declared or (derived if derived != "unknown" else "unknown")
+        tactic = declared or mitre.tactic_of(technique)
 
         agg = d.get("aggregation")
         return DetectionRule(

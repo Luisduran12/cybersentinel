@@ -8,3 +8,8 @@ rich>=13.0
 
 # Opcional: solo para exportar las curvas ROC / precision-exhaustividad a PNG
 # matplotlib>=3.7
+
+# Opcional: solo para regenerar la cache de ATT&CK desde el STIX oficial.
+# La cache ya viene en data/attack/attack_cache.json, asi que no hace falta
+# para usar el sistema.
+# mitreattack-python>=3.0

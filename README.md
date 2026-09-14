@@ -92,15 +92,25 @@ PYTHONPATH=src python -m cybersentinel.cli analyze -i data/sample_logs.jsonl \
 ```
 
 Resultado con la configuración por defecto (400 campañas, semilla 7, 30% para
-evaluación, 450 prefijos):
+evaluación) sobre la matriz ATT&CK oficial:
 
 | Modelo | precisión@1 | precisión@3 | F1 macro | Cobertura |
 |---|---:|---:|---:|---:|
-| Heurística canónica (línea base) | 0.422 | 0.796 | 0.353 | 0.998 |
-| **Cadena de Markov (orden 1)** | **0.576** | **0.893** | **0.372** | 0.998 |
+| Heurística canónica (línea base) | 0.479 | 0.818 | 0.401 | 1.000 |
+| **Cadena de Markov (orden 1)** | **0.584** | **0.893** | 0.397 | 1.000 |
 
-La cadena de Markov gana **15.3 puntos de precisión@1** y **9.8 de precisión@3**
-sobre la heurística.
+La cadena de Markov gana **10.5 puntos de precisión@1** y **7.5 de precisión@3**.
+
+Dos matices que conviene no ocultar:
+
+- La ventaja **se redujo** al pasar del subconjunto ATT&CK escrito a mano (14
+  tácticas) a la matriz oficial (15): la heurística subió de 0.422 a 0.479. El
+  orden oficial de tácticas es, por sí solo, una línea base mejor de lo que
+  parecía.
+- En **F1 macro** la heurística queda marginalmente por delante (0.401 frente a
+  0.397). El F1 macro pesa todas las tácticas por igual, así que penaliza que la
+  Markov nunca proponga las fases raras. La Markov gana donde importa
+  operativamente —acertar la fase siguiente— y empata en el promedio por clase.
 
 **Lo que estos números significan y lo que no.** Las campañas de entrenamiento
 las genera `data/generate_campaigns.py`: el modelo aprende *esa* distribución, no
@@ -117,6 +127,50 @@ conviene discutirla, no esconderla.
 
 Sustituir la Markov por un LSTM no obliga a tocar el correlador: basta con
 heredar de `SequenceModel` e implementar `fit`, `predict_next` y `to_dict`.
+
+### MITRE ATT&CK oficial y capas de Navigator
+
+La matriz ATT&CK sale del **STIX oficial de MITRE**, no de un subconjunto escrito
+a mano. Se resume en una caché de 81 KB que se versiona con el proyecto, de modo
+que el sistema funciona sin descargar los 51 MB del bundle ni instalar
+`mitreattack-python`:
+
+```bash
+# Descargar el STIX oficial (solo si quieres regenerar la cache)
+curl -sSL -o data/attack/enterprise-attack.json \
+  https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/enterprise-attack/enterprise-attack.json
+
+pip install 'mitreattack-python>=3.0'
+PYTHONPATH=src python -m cybersentinel.cli attack-sync --coverage
+```
+
+**Lo que cambió al usar la matriz real** (y que un subconjunto manual ocultaba):
+
+- La táctica `defense-evasion` **ya no existe**: MITRE la dividió en `stealth` y
+  `defense-impairment`, y la matriz pasó de 14 a 15 fases. Los nombres retirados
+  se siguen resolviendo mediante alias.
+- **Una técnica puede pertenecer a varias tácticas**: `T1053` está en ejecución,
+  persistencia y escalada de privilegios; `T1078`, en cuatro. El modelo anterior
+  asumía una sola.
+- Hay técnicas **revocadas** (como `T1562`) que un subconjunto manual mantendría
+  vivas indefinidamente.
+
+#### Capas de ATT&CK Navigator
+
+```bash
+# Que se detecto en este analisis, coloreado por riesgo
+PYTHONPATH=src python -m cybersentinel.cli analyze -i data/sample_logs.jsonl \
+    --navigator docs/figuras/capa_incidentes.json
+```
+
+Se abren en <https://mitre-attack.github.io/attack-navigator/> → *Open Existing
+Layer* → *Upload from local*.
+
+`attack-sync --coverage` responde además a la pregunta incómoda: **qué parte de
+ATT&CK cubre el sistema**. Hoy son 7 de 222 técnicas (**3.1%**), concentradas en
+seis tácticas de quince. No es un defecto que esconder, sino la medida honesta
+del alcance de un prototipo de laboratorio — y el argumento numérico que
+justifica integrar las reglas Sigma de la comunidad.
 
 ### Configuración
 
@@ -175,6 +229,7 @@ La suite cubre tres cosas distintas:
 | `tests/test_explainer_safety.py` | Que la telemetría del atacante llega al LLM como datos delimitados y que la narrativa no puede alterar ninguna decisión. |
 | `tests/test_datasets.py` | Que los cargadores digieren los formatos reales (CSV sin cabecera, cp1252, columnas con espacios). |
 | `tests/test_detection_evaluation.py` | Que el protocolo de medición es correcto: ningún ataque en el entrenamiento, nada medido sobre datos vistos. |
+| `tests/test_mitre_attack.py` | Que la matriz oficial se integra sin romper la interfaz, y que el sistema sigue funcionando sin ella. |
 
 ## Evaluación con datasets reales
 
@@ -233,6 +288,8 @@ cybersentinel/
 │   ├── detection/           # reglas (Sigma) + anomalías (Isolation Forest)
 │   │   └── evaluation.py       # precision/recall/F1, ROC y precisión-exhaustividad
 │   ├── correlation/         # incidentes, MITRE ATT&CK, predicción kill-chain
+│   │   ├── attack_data.py      # matriz ATT&CK oficial (STIX) + caché
+│   │   ├── navigator.py        # capas para ATT&CK Navigator
 │   │   ├── sequence_model.py   # Markov / línea base / interfaz para LSTM
 │   │   └── evaluation.py       # precisión@k, matriz de confusión, F1
 │   ├── explanation/         # narrativa XAI (+ LLM opcional)
@@ -241,6 +298,7 @@ cybersentinel/
 │   ├── pipeline.py          # orquestador
 │   └── cli.py               # interfaz de línea de comandos
 ├── config/                  # reglas YAML + política + config
+├── data/attack/             # caché de la matriz ATT&CK oficial
 ├── data/                    # generadores de telemetría, campañas y flujos sintéticos
 ├── models/                  # modelos entrenados + reporte de métricas
 ├── tests/                   # pruebas unitarias

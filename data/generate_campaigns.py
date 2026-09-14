@@ -19,6 +19,11 @@ conoce el generador, y ambos se evalúan sobre las mismas secuencias retenidas.
 Los perfiles reproducen patrones descritos públicamente en informes de respuesta
 a incidentes. No contienen indicadores, comandos ni artefactos reales: son
 secuencias de nombres de tácticas.
+
+Los nombres son los de la matriz ATT&CK **vigente**: `defense-evasion` ya no
+existe —MITRE la dividió en `stealth` y `defense-impairment`—. Los corpus y
+modelos anteriores siguen funcionando porque el modelo de secuencia traduce los
+nombres retirados, pero lo que se genera aquí usa los actuales.
 """
 from __future__ import annotations
 
@@ -53,11 +58,15 @@ PROFILES: list[CampaignProfile] = [
         description="Cifrado masivo tras comprometer y moverse por la red.",
         tactics=[
             "initial-access", "execution", "persistence", "privilege-escalation",
-            "defense-evasion", "discovery", "lateral-movement", "collection", "impact",
+            "stealth", "defense-impairment", "discovery", "lateral-movement",
+            "collection", "impact",
         ],
         weight=1.4,
         truncate_probability=0.15,   # rara vez se detiene: llega hasta el cifrado
-        notes=["La fase de impacto es el objetivo, no un efecto colateral."],
+        notes=[
+            "La fase de impacto es el objetivo, no un efecto colateral.",
+            "Incluye degradacion de defensas: el borrado de copias de seguridad.",
+        ],
     ),
     CampaignProfile(
         name="robo-de-credenciales",
@@ -73,7 +82,7 @@ PROFILES: list[CampaignProfile] = [
         description="Intrusion prolongada, sigilosa y con canal de mando persistente.",
         tactics=[
             "reconnaissance", "resource-development", "initial-access", "execution",
-            "persistence", "defense-evasion", "credential-access", "discovery",
+            "persistence", "stealth", "credential-access", "discovery",
             "lateral-movement", "collection", "command-and-control", "exfiltration",
         ],
         weight=0.8,

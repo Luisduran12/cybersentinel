@@ -23,6 +23,7 @@ from rich import box
 
 from .config import ROOT, Settings, DEFAULT_POLICY_PATH, DEFAULT_RULES_DIR
 from .correlation import mitre
+from .detection import RulesEngine
 from .pipeline import Pipeline, PipelineReport
 from .governance import GovernancePolicy, AuditLog
 
@@ -79,6 +80,16 @@ def cmd_analyze(args: argparse.Namespace) -> int:
             json.dumps(report.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8"
         )
         console.print(f"\n[green]Reporte JSON guardado en:[/green] {args.json}")
+
+    if args.navigator:
+        from .correlation import navigator
+        capa = navigator.layer_from_incidents([r.incident for r in report.results])
+        ruta = navigator.save_layer(capa, args.navigator)
+        console.print(
+            f"[green]Capa de ATT&CK Navigator guardada en:[/green] {ruta}\n"
+            "[dim]Ábrela en https://mitre-attack.github.io/attack-navigator/ "
+            "→ Open Existing Layer → Upload from local.[/dim]"
+        )
 
     if args.text:
         narrativas = "\n\n".join(r.narrative.to_text() for r in report.results)
@@ -263,6 +274,85 @@ def cmd_train_prediction(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_attack_sync(args: argparse.Namespace) -> int:
+    """Genera la caché de ATT&CK a partir del STIX oficial de MITRE."""
+    from .correlation import mitre, navigator
+    from .correlation.attack_data import DEFAULT_CACHE_PATH, DEFAULT_STIX_PATH, build_from_stix
+
+    stix = Path(args.stix) if args.stix else DEFAULT_STIX_PATH
+    if not stix.exists():
+        console.print(f"[red]No existe el STIX de ATT&CK en:[/red] {stix}\n")
+        console.print("Descárgalo con:")
+        console.print(
+            "  [dim]curl -sSL -o data/attack/enterprise-attack.json \\\n"
+            "    https://raw.githubusercontent.com/mitre-attack/attack-stix-data/"
+            "master/enterprise-attack/enterprise-attack.json[/dim]"
+        )
+        return 1
+
+    console.print(Panel.fit(
+        "[bold cyan]CyberSentinel[/bold cyan] — Sincronización de MITRE ATT&CK\n"
+        f"[dim]{stix} ({stix.stat().st_size / 1024 / 1024:.0f} MB)[/dim]",
+        box=box.ROUNDED,
+    ))
+    with console.status("[dim]Interpretando el STIX oficial…[/dim]"):
+        data = build_from_stix(stix)
+
+    destino = Path(args.output) if args.output else DEFAULT_CACHE_PATH
+    data.save(destino)
+    mitre.reload(destino)
+
+    console.print(
+        f"\n[green]Matriz ATT&CK v{data.version}[/green]: {data.n_techniques} técnicas, "
+        f"{data.n_subtechniques} subtécnicas, {len(data.tactic_order)} tácticas."
+    )
+    console.print(
+        f"[green]Caché escrita en:[/green] {destino} "
+        f"({destino.stat().st_size / 1024:.0f} KB)"
+    )
+    console.print(
+        "[dim]La caché se versiona con el proyecto: a partir de ahora el sistema usa "
+        "la matriz oficial sin necesitar el STIX ni mitreattack-python.[/dim]"
+    )
+
+    tabla = Table(title="Orden oficial de tácticas", box=box.SIMPLE)
+    tabla.add_column("#", justify="right")
+    tabla.add_column("Táctica")
+    tabla.add_column("Nombre")
+    for indice, tactic in enumerate(data.tactic_order, start=1):
+        tabla.add_row(str(indice), tactic, mitre.tactic_label(tactic))
+    console.print(tabla)
+
+    if args.coverage:
+        _render_coverage(navigator.coverage_summary(
+            RulesEngine.from_directory(DEFAULT_RULES).rules
+        ))
+    return 0
+
+
+def _render_coverage(resumen: dict) -> None:
+    """Cobertura de la matriz por las reglas propias."""
+    console.print(
+        f"\n[bold]Cobertura de detección:[/bold] {resumen['tecnicas_cubiertas']} de "
+        f"{resumen['tecnicas_totales']} técnicas ([bold]{resumen['cobertura']:.1%}[/bold])"
+    )
+    tabla = Table(box=box.SIMPLE)
+    tabla.add_column("Táctica")
+    tabla.add_column("Cubiertas", justify="right")
+    tabla.add_column("Totales", justify="right")
+    for fila in resumen["por_tactica"]:
+        estilo = "green" if fila["cubiertas"] else "dim"
+        tabla.add_row(
+            f"[{estilo}]{fila['tactica_es']}[/{estilo}]",
+            f"[{estilo}]{fila['cubiertas']}[/{estilo}]", str(fila["totales"]),
+        )
+    console.print(tabla)
+    console.print(
+        "[dim]Una cobertura baja no es un defecto que esconder: es la medida honesta "
+        "del alcance de un prototipo de laboratorio, y señala el trabajo pendiente.[/dim]"
+    )
+
+
 def cmd_evaluate_detection(args: argparse.Namespace) -> int:
     """Mide el detector de anomalías contra las etiquetas de un dataset real."""
     from .detection.evaluation import evaluate_anomaly_detector, save_curves
@@ -426,6 +516,7 @@ def main(argv: list[str] | None = None) -> int:
     p_an.add_argument("--json", help="Ruta para volcar el reporte en JSON.")
     p_an.add_argument("--text", help="Ruta para volcar las narrativas en texto plano "
                                      "(util para pegarlas en la memoria).")
+    p_an.add_argument("--navigator", help="Ruta para exportar una capa de ATT&CK Navigator.")
     p_an.add_argument("--config", help="Ruta a config.yaml (por defecto config/config.yaml).")
     p_an.add_argument("--model", help="Modelo de predicción entrenado (JSON). "
                                       "Sin él se usa la heurística canónica.")
@@ -449,6 +540,16 @@ def main(argv: list[str] | None = None) -> int:
     p_tp.add_argument("--save-model", help="Ruta donde guardar el modelo entrenado (JSON).")
     p_tp.add_argument("--json", help="Ruta para volcar el reporte de métricas en JSON.")
     p_tp.set_defaults(func=cmd_train_prediction)
+
+    p_as = sub.add_parser(
+        "attack-sync",
+        help="Genera la caché de MITRE ATT&CK desde el STIX oficial.",
+    )
+    p_as.add_argument("--stix", help="Ruta al enterprise-attack.json de MITRE.")
+    p_as.add_argument("--output", help="Ruta de la caché a generar.")
+    p_as.add_argument("--coverage", action="store_true",
+                      help="Mostrar además qué parte de la matriz cubren las reglas.")
+    p_as.set_defaults(func=cmd_attack_sync)
 
     p_ed = sub.add_parser(
         "evaluate-detection",
