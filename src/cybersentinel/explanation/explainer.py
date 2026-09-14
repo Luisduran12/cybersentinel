@@ -58,7 +58,7 @@ class IncidentNarrative:
 class Explainer:
     """Genera narrativas explicables de incidentes."""
 
-    def __init__(self, use_llm: bool = False, model: str = "claude-sonnet-4-6") -> None:
+    def __init__(self, use_llm: bool = False, model: str = "claude-opus-5") -> None:
         self.use_llm = use_llm
         self.model = model
 
