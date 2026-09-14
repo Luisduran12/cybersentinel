@@ -83,12 +83,24 @@ class SecurityEvent:
         return json.dumps(self.to_dict(), default=str, ensure_ascii=False)
 
     @staticmethod
-    def parse_timestamp(value: Any) -> datetime:
-        """Convierte múltiples formatos de tiempo a datetime timezone-aware (UTC)."""
+    def try_parse_timestamp(value: Any) -> Optional[datetime]:
+        """
+        Convierte múltiples formatos de tiempo a datetime timezone-aware (UTC).
+
+        Devuelve None si no reconoce el formato, para que quien llama pueda
+        decidir qué hacer. Un timestamp que no se entiende **no es** "ahora":
+        sustituirlo en silencio desplaza el evento dentro de la ventana de
+        correlación y puede meterlo en un incidente al que no pertenece.
+        """
         if isinstance(value, datetime):
             return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+        if isinstance(value, bool):
+            return None
         if isinstance(value, (int, float)):
-            return datetime.fromtimestamp(value, tz=timezone.utc)
+            try:
+                return datetime.fromtimestamp(value, tz=timezone.utc)
+            except (OverflowError, OSError, ValueError):
+                return None
         if isinstance(value, str):
             for fmt in ("%Y-%m-%dT%H:%M:%S.%f%z", "%Y-%m-%dT%H:%M:%S%z",
                         "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y/%m/%d %H:%M:%S"):
@@ -97,4 +109,14 @@ class SecurityEvent:
                     return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
                 except ValueError:
                     continue
-        return datetime.now(tz=timezone.utc)
+        return None
+
+    @staticmethod
+    def parse_timestamp(value: Any) -> datetime:
+        """
+        Como `try_parse_timestamp`, pero cae a la hora actual si no reconoce el
+        formato. Se conserva por compatibilidad; en la ingesta se usa la variante
+        que devuelve None, porque allí el evento se marca con la etiqueta
+        `timestamp_invalido` en lugar de falsear la hora en silencio.
+        """
+        return SecurityEvent.try_parse_timestamp(value) or datetime.now(tz=timezone.utc)

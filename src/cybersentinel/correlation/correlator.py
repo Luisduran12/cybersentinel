@@ -32,6 +32,20 @@ from . import mitre
 from .sequence_model import CanonicalBaseline, SequenceModel
 
 
+def _porcentaje(valor: float) -> str:
+    """
+    Formatea una probabilidad sin aplastar los valores pequeños.
+
+    Una probabilidad de 0.004 mostrada como "0%" parece un error de cálculo;
+    mostrada como "0.40%" dice lo que realmente estima el modelo.
+    """
+    if valor >= 0.1:
+        return f"{valor:.0%}"
+    if valor >= 0.01:
+        return f"{valor:.1%}"
+    return f"{valor:.2%}"
+
+
 @dataclass
 class Finding:
     """Hallazgo unificado: proviene de una regla o de una anomalía."""
@@ -284,7 +298,7 @@ class Correlator:
 
         if predicted:
             partes = [
-                f"{mitre.TACTIC_LABELS_ES.get(t, t)} ({p:.0%})"
+                f"{mitre.TACTIC_LABELS_ES.get(t, t)} ({_porcentaje(p)})"
                 for t, p in zip(predicted, probabilities)
             ]
             rationale = (

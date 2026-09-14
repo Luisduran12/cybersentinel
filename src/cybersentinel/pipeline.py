@@ -163,6 +163,11 @@ class Pipeline:
                     "techniques": inc.techniques,
                     "prediction": inc.prediction.to_dict() if inc.prediction else None,
                     "recommended_actions": [r.verdict.to_dict() for r in recs],
+                    # Trazabilidad: que produjo el texto de la narrativa. Las
+                    # decisiones (riesgo, tecnicas, contramedidas) se calculan
+                    # antes y no dependen de ella.
+                    "narrative_source": narrative.source,
+                    "narrative_model": narrative.model,
                 },
             )
             results.append(IncidentResult(inc, narrative, recs))

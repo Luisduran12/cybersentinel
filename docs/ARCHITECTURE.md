@@ -25,8 +25,20 @@ El diseño sigue tres principios:
 
 ### 2.1 Ingesta (`ingestion/`)
 Normaliza fuentes heterogéneas a un **esquema común** inspirado en ECS/OCSF.
-Cada fuente tiene un parser; añadir una fuente = añadir un parser. Soporta lectura
-completa y *streaming* para archivos grandes.
+Cada fuente tiene un parser (sysmon, auth, firewall, netflow, web); añadir una
+fuente = añadir un parser. Soporta lectura completa y *streaming* para archivos
+grandes, con la lectura completa apoyada en la de streaming para que no puedan
+divergir.
+
+Principio de esta capa: **nada se descarta ni se falsea en silencio**. Un
+registro de una fuente sin parser, con un timestamp ilegible o en una línea
+corrupta se procesa igual —perder telemetría es peor— pero queda **etiquetado**
+(`fuente_desconocida`, `timestamp_invalido`) y registrado en el log. Sustituir un
+timestamp ilegible por la hora actual sin dejar rastro desplaza el evento dentro
+de la ventana de correlación y puede meterlo en un incidente al que no pertenece.
+
+El parser de `netflow` acepta además las convenciones de nombres de UNSW-NB15
+(`srcip`, `sbytes`) y Zeek (`id.orig_h`): es la puerta de entrada de la Fase 4.
 
 ### 2.2 Detección (`detection/`)
 Enfoque **híbrido**:
@@ -96,6 +108,25 @@ Genera una narrativa: resumen, razonamiento, evidencia citada, predicción y
 confianza. Modo **local determinista** por defecto; modo **LLM (Claude)** opcional
 para un resumen ejecutivo más fluido, con *fallback* automático.
 
+**Superficie de ataque del modo LLM.** La evidencia contiene texto escrito por el
+atacante, así que enviarla a un modelo es una vía de inyección de prompt. El
+diseño la acota en tres niveles:
+
+1. *El modelo no decide.* Solo reescribe `summary`. Severidad, riesgo, técnicas,
+   predicción y contramedidas ya están calculados y no pasan por él. Una
+   narrativa manipulada no puede alterar una decisión de gobernanza — esta es la
+   defensa que importa, porque las otras dos son mitigaciones parciales.
+2. *Delimitación y escapado.* La telemetría viaja dentro de una etiqueta que el
+   prompt de sistema declara como datos no fiables, con el cierre de esa etiqueta
+   neutralizado dentro del propio dato, caracteres de control eliminados y
+   longitud acotada.
+3. *Trazabilidad.* La narrativa declara su origen (`local` / `llm`) y el modelo,
+   y ambos quedan en el log de auditoría.
+
+Conviene decirlo sin adornos en la defensa: **no existe una defensa completa
+contra la inyección de prompt**. Por eso la arquitectura no le confía ninguna
+decisión al modelo.
+
 ### 2.5 Gobernanza (`governance/`)
 - **Política**: clasifica cada contramedida en *permitida / requiere aprobación /
   prohibida*. Las acciones destructivas u ofensivas están **prohibidas por
@@ -146,6 +177,8 @@ JSONL ─► Normalizer ─► [SecurityEvent] ─► RulesEngine ─┐
   para una demo no supervisada, pero **no para medir**: la evaluación
   cuantitativa exige entrenar sobre una línea base y puntuar sobre un conjunto
   separado.
+- El modo LLM está **mitigado, no blindado**, frente a la inyección de prompt. La
+  garantía real es arquitectónica: el modelo no toma ninguna decisión.
 - No es un IDS/EDR de producción ni sustituye a un SOC. Es un **prototipo de
   investigación** de laboratorio.
 - La predicción es **probabilística y heurística**, no una garantía. Un atacante

@@ -127,6 +127,12 @@ anomalía, ventana de correlación, modelo del LLM). Precedencia:
 argumento de CLI  >  config.yaml  >  default embebido
 ```
 
+### Exportar las narrativas a texto plano
+
+```bash
+PYTHONPATH=src python -m cybersentinel.cli analyze -i data/sample_logs.jsonl --text narrativas.txt
+```
+
 ### Enriquecer las narrativas con Claude (opcional)
 
 ```bash
@@ -136,6 +142,20 @@ PYTHONPATH=src python -m cybersentinel.cli analyze -i data/sample_logs.jsonl --u
 ```
 
 Sin API key el sistema funciona igual con narrativas generadas localmente (deterministas y reproducibles).
+
+**Seguridad de este modo.** La evidencia de un incidente contiene texto que
+escribió el atacante (líneas de comando, URLs). Pasarlo a un modelo sin más es una
+vía de inyección de prompt. Tres defensas:
+
+1. **El modelo no decide nada.** Solo reescribe el texto del resumen. La
+   severidad, el riesgo, las técnicas, la predicción y las contramedidas se
+   calculan antes y no se le consultan: una narrativa manipulada no puede cambiar
+   una decisión de gobernanza.
+2. **La telemetría va delimitada y escapada** dentro de una etiqueta que el
+   prompt de sistema declara como datos no fiables, y un intento de cerrar esa
+   etiqueta desde el propio dato se neutraliza.
+3. **Queda auditado**: el log registra si la narrativa salió del modo local o del
+   LLM, y con qué modelo.
 
 ## Pruebas
 
@@ -151,6 +171,8 @@ La suite cubre tres cosas distintas:
 | `tests/test_detection_quality.py` | Que se detecta lo que se dice detectar y, sobre todo, que el tráfico benigno **no** genera incidentes graves. |
 | `tests/test_audit_integrity.py` | Que la manipulación del log (edición, truncado, reescritura completa) se detecta. |
 | `tests/test_sequence_model.py` | Que la cadena de Markov aprende, que las métricas miden lo que dicen, y que la predicción nunca retrocede en la cadena. |
+| `tests/test_ingestion.py` | Que ningún registro se pierde ni se falsea en silencio (fuente desconocida, timestamp ilegible, línea corrupta). |
+| `tests/test_explainer_safety.py` | Que la telemetría del atacante llega al LLM como datos delimitados y que la narrativa no puede alterar ninguna decisión. |
 
 ## Datasets reales para tu tesis
 
@@ -171,7 +193,7 @@ El generador sintético sirve para demostrar el flujo. Para evaluación rigurosa
 cybersentinel/
 ├── src/cybersentinel/
 │   ├── schema.py            # esquema común de eventos (ECS/OCSF)
-│   ├── ingestion/           # normalización de telemetría
+│   ├── ingestion/           # normalización (sysmon, auth, firewall, netflow, web)
 │   ├── detection/           # reglas (Sigma) + anomalías (Isolation Forest)
 │   ├── correlation/         # incidentes, MITRE ATT&CK, predicción kill-chain
 │   │   ├── sequence_model.py   # Markov / línea base / interfaz para LSTM

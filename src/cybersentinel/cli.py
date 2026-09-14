@@ -76,6 +76,13 @@ def cmd_analyze(args: argparse.Namespace) -> int:
             json.dumps(report.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8"
         )
         console.print(f"\n[green]Reporte JSON guardado en:[/green] {args.json}")
+
+    if args.text:
+        narrativas = "\n\n".join(r.narrative.to_text() for r in report.results)
+        Path(args.text).write_text(
+            narrativas or "No se detectaron incidentes.\n", encoding="utf-8"
+        )
+        console.print(f"[green]Narrativas en texto guardadas en:[/green] {args.text}")
     return 0
 
 
@@ -280,6 +287,8 @@ def main(argv: list[str] | None = None) -> int:
     p_an.add_argument("--input", "-i", required=True, help="Ruta al archivo JSONL de logs.")
     p_an.add_argument("--audit", default="audit_log.jsonl", help="Ruta del log de auditoría.")
     p_an.add_argument("--json", help="Ruta para volcar el reporte en JSON.")
+    p_an.add_argument("--text", help="Ruta para volcar las narrativas en texto plano "
+                                     "(util para pegarlas en la memoria).")
     p_an.add_argument("--config", help="Ruta a config.yaml (por defecto config/config.yaml).")
     p_an.add_argument("--model", help="Modelo de predicción entrenado (JSON). "
                                       "Sin él se usa la heurística canónica.")

@@ -16,6 +16,7 @@ la fase de correlación y predicción.
 """
 from __future__ import annotations
 
+import logging
 import re
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -26,6 +27,8 @@ from typing import Any
 import yaml
 
 from ..schema import SecurityEvent, Severity
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -70,14 +73,36 @@ class DetectionRule:
 
     @staticmethod
     def from_dict(d: dict[str, Any]) -> "DetectionRule":
+        """
+        Construye la regla y resuelve su táctica ATT&CK.
+
+        La táctica se deriva de la técnica cuando la regla no la declara, y se
+        comprueba cuando sí lo hace: tener el mismo dato escrito en dos sitios es
+        la receta para que se desincronicen. Una discrepancia se avisa en vez de
+        aceptarse en silencio, porque contamina la predicción de kill-chain.
+        """
+        # Import local: `correlation` importa este módulo, así que hacerlo arriba
+        # crearía un ciclo. Aquí ya está todo cargado.
+        from ..correlation import mitre
+
+        technique = d.get("mitre_technique", "unknown")
+        declared = d.get("mitre_tactic")
+        derived = mitre.tactic_of(technique)
+        if declared and derived != "unknown" and declared != derived:
+            logger.warning(
+                "La regla %s declara la táctica '%s' pero %s pertenece a '%s'; "
+                "se usa la declarada.", d.get("id"), declared, technique, derived,
+            )
+        tactic = declared or (derived if derived != "unknown" else "unknown")
+
         agg = d.get("aggregation")
         return DetectionRule(
             id=d["id"],
             title=d["title"],
             description=d.get("description", ""),
             severity=Severity(d.get("severity", "medium")),
-            mitre_technique=d.get("mitre_technique", "unknown"),
-            mitre_tactic=d.get("mitre_tactic", "unknown"),
+            mitre_technique=technique,
+            mitre_tactic=tactic,
             conditions=d.get("conditions", []),
             references=d.get("references", []),
             aggregation=Aggregation.from_dict(agg) if agg else None,
