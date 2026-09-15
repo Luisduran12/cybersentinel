@@ -24,6 +24,7 @@ from rich import box
 from .config import ROOT, Settings, DEFAULT_POLICY_PATH, DEFAULT_RULES_DIR
 from .correlation import mitre
 from .detection import RulesEngine
+from .ingestion import Normalizer
 from .pipeline import Pipeline, PipelineReport
 from .governance import GovernancePolicy, AuditLog
 
@@ -47,6 +48,36 @@ def _load_policy() -> GovernancePolicy:
     if DEFAULT_POLICY.exists():
         return GovernancePolicy.from_yaml(DEFAULT_POLICY)
     return GovernancePolicy()
+
+
+def _load_events(path: Path, formato: str, limite: int | None):
+    """
+    Carga la telemetría según su formato.
+
+    El adapter de UNSW-NB15 existía pero solo lo usaban los scripts de
+    evaluación: desde la CLI no había forma de llegar a él, así que analizar un
+    CSV del dataset devolvía cero eventos —cada línea fallaba el `json.loads` y
+    se descartaba como corrupta—. Esto lo conecta.
+    """
+    if formato == "auto":
+        formato = "unsw-nb15" if path.suffix.lower() == ".csv" else "jsonl"
+
+    if formato == "jsonl":
+        eventos = Normalizer().from_jsonl(path)
+        return eventos[:limite] if limite else eventos, formato
+
+    if formato == "unsw-nb15":
+        from .data.unsw_nb15_adapter import UNSWNB15Adapter
+
+        adapter = UNSWNB15Adapter()
+        eventos = []
+        for registro in adapter.read_csv(path):
+            eventos.append(registro.event)
+            if limite and len(eventos) >= limite:
+                break
+        return eventos, formato
+
+    raise ValueError(f"Formato desconocido: {formato}")
 
 
 def cmd_analyze(args: argparse.Namespace) -> int:
@@ -73,7 +104,25 @@ def cmd_analyze(args: argparse.Namespace) -> int:
         enable_rag=not args.no_rag,
         enable_cti=not args.no_cti,
     )
-    report = pipeline.run_file(input_path)
+    try:
+        eventos, formato = _load_events(input_path, args.format, args.limit)
+    except ValueError as exc:
+        console.print(f"[red]{exc}[/red]")
+        return 1
+
+    if not eventos:
+        console.print(
+            f"[red]No se pudo normalizar ningún evento de {input_path}[/red]\n"
+            f"[dim]Formato interpretado: {formato}. Si el archivo no es de ese "
+            "tipo, indícalo con --format.[/dim]"
+        )
+        return 1
+
+    console.print(
+        f"[dim]Formato: {formato} · {len(eventos):,} eventos cargados"
+        + (f" (límite {args.limit:,})" if args.limit else "") + "[/dim]"
+    )
+    report = pipeline.run_events(eventos)
     _render_report(report, mostrar_todo=args.all)
 
     if args.json:
@@ -718,6 +767,10 @@ def main(argv: list[str] | None = None) -> int:
     p_an.add_argument("--text", help="Ruta para volcar las narrativas en texto plano "
                                      "(util para pegarlas en la memoria).")
     p_an.add_argument("--navigator", help="Ruta para exportar una capa de ATT&CK Navigator.")
+    p_an.add_argument("--format", choices=("auto", "jsonl", "unsw-nb15"), default="auto",
+                      help="Formato de la telemetría. 'auto' lo deduce por la extensión.")
+    p_an.add_argument("--limit", type=int,
+                      help="Máximo de eventos a procesar (útil con datasets grandes).")
     p_an.add_argument("--all", action="store_true",
                       help="Mostrar todos los eventos, no solo los hallazgos.")
     p_an.add_argument("--no-llm", action="store_true", help="Desactivar la explicación.")
