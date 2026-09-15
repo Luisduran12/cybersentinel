@@ -1,0 +1,61 @@
+{
+  "run_id": "5a0d4129-e5fd-41bb-a712-9e9032c83041",
+  "file": "UNSW-NB15_1.csv",
+  "sha256": "7d851bbeabd27894ce39c8e78835c73341fc946652fb7743b9eff193b55eb511",
+  "evaluation_type": "EXPLORATORY EVALUATION",
+  "split": {
+    "method": "temporal 60/20/20 dentro de la ventana evaluable",
+    "train": 112087,
+    "validation": 37362,
+    "test": 37363,
+    "train_fit_on": "solo benignos",
+    "threshold_selected_on": "VALIDATION"
+  },
+  "model": {
+    "algorithm": "IsolationForest",
+    "contamination": 0.15,
+    "n_estimators": 200,
+    "random_state": 42
+  },
+  "sigma": {
+    "TP": 0,
+    "FP": 0,
+    "TN": 33914,
+    "FN": 3449,
+    "precision": null,
+    "recall": 0.0,
+    "f1": null,
+    "fpr": 0.0
+  },
+  "ml_fixed_threshold_0_5": {
+    "TP": 3449,
+    "FP": 33914,
+    "TN": 0,
+    "FN": 0,
+    "precision": 0.09231057463265797,
+    "recall": 1.0,
+    "f1": 0.16901891600509653,
+    "fpr": 1.0
+  },
+  "ml_calibrated": {
+    "TP": 2120,
+    "FP": 1978,
+    "TN": 31936,
+    "FN": 1329,
+    "precision": 0.5173255246461689,
+    "recall": 0.6146709191069876,
+    "f1": 0.5618126407844176,
+    "fpr": 0.05832399598985669,
+    "threshold": 0.6818738427574689
+  },
+  "roc_auc": 0.9461940750890151,
+  "pr_auc": 0.4560764518224789,
+  "score_stats": {
+    "min": 0.5261606721603115,
+    "max": 0.7637082283949795,
+    "mean": 0.5943990215994029,
+    "median": 0.5793717178302391,
+    "std": 0.05039796509696209,
+    "distinct": 19874
+  }
+}
