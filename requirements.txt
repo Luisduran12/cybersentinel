@@ -9,6 +9,11 @@ pysigma>=1.5.0,<2.0
 # CTI: parseo de bundles STIX 2.1
 stix2>=3.0
 
+# API de ingestion en tiempo real
+fastapi>=0.115
+uvicorn[standard]>=0.30
+httpx>=0.27          # cliente del generador de carga y de las pruebas
+
 # RAG: segmentacion, indice vectorial y contrato de embeddings.
 # Los embeddings por defecto son locales (LSA sobre TF-IDF con scikit-learn):
 # no hacen falta descargas ni red en tiempo de ejecucion.

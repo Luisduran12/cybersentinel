@@ -1,0 +1,23 @@
+{
+  "target_rate_eps": 1000,
+  "duration_s": 10.005,
+  "events_sent": 10000,
+  "events_accepted": 10000,
+  "events_rejected": 0,
+  "achieved_rate_eps": 999.5,
+  "accepted_rate_eps": 999.5,
+  "http_status_codes": {
+    "202": 200
+  },
+  "network_errors": 0,
+  "request_latency_ms": {
+    "p50": 11.895,
+    "p95": 18.767,
+    "p99": 66.374,
+    "mean": 13.504,
+    "max": 90.786,
+    "requests": 200
+  },
+  "seed": 42,
+  "suspicious_ratio": 0.05
+}
