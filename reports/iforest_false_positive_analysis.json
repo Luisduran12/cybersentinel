@@ -1,0 +1,7548 @@
+[
+  {
+    "event_id": "benign_1119",
+    "timestamp": "2026-09-17T09:26:13+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5225,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ],
+      [
+        "cmd_len",
+        1.0603
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1622",
+    "timestamp": "2026-09-17T09:29:45+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5336,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ],
+      [
+        "hour_cos",
+        0.9267
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_792",
+    "timestamp": "2026-09-17T09:31:09+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5322,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "cmd_len",
+        1.2411
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1963",
+    "timestamp": "2026-09-17T09:34:08+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5004,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_cos",
+        0.9267
+      ],
+      [
+        "hour_sin",
+        0.8793
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1850",
+    "timestamp": "2026-09-17T09:43:24+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5422,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "events_in_window",
+        1.0003
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_230",
+    "timestamp": "2026-09-17T09:45:05+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.54,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "events_in_window",
+        1.0003
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1997",
+    "timestamp": "2026-09-17T09:47:57+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5191,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ],
+      [
+        "cmd_len",
+        1.0603
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_564",
+    "timestamp": "2026-09-17T09:48:04+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5174,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ],
+      [
+        "cmd_len",
+        1.0603
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_856",
+    "timestamp": "2026-09-17T09:51:43+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5356,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "events_in_window",
+        1.0003
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_460",
+    "timestamp": "2026-09-17T09:53:07+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5217,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "cmd_len",
+        1.2411
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1595",
+    "timestamp": "2026-09-17T09:54:07+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5081,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "time_since_prev_log",
+        1.0579
+      ],
+      [
+        "hour_cos",
+        0.9267
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_591",
+    "timestamp": "2026-09-17T09:57:39+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5653,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_67",
+    "timestamp": "2026-09-17T09:58:18+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5153,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "time_since_prev_log",
+        1.4022
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ],
+      [
+        "hour_cos",
+        0.9267
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_266",
+    "timestamp": "2026-09-17T09:59:13+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.557,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1587",
+    "timestamp": "2026-09-17T10:03:06+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5402,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "cmd_len",
+        1.2411
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_127",
+    "timestamp": "2026-09-17T10:05:46+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5043,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "cmd_len",
+        1.2411
+      ],
+      [
+        "hour_cos",
+        1.1546
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1823",
+    "timestamp": "2026-09-17T10:08:33+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.523,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "cmd_len",
+        1.2411
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1391",
+    "timestamp": "2026-09-17T10:10:37+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5223,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_cos",
+        1.1546
+      ],
+      [
+        "events_in_window",
+        1.0003
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1092",
+    "timestamp": "2026-09-17T10:13:13+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5616,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_913",
+    "timestamp": "2026-09-17T10:15:25+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5366,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.1546
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_599",
+    "timestamp": "2026-09-17T10:18:49+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5323,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "cmd_len",
+        1.2411
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1337",
+    "timestamp": "2026-09-17T10:19:33+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5163,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ],
+      [
+        "cmd_len",
+        1.2411
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_629",
+    "timestamp": "2026-09-17T10:25:50+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5606,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_912",
+    "timestamp": "2026-09-17T10:33:06+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5288,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "time_since_prev_log",
+        1.4691
+      ],
+      [
+        "hour_cos",
+        1.1546
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_836",
+    "timestamp": "2026-09-17T10:43:49+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5402,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "time_since_prev_log",
+        1.5314
+      ],
+      [
+        "hour_cos",
+        1.1546
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_777",
+    "timestamp": "2026-09-17T10:51:32+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5952,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1360",
+    "timestamp": "2026-09-17T10:51:37+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5239,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "time_since_prev_log",
+        1.3035
+      ],
+      [
+        "hour_cos",
+        1.1546
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1572",
+    "timestamp": "2026-09-17T10:52:01+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5006,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.1546
+      ],
+      [
+        "events_in_window",
+        1.0003
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_944",
+    "timestamp": "2026-09-17T10:53:44+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5234,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_cos",
+        1.1546
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1371",
+    "timestamp": "2026-09-17T10:54:17+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5194,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_cos",
+        1.1546
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1353",
+    "timestamp": "2026-09-17T10:56:59+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5338,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1242",
+    "timestamp": "2026-09-17T10:57:42+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5543,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_177",
+    "timestamp": "2026-09-17T11:05:05+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.525,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1569",
+    "timestamp": "2026-09-17T11:07:06+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5335,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_532",
+    "timestamp": "2026-09-17T11:07:11+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5072,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ],
+      [
+        "time_since_prev_log",
+        1.1738
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_354",
+    "timestamp": "2026-09-17T11:14:08+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5645,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_534",
+    "timestamp": "2026-09-17T11:14:21+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5293,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1030",
+    "timestamp": "2026-09-17T11:20:10+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5361,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_622",
+    "timestamp": "2026-09-17T11:26:24+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5058,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ],
+      [
+        "events_in_window",
+        1.0003
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1192",
+    "timestamp": "2026-09-17T11:33:47+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5132,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "time_since_prev_log",
+        1.3593
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1014",
+    "timestamp": "2026-09-17T11:34:38+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5517,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1493",
+    "timestamp": "2026-09-17T11:38:58+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5033,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ],
+      [
+        "cmd_entropy",
+        0.8977
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1322",
+    "timestamp": "2026-09-17T11:40:49+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5699,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1145",
+    "timestamp": "2026-09-17T11:42:56+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5434,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1069",
+    "timestamp": "2026-09-17T11:43:09+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5414,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1398",
+    "timestamp": "2026-09-17T11:43:41+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5563,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "time_since_prev_log",
+        1.5592
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1574",
+    "timestamp": "2026-09-17T11:47:32+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5319,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_854",
+    "timestamp": "2026-09-17T11:48:19+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5067,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ],
+      [
+        "events_in_window",
+        1.0003
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1390",
+    "timestamp": "2026-09-17T11:48:36+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5619,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "time_since_prev_log",
+        2.0538
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_373",
+    "timestamp": "2026-09-17T11:49:53+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5394,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_317",
+    "timestamp": "2026-09-17T11:52:51+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5311,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1306",
+    "timestamp": "2026-09-17T11:57:07+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5033,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ],
+      [
+        "cmd_entropy",
+        0.8977
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_208",
+    "timestamp": "2026-09-17T11:59:28+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5368,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_692",
+    "timestamp": "2026-09-17T12:01:28+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5224,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_cos",
+        1.3466
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1899",
+    "timestamp": "2026-09-17T12:11:18+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5663,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_cos",
+        1.3466
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1405",
+    "timestamp": "2026-09-17T12:12:12+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5443,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_cos",
+        1.3466
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_643",
+    "timestamp": "2026-09-17T12:21:06+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5517,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_cos",
+        1.3466
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_241",
+    "timestamp": "2026-09-17T12:23:58+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5787,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_cos",
+        1.3466
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1403",
+    "timestamp": "2026-09-17T12:29:02+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5024,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.3466
+      ],
+      [
+        "events_in_window",
+        1.0003
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_727",
+    "timestamp": "2026-09-17T12:29:10+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5516,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_cos",
+        1.3466
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_505",
+    "timestamp": "2026-09-17T12:32:04+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5229,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.3466
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1830",
+    "timestamp": "2026-09-17T12:32:25+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5416,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "time_since_prev_log",
+        1.89
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1174",
+    "timestamp": "2026-09-17T12:33:42+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5572,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1835",
+    "timestamp": "2026-09-17T12:33:52+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.6154,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "events_in_window",
+        1.9771
+      ],
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1755",
+    "timestamp": "2026-09-17T12:36:36+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5428,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "events_in_window",
+        1.9771
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_cos",
+        1.3466
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_572",
+    "timestamp": "2026-09-17T12:46:06+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5175,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "hour_cos",
+        1.3466
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1604",
+    "timestamp": "2026-09-17T12:48:56+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5214,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ],
+      [
+        "hour_cos",
+        1.3466
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_156",
+    "timestamp": "2026-09-17T12:52:21+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5443,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ],
+      [
+        "hour_cos",
+        1.3466
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_899",
+    "timestamp": "2026-09-17T12:54:00+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.532,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_cos",
+        1.3466
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_681",
+    "timestamp": "2026-09-17T12:56:48+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.537,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.3466
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1438",
+    "timestamp": "2026-09-17T12:56:48+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5805,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_657",
+    "timestamp": "2026-09-17T12:57:15+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5926,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "time_since_prev_log",
+        1.6932
+      ],
+      [
+        "has_hash",
+        1.5452
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_865",
+    "timestamp": "2026-09-17T12:57:44+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5557,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_cos",
+        1.3466
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1770",
+    "timestamp": "2026-09-17T12:57:51+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5563,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_cos",
+        1.3466
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1163",
+    "timestamp": "2026-09-17T12:59:35+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5607,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "events_in_window",
+        1.9771
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_cos",
+        1.3466
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_685",
+    "timestamp": "2026-09-17T12:59:45+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.6369,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "events_in_window",
+        2.4564
+      ],
+      [
+        "time_since_prev_log",
+        2.4556
+      ],
+      [
+        "cmd_special_chars",
+        1.9087
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1999",
+    "timestamp": "2026-09-17T13:03:23+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5456,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_917",
+    "timestamp": "2026-09-17T13:05:31+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5312,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_295",
+    "timestamp": "2026-09-17T13:06:25+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5426,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1271",
+    "timestamp": "2026-09-17T13:07:05+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5801,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "time_since_prev_log",
+        1.3821
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_97",
+    "timestamp": "2026-09-17T13:09:25+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5568,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "events_in_window",
+        1.9771
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_525",
+    "timestamp": "2026-09-17T13:09:32+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5634,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1280",
+    "timestamp": "2026-09-17T13:13:50+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5809,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1195",
+    "timestamp": "2026-09-17T13:15:10+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5633,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1726",
+    "timestamp": "2026-09-17T13:16:38+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5438,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1783",
+    "timestamp": "2026-09-17T13:17:16+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5721,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "time_since_prev_log",
+        1.4229
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_829",
+    "timestamp": "2026-09-17T13:17:50+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5311,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1382",
+    "timestamp": "2026-09-17T13:22:01+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5416,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1140",
+    "timestamp": "2026-09-17T13:24:33+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5374,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1581",
+    "timestamp": "2026-09-17T13:28:59+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5395,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1481",
+    "timestamp": "2026-09-17T13:29:48+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5215,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ],
+      [
+        "events_in_window",
+        1.0003
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_464",
+    "timestamp": "2026-09-17T13:33:18+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5129,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_644",
+    "timestamp": "2026-09-17T13:35:11+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.537,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_62",
+    "timestamp": "2026-09-17T13:36:41+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5323,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1767",
+    "timestamp": "2026-09-17T13:41:07+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.51,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ],
+      [
+        "cmd_len",
+        1.2411
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1213",
+    "timestamp": "2026-09-17T13:42:12+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5099,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ],
+      [
+        "cmd_len",
+        1.0603
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_216",
+    "timestamp": "2026-09-17T13:45:06+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5069,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ],
+      [
+        "cmd_entropy",
+        0.8977
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1838",
+    "timestamp": "2026-09-17T13:46:30+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5625,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_543",
+    "timestamp": "2026-09-17T13:54:10+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5222,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ],
+      [
+        "time_since_prev_log",
+        1.2641
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_468",
+    "timestamp": "2026-09-17T13:55:34+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5056,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.2978
+      ],
+      [
+        "events_in_window",
+        1.0003
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1234",
+    "timestamp": "2026-09-17T14:00:55+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5201,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_cos",
+        1.1546
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_762",
+    "timestamp": "2026-09-17T14:03:17+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5287,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.1546
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1428",
+    "timestamp": "2026-09-17T14:06:57+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5586,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "time_since_prev_log",
+        1.5475
+      ],
+      [
+        "has_hash",
+        1.5452
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1856",
+    "timestamp": "2026-09-17T14:14:59+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5516,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_cos",
+        1.1546
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_870",
+    "timestamp": "2026-09-17T14:15:27+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5394,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "time_since_prev_log",
+        1.6646
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_cos",
+        1.1546
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1639",
+    "timestamp": "2026-09-17T14:15:32+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5773,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "time_since_prev_log",
+        2.9502
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1159",
+    "timestamp": "2026-09-17T14:28:02+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5704,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "time_since_prev_log",
+        1.5475
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_536",
+    "timestamp": "2026-09-17T14:28:43+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5596,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1490",
+    "timestamp": "2026-09-17T14:30:21+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5557,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1485",
+    "timestamp": "2026-09-17T14:35:02+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5651,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_35",
+    "timestamp": "2026-09-17T14:35:48+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5237,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.1546
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_19",
+    "timestamp": "2026-09-17T14:42:12+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5139,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.1546
+      ],
+      [
+        "events_in_window",
+        1.0003
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1137",
+    "timestamp": "2026-09-17T14:42:50+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5059,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.1546
+      ],
+      [
+        "events_in_window",
+        1.0003
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_350",
+    "timestamp": "2026-09-17T14:43:53+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5368,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "cmd_len",
+        1.2411
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_695",
+    "timestamp": "2026-09-17T14:43:54+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5463,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "cmd_len",
+        1.2411
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_50",
+    "timestamp": "2026-09-17T14:45:20+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5407,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ],
+      [
+        "hour_cos",
+        1.1546
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_892",
+    "timestamp": "2026-09-17T14:46:14+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.595,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1793",
+    "timestamp": "2026-09-17T14:47:03+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5279,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.1546
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1894",
+    "timestamp": "2026-09-17T14:47:40+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5207,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ],
+      [
+        "hour_cos",
+        1.1546
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1523",
+    "timestamp": "2026-09-17T14:51:41+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5341,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.1546
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_958",
+    "timestamp": "2026-09-17T14:53:22+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5784,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_447",
+    "timestamp": "2026-09-17T14:55:14+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5216,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_cos",
+        1.1546
+      ],
+      [
+        "cmd_entropy",
+        0.8977
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1816",
+    "timestamp": "2026-09-17T15:00:58+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5175,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "time_since_prev_log",
+        1.2444
+      ],
+      [
+        "cmd_len",
+        1.2411
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1775",
+    "timestamp": "2026-09-17T15:01:07+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5178,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_221",
+    "timestamp": "2026-09-17T15:05:34+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5395,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1047",
+    "timestamp": "2026-09-17T15:08:32+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5175,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "cmd_len",
+        1.2411
+      ],
+      [
+        "time_since_prev_log",
+        1.1482
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_855",
+    "timestamp": "2026-09-17T15:09:18+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5054,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ],
+      [
+        "events_in_window",
+        1.0003
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_670",
+    "timestamp": "2026-09-17T15:10:03+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5211,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_968",
+    "timestamp": "2026-09-17T15:10:52+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5802,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_163",
+    "timestamp": "2026-09-17T15:18:19+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5181,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_749",
+    "timestamp": "2026-09-17T15:18:32+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.503,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ],
+      [
+        "cmd_len",
+        1.0603
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_497",
+    "timestamp": "2026-09-17T15:19:29+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5263,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1748",
+    "timestamp": "2026-09-17T15:20:26+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5111,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ],
+      [
+        "cmd_len",
+        1.0603
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1955",
+    "timestamp": "2026-09-17T15:23:05+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5233,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1255",
+    "timestamp": "2026-09-17T15:26:01+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5047,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ],
+      [
+        "events_in_window",
+        1.0003
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1425",
+    "timestamp": "2026-09-17T15:28:25+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.537,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "cmd_len",
+        1.2411
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_395",
+    "timestamp": "2026-09-17T15:31:05+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5715,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1623",
+    "timestamp": "2026-09-17T15:33:32+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5191,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "time_since_prev_log",
+        1.1392
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_236",
+    "timestamp": "2026-09-17T15:36:50+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5356,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_734",
+    "timestamp": "2026-09-17T15:39:10+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5072,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "cmd_len",
+        1.2411
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_549",
+    "timestamp": "2026-09-17T15:40:24+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5633,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_815",
+    "timestamp": "2026-09-17T15:41:54+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5695,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_425",
+    "timestamp": "2026-09-17T15:43:50+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5418,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1050",
+    "timestamp": "2026-09-17T15:46:21+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5425,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1426",
+    "timestamp": "2026-09-17T15:51:23+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5061,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "cmd_len",
+        1.2411
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_75",
+    "timestamp": "2026-09-17T15:51:50+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.544,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "time_since_prev_log",
+        1.6932
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1907",
+    "timestamp": "2026-09-17T16:00:21+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.536,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1584",
+    "timestamp": "2026-09-17T16:05:12+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5108,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ],
+      [
+        "cmd_entropy",
+        0.8977
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_125",
+    "timestamp": "2026-09-17T16:11:54+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5196,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "time_since_prev_log",
+        1.3764
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1849",
+    "timestamp": "2026-09-17T16:12:29+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5291,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "time_since_prev_log",
+        1.4882
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_941",
+    "timestamp": "2026-09-17T16:14:13+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5253,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_359",
+    "timestamp": "2026-09-17T16:15:30+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5199,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_445",
+    "timestamp": "2026-09-17T16:17:03+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5653,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_512",
+    "timestamp": "2026-09-17T16:18:18+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5228,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1883",
+    "timestamp": "2026-09-17T16:20:31+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5586,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1869",
+    "timestamp": "2026-09-17T16:22:26+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5076,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ],
+      [
+        "events_in_window",
+        1.0003
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_16",
+    "timestamp": "2026-09-17T16:25:14+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5663,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1142",
+    "timestamp": "2026-09-17T16:26:08+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5192,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ],
+      [
+        "cmd_len",
+        1.0603
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1614",
+    "timestamp": "2026-09-17T16:28:17+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.517,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "events_in_window",
+        1.3592
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ],
+      [
+        "cmd_entropy",
+        0.8977
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_8",
+    "timestamp": "2026-09-17T16:28:35+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.58,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "time_since_prev_log",
+        2.0096
+      ],
+      [
+        "events_in_window",
+        1.9771
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_92",
+    "timestamp": "2026-09-17T16:28:39+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5418,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_799",
+    "timestamp": "2026-09-17T16:29:30+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5993,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "events_in_window",
+        2.4564
+      ],
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1235",
+    "timestamp": "2026-09-17T16:32:46+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5341,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "events_in_window",
+        1.9771
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ],
+      [
+        "cmd_entropy",
+        0.8977
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_466",
+    "timestamp": "2026-09-17T16:37:47+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5758,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_743",
+    "timestamp": "2026-09-17T16:37:57+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5735,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_925",
+    "timestamp": "2026-09-17T16:38:23+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5129,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "time_since_prev_log",
+        1.7229
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_718",
+    "timestamp": "2026-09-17T16:39:37+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5262,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1528",
+    "timestamp": "2026-09-17T16:44:21+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5083,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ],
+      [
+        "events_in_window",
+        1.0003
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1591",
+    "timestamp": "2026-09-17T16:48:50+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5438,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_992",
+    "timestamp": "2026-09-17T16:49:53+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5632,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1680",
+    "timestamp": "2026-09-17T17:00:12+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5295,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "events_in_window",
+        1.0003
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_99",
+    "timestamp": "2026-09-17T17:01:41+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5505,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1248",
+    "timestamp": "2026-09-17T17:03:28+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5453,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_341",
+    "timestamp": "2026-09-17T17:09:59+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5726,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_760",
+    "timestamp": "2026-09-17T17:18:30+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5271,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "time_since_prev_log",
+        2.1185
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_674",
+    "timestamp": "2026-09-17T17:19:11+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5308,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1288",
+    "timestamp": "2026-09-17T17:22:12+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5091,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "cmd_len",
+        1.0603
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_414",
+    "timestamp": "2026-09-17T17:27:18+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5601,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "time_since_prev_log",
+        1.5167
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_81",
+    "timestamp": "2026-09-17T17:32:21+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5077,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "cmd_len",
+        1.2411
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1381",
+    "timestamp": "2026-09-17T17:34:40+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5467,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1501",
+    "timestamp": "2026-09-17T17:43:07+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5103,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "time_since_prev_log",
+        1.1824
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_550",
+    "timestamp": "2026-09-17T17:48:45+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5566,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1598",
+    "timestamp": "2026-09-17T17:51:15+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5487,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_798",
+    "timestamp": "2026-09-17T17:51:48+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5973,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "events_in_window",
+        1.9771
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1189",
+    "timestamp": "2026-09-17T17:52:20+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5334,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1206",
+    "timestamp": "2026-09-17T17:52:31+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5402,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "time_since_prev_log",
+        2.3846
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_832",
+    "timestamp": "2026-09-17T17:59:42+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.531,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "time_since_prev_log",
+        1.6194
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_276",
+    "timestamp": "2026-09-17T17:59:52+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5652,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_441",
+    "timestamp": "2026-09-17T18:02:53+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.6012,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_117",
+    "timestamp": "2026-09-17T18:07:13+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5487,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.5283
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_936",
+    "timestamp": "2026-09-17T18:11:08+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5513,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.5283
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1657",
+    "timestamp": "2026-09-17T18:15:01+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5385,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_sin",
+        1.5283
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1728",
+    "timestamp": "2026-09-17T18:15:37+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5393,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_sin",
+        1.5283
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1667",
+    "timestamp": "2026-09-17T18:19:29+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5337,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.5283
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1776",
+    "timestamp": "2026-09-17T18:26:13+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5032,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "hour_sin",
+        1.5283
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "events_in_window",
+        1.0003
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1564",
+    "timestamp": "2026-09-17T18:33:24+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5722,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_sin",
+        1.5283
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_585",
+    "timestamp": "2026-09-17T18:41:25+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5203,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "hour_sin",
+        1.5283
+      ],
+      [
+        "cmd_len",
+        1.2411
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1395",
+    "timestamp": "2026-09-17T18:41:35+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5337,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "time_since_prev_log",
+        1.6052
+      ],
+      [
+        "hour_sin",
+        1.5283
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_158",
+    "timestamp": "2026-09-17T18:42:22+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5149,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "hour_sin",
+        1.5283
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "time_since_prev_log",
+        1.2534
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_277",
+    "timestamp": "2026-09-17T18:45:19+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5449,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.5283
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1727",
+    "timestamp": "2026-09-17T18:45:55+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5793,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "events_in_window",
+        1.9771
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_sin",
+        1.5283
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1960",
+    "timestamp": "2026-09-17T18:47:02+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.506,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "hour_sin",
+        1.5283
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "cmd_len",
+        1.0603
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_411",
+    "timestamp": "2026-09-17T18:47:30+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5656,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "time_since_prev_log",
+        1.6646
+      ],
+      [
+        "hour_sin",
+        1.5283
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1170",
+    "timestamp": "2026-09-17T18:50:59+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.567,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.5283
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1821",
+    "timestamp": "2026-09-17T18:52:43+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5457,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_sin",
+        1.5283
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_521",
+    "timestamp": "2026-09-17T18:55:52+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5771,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.5283
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_394",
+    "timestamp": "2026-09-17T18:57:56+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5538,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "time_since_prev_log",
+        1.7497
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.5283
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1071",
+    "timestamp": "2026-09-17T19:01:13+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5715,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1922",
+    "timestamp": "2026-09-17T19:03:29+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5349,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_637",
+    "timestamp": "2026-09-17T19:04:04+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5382,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_939",
+    "timestamp": "2026-09-17T19:08:39+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5677,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1692",
+    "timestamp": "2026-09-17T19:09:15+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5382,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_438",
+    "timestamp": "2026-09-17T19:09:16+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5654,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "time_since_prev_log",
+        1.4441
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1278",
+    "timestamp": "2026-09-17T19:09:33+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5864,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "time_since_prev_log",
+        2.0538
+      ],
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1155",
+    "timestamp": "2026-09-17T19:12:03+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.509,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "cmd_len",
+        1.2411
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_467",
+    "timestamp": "2026-09-17T19:23:56+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5268,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "time_since_prev_log",
+        1.105
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_43",
+    "timestamp": "2026-09-17T19:27:21+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5589,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "time_since_prev_log",
+        1.4057
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1147",
+    "timestamp": "2026-09-17T19:28:13+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5877,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1636",
+    "timestamp": "2026-09-17T19:28:24+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.6111,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1090",
+    "timestamp": "2026-09-17T19:33:34+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5396,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_396",
+    "timestamp": "2026-09-17T19:36:28+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5004,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ],
+      [
+        "cmd_len",
+        1.0603
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1683",
+    "timestamp": "2026-09-17T19:38:04+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5675,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1837",
+    "timestamp": "2026-09-17T19:39:20+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5221,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_293",
+    "timestamp": "2026-09-17T19:45:17+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5553,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1752",
+    "timestamp": "2026-09-17T19:46:55+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5625,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_930",
+    "timestamp": "2026-09-17T19:50:10+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5714,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1263",
+    "timestamp": "2026-09-17T19:50:45+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5246,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "cmd_len",
+        1.2411
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1720",
+    "timestamp": "2026-09-17T19:52:32+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5221,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "time_since_prev_log",
+        1.035
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_820",
+    "timestamp": "2026-09-17T19:53:35+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5381,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1993",
+    "timestamp": "2026-09-17T19:54:08+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5069,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "cmd_len",
+        1.0603
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_175",
+    "timestamp": "2026-09-17T19:55:41+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5497,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1188",
+    "timestamp": "2026-09-17T19:55:52+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5252,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ],
+      [
+        "cmd_len",
+        1.0603
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_386",
+    "timestamp": "2026-09-17T19:56:26+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5627,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1981",
+    "timestamp": "2026-09-17T19:59:55+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5499,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.4803
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1768",
+    "timestamp": "2026-09-17T20:00:22+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5582,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "time_since_prev_log",
+        1.6932
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_933",
+    "timestamp": "2026-09-17T20:04:27+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5297,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ],
+      [
+        "cmd_len",
+        1.0603
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1386",
+    "timestamp": "2026-09-17T20:07:15+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5737,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_772",
+    "timestamp": "2026-09-17T20:07:18+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5421,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ],
+      [
+        "events_in_window",
+        1.0003
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1180",
+    "timestamp": "2026-09-17T20:10:14+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5357,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ],
+      [
+        "cmd_len",
+        1.0603
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_541",
+    "timestamp": "2026-09-17T20:10:54+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5303,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_393",
+    "timestamp": "2026-09-17T20:12:22+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5411,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1992",
+    "timestamp": "2026-09-17T20:17:45+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.6027,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_59",
+    "timestamp": "2026-09-17T20:22:14+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5509,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_206",
+    "timestamp": "2026-09-17T20:28:11+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5354,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ],
+      [
+        "time_since_prev_log",
+        1.2547
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_927",
+    "timestamp": "2026-09-17T20:28:50+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5805,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "time_since_prev_log",
+        1.4339
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1744",
+    "timestamp": "2026-09-17T20:31:15+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5235,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ],
+      [
+        "cmd_len",
+        1.0603
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_562",
+    "timestamp": "2026-09-17T20:32:30+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5674,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1824",
+    "timestamp": "2026-09-17T20:34:14+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5705,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_646",
+    "timestamp": "2026-09-17T20:34:56+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5028,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "hour_sin",
+        1.3394
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ],
+      [
+        "time_since_prev_log",
+        1.0036
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1320",
+    "timestamp": "2026-09-17T20:34:59+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5188,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ],
+      [
+        "cmd_len",
+        1.2411
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_631",
+    "timestamp": "2026-09-17T20:35:19+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.558,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1861",
+    "timestamp": "2026-09-17T20:40:01+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5327,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ],
+      [
+        "cmd_len",
+        1.0603
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_207",
+    "timestamp": "2026-09-17T20:40:46+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5585,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1784",
+    "timestamp": "2026-09-17T20:49:02+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5175,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ],
+      [
+        "time_since_prev_log",
+        1.0888
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_161",
+    "timestamp": "2026-09-17T20:49:36+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5307,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1251",
+    "timestamp": "2026-09-17T20:50:10+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5873,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1701",
+    "timestamp": "2026-09-17T20:52:35+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.549,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1412",
+    "timestamp": "2026-09-17T20:53:21+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5304,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "events_in_window",
+        1.3592
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ],
+      [
+        "time_since_prev_log",
+        1.2706
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_897",
+    "timestamp": "2026-09-17T20:58:01+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.543,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ],
+      [
+        "events_in_window",
+        1.0003
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_489",
+    "timestamp": "2026-09-17T20:58:43+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5249,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "time_since_prev_log",
+        1.3432
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_625",
+    "timestamp": "2026-09-17T20:59:56+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5601,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ],
+      [
+        "hour_sin",
+        1.3394
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1864",
+    "timestamp": "2026-09-17T21:03:18+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5595,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "cmd_len",
+        1.2411
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_717",
+    "timestamp": "2026-09-17T21:03:53+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5248,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "time_since_prev_log",
+        1.4882
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ],
+      [
+        "hour_cos",
+        1.1006
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_325",
+    "timestamp": "2026-09-17T21:05:28+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5214,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "events_in_window",
+        1.3592
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ],
+      [
+        "hour_cos",
+        1.1006
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1676",
+    "timestamp": "2026-09-17T21:10:41+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5241,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ],
+      [
+        "hour_cos",
+        1.1006
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_95",
+    "timestamp": "2026-09-17T21:10:47+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5453,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "time_since_prev_log",
+        2.8244
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ],
+      [
+        "hour_cos",
+        1.1006
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1177",
+    "timestamp": "2026-09-17T21:12:44+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5719,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1747",
+    "timestamp": "2026-09-17T21:15:15+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5374,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "cmd_len",
+        1.2411
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1642",
+    "timestamp": "2026-09-17T21:17:07+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5733,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "time_since_prev_log",
+        1.6505
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_951",
+    "timestamp": "2026-09-17T21:17:47+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5826,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "time_since_prev_log",
+        1.3821
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1961",
+    "timestamp": "2026-09-17T21:19:32+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5499,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1949",
+    "timestamp": "2026-09-17T21:22:55+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5259,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ],
+      [
+        "hour_cos",
+        1.1006
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_493",
+    "timestamp": "2026-09-17T21:23:44+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.561,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "time_since_prev_log",
+        1.2201
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_304",
+    "timestamp": "2026-09-17T21:25:29+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5078,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "events_in_window",
+        1.3592
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ],
+      [
+        "hour_cos",
+        1.1006
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_573",
+    "timestamp": "2026-09-17T21:25:35+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5582,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_233",
+    "timestamp": "2026-09-17T21:26:18+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.532,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "time_since_prev_log",
+        1.3244
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1706",
+    "timestamp": "2026-09-17T21:26:36+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5803,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "time_since_prev_log",
+        2.0096
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1302",
+    "timestamp": "2026-09-17T21:33:08+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5828,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1183",
+    "timestamp": "2026-09-17T21:35:06+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5332,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_784",
+    "timestamp": "2026-09-17T21:39:53+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5464,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ],
+      [
+        "time_since_prev_log",
+        1.1059
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_5",
+    "timestamp": "2026-09-17T21:42:07+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.555,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1538",
+    "timestamp": "2026-09-17T21:42:28+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5058,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "hour_sin",
+        1.1152
+      ],
+      [
+        "hour_cos",
+        1.1006
+      ],
+      [
+        "cmd_entropy",
+        0.8977
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1901",
+    "timestamp": "2026-09-17T21:43:53+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5732,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "time_since_prev_log",
+        1.2547
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1685",
+    "timestamp": "2026-09-17T21:48:49+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5586,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1588",
+    "timestamp": "2026-09-17T21:49:04+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5743,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1967",
+    "timestamp": "2026-09-17T21:52:19+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5528,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ],
+      [
+        "hour_cos",
+        1.1006
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_146",
+    "timestamp": "2026-09-17T21:54:46+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5559,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_584",
+    "timestamp": "2026-09-17T21:55:47+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5574,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_sin",
+        1.1152
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_560",
+    "timestamp": "2026-09-17T22:08:29+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.568,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_cos",
+        1.3285
+      ],
+      [
+        "time_since_prev_log",
+        1.2003
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_391",
+    "timestamp": "2026-09-17T22:11:24+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5319,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "hour_cos",
+        1.3285
+      ],
+      [
+        "cmd_len",
+        1.2411
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_598",
+    "timestamp": "2026-09-17T22:12:44+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.598,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_759",
+    "timestamp": "2026-09-17T22:13:40+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5366,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_cos",
+        1.3285
+      ],
+      [
+        "hour_sin",
+        0.8231
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1926",
+    "timestamp": "2026-09-17T22:15:46+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5671,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ],
+      [
+        "hour_cos",
+        1.3285
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1888",
+    "timestamp": "2026-09-17T22:17:08+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.568,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_287",
+    "timestamp": "2026-09-17T22:18:45+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5669,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1763",
+    "timestamp": "2026-09-17T22:21:36+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5938,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1073",
+    "timestamp": "2026-09-17T22:21:47+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.596,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "time_since_prev_log",
+        2.3846
+      ],
+      [
+        "events_in_window",
+        1.9771
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1460",
+    "timestamp": "2026-09-17T22:23:39+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5655,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.3285
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1875",
+    "timestamp": "2026-09-17T22:27:00+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5803,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "hour_cos",
+        1.3285
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_331",
+    "timestamp": "2026-09-17T22:27:20+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5314,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "hour_cos",
+        1.3285
+      ],
+      [
+        "cmd_len",
+        1.2411
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1818",
+    "timestamp": "2026-09-17T22:29:15+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5351,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "time_since_prev_log",
+        1.8179
+      ],
+      [
+        "hour_cos",
+        1.3285
+      ],
+      [
+        "events_in_window",
+        1.0003
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1223",
+    "timestamp": "2026-09-17T22:31:45+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5582,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_cos",
+        1.3285
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_47",
+    "timestamp": "2026-09-17T22:32:21+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.537,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "hour_cos",
+        1.3285
+      ],
+      [
+        "events_in_window",
+        1.0003
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_490",
+    "timestamp": "2026-09-17T22:32:25+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5229,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "time_since_prev_log",
+        1.3821
+      ],
+      [
+        "hour_cos",
+        1.3285
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_159",
+    "timestamp": "2026-09-17T22:33:52+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5361,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "hour_cos",
+        1.3285
+      ],
+      [
+        "cmd_len",
+        1.2411
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_853",
+    "timestamp": "2026-09-17T22:34:41+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.54,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "hour_cos",
+        1.3285
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1785",
+    "timestamp": "2026-09-17T22:36:48+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5742,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1440",
+    "timestamp": "2026-09-17T22:36:59+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.573,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "time_since_prev_log",
+        2.3846
+      ],
+      [
+        "events_in_window",
+        1.9771
+      ],
+      [
+        "hour_cos",
+        1.3285
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1718",
+    "timestamp": "2026-09-17T22:40:08+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5127,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "hour_cos",
+        1.3285
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ],
+      [
+        "cmd_len",
+        1.0603
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_21",
+    "timestamp": "2026-09-17T22:42:42+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5718,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1986",
+    "timestamp": "2026-09-17T22:45:36+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5418,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "hour_cos",
+        1.3285
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1924",
+    "timestamp": "2026-09-17T22:45:56+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5629,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.3285
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_337",
+    "timestamp": "2026-09-17T22:48:23+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5422,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "hour_cos",
+        1.3285
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1876",
+    "timestamp": "2026-09-17T22:48:48+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5222,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.3285
+      ],
+      [
+        "cmd_len",
+        1.0603
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_7",
+    "timestamp": "2026-09-17T22:51:36+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5445,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "user_rarity",
+        1.3619
+      ],
+      [
+        "hour_cos",
+        1.3285
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_195",
+    "timestamp": "2026-09-17T22:53:44+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5199,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "hour_cos",
+        1.3285
+      ],
+      [
+        "time_since_prev_log",
+        1.2292
+      ],
+      [
+        "cmd_len",
+        1.0603
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_315",
+    "timestamp": "2026-09-17T22:54:15+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5286,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "time_since_prev_log",
+        1.5843
+      ],
+      [
+        "hour_cos",
+        1.3285
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1124",
+    "timestamp": "2026-09-17T22:54:59+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5562,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "hour_cos",
+        1.3285
+      ],
+      [
+        "cmd_len",
+        1.2903
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1334",
+    "timestamp": "2026-09-17T23:11:04+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5718,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "is_night",
+        1.5269
+      ],
+      [
+        "hour_cos",
+        1.4717
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_423",
+    "timestamp": "2026-09-17T23:15:05+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5398,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "is_night",
+        1.5269
+      ],
+      [
+        "hour_cos",
+        1.4717
+      ],
+      [
+        "time_since_prev_log",
+        1.3778
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1889",
+    "timestamp": "2026-09-17T23:16:16+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.593,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "time_since_prev_log",
+        1.6324
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "is_night",
+        1.5269
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_911",
+    "timestamp": "2026-09-17T23:18:30+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5255,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "is_night",
+        1.5269
+      ],
+      [
+        "hour_cos",
+        1.4717
+      ],
+      [
+        "cmd_entropy",
+        0.8977
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1472",
+    "timestamp": "2026-09-17T23:19:26+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5266,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "is_night",
+        1.5269
+      ],
+      [
+        "hour_cos",
+        1.4717
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1799",
+    "timestamp": "2026-09-17T23:21:22+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5645,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "is_night",
+        1.5269
+      ],
+      [
+        "hour_cos",
+        1.4717
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1884",
+    "timestamp": "2026-09-17T23:21:47+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5926,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "time_since_prev_log",
+        1.7537
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "is_night",
+        1.5269
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1859",
+    "timestamp": "2026-09-17T23:22:13+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.6229,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "time_since_prev_log",
+        1.7229
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_107",
+    "timestamp": "2026-09-17T23:24:50+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5542,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "is_night",
+        1.5269
+      ],
+      [
+        "hour_cos",
+        1.4717
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_797",
+    "timestamp": "2026-09-17T23:26:38+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5825,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "is_night",
+        1.5269
+      ],
+      [
+        "hour_cos",
+        1.4717
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_587",
+    "timestamp": "2026-09-17T23:27:51+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.5624,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "is_night",
+        1.5269
+      ],
+      [
+        "hour_cos",
+        1.4717
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1693",
+    "timestamp": "2026-09-17T23:27:52+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5388,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "is_night",
+        1.5269
+      ],
+      [
+        "hour_cos",
+        1.4717
+      ],
+      [
+        "events_in_window",
+        1.3592
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1101",
+    "timestamp": "2026-09-17T23:31:37+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.5831,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "is_night",
+        1.5269
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1737",
+    "timestamp": "2026-09-17T23:34:33+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5646,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "is_night",
+        1.5269
+      ],
+      [
+        "hour_cos",
+        1.4717
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1093",
+    "timestamp": "2026-09-17T23:37:29+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5187,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "is_night",
+        1.5269
+      ],
+      [
+        "hour_cos",
+        1.4717
+      ],
+      [
+        "cmd_special_chars",
+        0.6835
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_509",
+    "timestamp": "2026-09-17T23:38:43+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.592,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "is_night",
+        1.5269
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_720",
+    "timestamp": "2026-09-17T23:43:00+00:00",
+    "command_line": "chrome.exe --type=renderer",
+    "score": 0.6099,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_special_chars",
+        1.9087
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "is_night",
+        1.5269
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_902",
+    "timestamp": "2026-09-17T23:45:06+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5724,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "is_night",
+        1.5269
+      ],
+      [
+        "hour_cos",
+        1.4717
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_431",
+    "timestamp": "2026-09-17T23:46:34+00:00",
+    "command_line": "svchost.exe -k netsvcs",
+    "score": 0.555,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "is_night",
+        1.5269
+      ],
+      [
+        "hour_cos",
+        1.4717
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1359",
+    "timestamp": "2026-09-17T23:46:52+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5298,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "is_night",
+        1.5269
+      ],
+      [
+        "hour_cos",
+        1.4717
+      ],
+      [
+        "user_rarity",
+        1.0724
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1290",
+    "timestamp": "2026-09-17T23:50:41+00:00",
+    "command_line": "conhost.exe 0xffffffff",
+    "score": 0.5663,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "is_night",
+        1.5269
+      ],
+      [
+        "hour_cos",
+        1.4717
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1790",
+    "timestamp": "2026-09-17T23:53:47+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.5939,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "is_night",
+        1.5269
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_1312",
+    "timestamp": "2026-09-17T23:54:48+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.59,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_hash",
+        1.5452
+      ],
+      [
+        "is_night",
+        1.5269
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_191",
+    "timestamp": "2026-09-17T23:55:06+00:00",
+    "command_line": "taskhostw.exe",
+    "score": 0.5673,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "time_since_prev_log",
+        2.0096
+      ],
+      [
+        "is_night",
+        1.5269
+      ],
+      [
+        "hour_cos",
+        1.4717
+      ]
+    ]
+  },
+  {
+    "event_id": "benign_626",
+    "timestamp": "2026-09-17T23:56:39+00:00",
+    "command_line": "explorer.exe",
+    "score": 0.6093,
+    "is_anomaly": true,
+    "true_label": 0,
+    "top_features": [
+      [
+        "cmd_entropy",
+        1.7398
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ]
+    ]
+  }
+]

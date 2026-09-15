@@ -1,0 +1,35 @@
+title: Network Port Scan Tool Execution (CyberSentinel Native)
+id: 7d2f5c8b-1e9a-4a3c-e7b6-b4e1f9a3aa23
+status: test
+description: >-
+  Detects execution of well-known network port scanning tools (nmap, masscan,
+  zmap, rustscan) or characteristic scan flags in the command line.
+  CyberSentinel-native rule adapted to Sigma format from RULE-0004.
+
+  FIELD USAGE (CyberSentinel-native):
+  - command_line: identity mapping (command_line -> command_line)
+  - category: process (logsource category pre-filter prevents matching
+    web events where command_line holds a URL)
+
+  NOTE: The logsource category filter (process_creation -> event.category='process')
+  is essential to avoid false positives on web events where command_line
+  stores the request URL.
+
+references:
+  - https://attack.mitre.org/techniques/T1046/
+author: CyberSentinel native rule (adapted from RULE-0004)
+date: 2026-09-14
+logsource:
+  product: cybersentinel
+  category: process_creation
+detection:
+  selection:
+    command_line|re: '\b(nmap|masscan|zmap|rustscan)\b|\s-sS\b|\s-p-(\s|$)'
+  condition: selection
+falsepositives:
+  - Authorized network inventory by the infrastructure team.
+  - Connectivity tests by an administrator during an incident.
+level: medium
+tags:
+  - attack.discovery
+  - attack.t1046

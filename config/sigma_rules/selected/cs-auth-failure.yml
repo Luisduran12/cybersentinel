@@ -1,0 +1,38 @@
+title: Authentication Failure - Single Event (CyberSentinel Native)
+id: 1c8e3a6d-5b7f-4d9e-a4c2-c7b5e2d8bb34
+status: test
+description: >-
+  Detects a single authentication failure event. This is the stateless variant
+  of RULE-0001 (brute force), which requires 5+ failures in 5 minutes.
+  Intended as a lower-confidence signal for correlation, not as a standalone
+  high-severity alert.
+
+  FIELD USAGE (CyberSentinel-native, identity mapping):
+  - outcome: checked via contains for 'fail' to cover 'failure', 'failed', 'denied'
+  - Logsource category 'authentication' maps to event.category='authentication'
+
+  COVERAGE: Credential Access - T1110 (Brute Force, any variant)
+  LIMITATION: Single failure does NOT indicate brute force; the aggregated
+  RULE-0001 provides that verdict. Use this rule for early warning only.
+
+references:
+  - https://attack.mitre.org/techniques/T1110/
+author: CyberSentinel native rule
+date: 2026-09-14
+logsource:
+  product: cybersentinel
+  category: authentication
+detection:
+  selection:
+    outcome|contains:
+      - 'failure'
+      - 'failed'
+      - 'denied'
+  condition: selection
+falsepositives:
+  - Legitimate user mistyping password once.
+  - Service account with stale credentials.
+level: low
+tags:
+  - attack.credential-access
+  - attack.t1110

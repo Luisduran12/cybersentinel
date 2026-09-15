@@ -1,0 +1,39 @@
+title: Certutil Download via URL Cache (CyberSentinel Adaptation)
+id: 9c3a1f8e-7b5d-4e2a-b6c3-d1f9a3e7ee45
+status: test
+description: >-
+  Detects certutil.exe being used to download files via -urlcache or -verifyctl.
+  This is a well-known Living Off the Land Binary (LOLBin) technique used by
+  threat actors for payload delivery. Adapted from SigmaHQ proc_creation_win_certutil_download.
+
+  ADAPTATION NOTES:
+  - Field 'CommandLine' maps to SecurityEvent.command_line via FIELD_MAP.
+  - Both download flags covered: -urlcache (primary) and -verifyctl (alternative).
+  - Original SigmaHQ rule also checks Image|endswith: \certutil.exe; omitted
+    since process_name alone is insufficient without full path context.
+
+references:
+  - https://attack.mitre.org/techniques/T1105/
+  - https://lolbas-project.github.io/lolbas/Binaries/Certutil/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_certutil_download.yml
+author: CyberSentinel adaptation (original SigmaHQ community)
+date: 2026-09-14
+logsource:
+  product: cybersentinel
+  category: process_creation
+detection:
+  selection_certutil:
+    CommandLine|contains: 'certutil'
+  selection_flags:
+    CommandLine|contains:
+      - '-urlcache'
+      - '-verifyctl'
+      - '-decode'
+  condition: selection_certutil and selection_flags
+falsepositives:
+  - Certificate validation scripts used by legitimate PKI operations.
+  - Security tools verifying certificate chains.
+level: high
+tags:
+  - attack.command-and-control
+  - attack.t1105

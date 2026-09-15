@@ -71,6 +71,32 @@ class DetectionRule:
     aggregation: Aggregation | None = None
     false_positives: list[str] = field(default_factory=list)
 
+    # ------------------------------------------------------------------
+    # Interfaz polimórfica para SigmaBackedRule
+    # ------------------------------------------------------------------
+
+    @property
+    def is_evaluable(self) -> bool:
+        """
+        True si la regla tiene condiciones evaluables.
+
+        Las subclases (ej. SigmaBackedRule) sobreescriben esta propiedad
+        para indicar que la evaluación usa un mecanismo distinto al de
+        la lista de condiciones. Esto permite que stateless_rules las
+        incluya correctamente sin requerir un isinstance() en el engine.
+        """
+        return bool(self.conditions)
+
+    def matches(self, event: "SecurityEvent") -> bool:  # noqa: F821
+        """
+        Evalúa si la regla coincide con un evento.
+
+        Implementación base: evalúa la lista de condiciones con AND lógico.
+        SigmaBackedRule sobreescribe este método para usar el AST de pySigma.
+        La firma y el tipo de retorno son contratos fijos; no se deben cambiar.
+        """
+        return all(_match_condition(event, c) for c in self.conditions)
+
     @staticmethod
     def from_dict(d: dict[str, Any]) -> "DetectionRule":
         """
@@ -205,10 +231,40 @@ class RulesEngine:
                 engine.rules.append(DetectionRule.from_dict(data))
         return engine
 
+    @classmethod
+    def from_sigma_directory(cls, directory: str | Path) -> "RulesEngine":
+        """
+        Carga reglas en formato Sigma público desde un directorio.
+
+        Complementa a from_directory(): carga reglas en formato Sigma
+        (SigmaHQ / CyberSentinel-adaptadas) usando pySigma 1.5.0 como parser
+        y un evaluador recursivo propio basado en el AST de pySigma.
+
+        Las reglas propias (config/rules/) se siguen cargando con
+        from_directory() sin cambios. Ambos métodos pueden combinarse:
+
+            engine = RulesEngine()
+            engine.rules += RulesEngine.from_directory(rules_dir).rules
+            engine.rules += RulesEngine.from_sigma_directory(sigma_dir).rules
+
+        Los archivos que no puedan parsearse o convertirse se omiten con
+        un WARNING en el log, sin interrumpir la carga del resto.
+        """
+        # Import local para evitar ciclo: sigma_loader → rules_engine
+        from .sigma_loader import load_sigma_rules
+        engine = cls()
+        engine.rules = load_sigma_rules(directory)
+        return engine
+
     @property
     def stateless_rules(self) -> list[DetectionRule]:
-        """Reglas que se deciden con un solo evento."""
-        return [r for r in self.rules if r.conditions and r.aggregation is None]
+        """
+        Reglas que se deciden con un solo evento.
+
+        Usa `is_evaluable` en lugar de `conditions` directamente para incluir
+        también SigmaBackedRule (que tiene conditions=[] pero AST propio).
+        """
+        return [r for r in self.rules if r.is_evaluable and r.aggregation is None]
 
     @property
     def aggregated_rules(self) -> list[DetectionRule]:
@@ -227,14 +283,17 @@ class RulesEngine:
 
     def evaluate_event(self, event: SecurityEvent) -> list[RuleHit]:
         """
-        Reglas sin estado que coinciden con un evento (AND de condiciones).
+        Reglas sin estado que coinciden con un evento.
 
-        Las reglas con agregación no se evalúan aquí: necesitan ver la serie
-        completa de eventos. Para esas, usa `evaluate`.
+        Usa rule.matches(event) en lugar de evaluar la lista de condiciones
+        directamente: permite que SigmaBackedRule use su AST de pySigma sin
+        cambiar la interfaz pública. Las reglas con agregación no se evalúan
+        aquí: necesitan ver la serie completa de eventos. Para esas, usa
+        `evaluate`.
         """
         hits: list[RuleHit] = []
         for rule in self.stateless_rules:
-            if all(_match_condition(event, c) for c in rule.conditions):
+            if rule.matches(event):
                 hits.append(RuleHit(rule=rule, event=event,
                                     confidence=self._base_confidence(rule)))
         return hits
@@ -262,7 +321,7 @@ class RulesEngine:
         agg = rule.aggregation
         assert agg is not None
 
-        matching = [e for e in events if all(_match_condition(e, c) for c in rule.conditions)]
+        matching = [e for e in events if rule.matches(e)]
         if not matching:
             return []
 

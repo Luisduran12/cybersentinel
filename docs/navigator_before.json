@@ -1,0 +1,99 @@
+{
+  "name": "CyberSentinel — Cobertura ATT&CK ANTES de pySigma (7 técnicas)",
+  "versions": {
+    "attack": "14",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Estado de cobertura estructural ANTES de integrar reglas Sigma. 7 técnicas cubiertas por las reglas propias de CyberSentinel. Verde=detected (regla disparó en UNSW-NB15), Azul=covered (regla existe, no evaluable o sin disparos en UNSW-NB15).",
+  "filters": {
+    "platforms": [
+      "Windows",
+      "Linux",
+      "macOS"
+    ]
+  },
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showID": true,
+    "showName": true
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1021",
+      "color": "#3498db",
+      "comment": "Regla original evaluable en UNSW-NB15 pero sin disparos. Estado: covered.",
+      "enabled": true,
+      "score": 1
+    },
+    {
+      "techniqueID": "T1046",
+      "color": "#3498db",
+      "comment": "Regla original NOT EVALUABLE en UNSW-NB15 (requiere telemetría de proceso o autenticación ausente en el dataset).",
+      "enabled": true,
+      "score": 1
+    },
+    {
+      "techniqueID": "T1048",
+      "color": "#3498db",
+      "comment": "Regla original evaluable en UNSW-NB15 pero sin disparos. Estado: covered.",
+      "enabled": true,
+      "score": 1
+    },
+    {
+      "techniqueID": "T1053",
+      "color": "#3498db",
+      "comment": "Regla original NOT EVALUABLE en UNSW-NB15 (requiere telemetría de proceso o autenticación ausente en el dataset).",
+      "enabled": true,
+      "score": 1
+    },
+    {
+      "techniqueID": "T1059",
+      "color": "#3498db",
+      "comment": "Regla original NOT EVALUABLE en UNSW-NB15 (requiere telemetría de proceso o autenticación ausente en el dataset).",
+      "enabled": true,
+      "score": 1
+    },
+    {
+      "techniqueID": "T1071",
+      "color": "#2ecc71",
+      "comment": "Regla original evaluada en UNSW-NB15. Disparos: 41. Estado: detected.",
+      "enabled": true,
+      "score": 1
+    },
+    {
+      "techniqueID": "T1110",
+      "color": "#3498db",
+      "comment": "Regla original NOT EVALUABLE en UNSW-NB15 (requiere telemetría de proceso o autenticación ausente en el dataset).",
+      "enabled": true,
+      "score": 1
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ff6666",
+      "#ffe766",
+      "#8ec843"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "detected: regla evaluable + disparos en UNSW-NB15",
+      "color": "#2ecc71"
+    },
+    {
+      "label": "covered: regla existe, no evaluable o sin disparos",
+      "color": "#3498db"
+    }
+  ],
+  "metadata": {
+    "generated": "2026-09-14T22:30:11.133508+00:00",
+    "dataset": "/home/user/cybersentinel/data/synthetic_flows_unsw_format.csv",
+    "phase": "Fase1-Parte3"
+  }
+}

@@ -65,6 +65,13 @@ class SecurityEvent:
     # Resultado
     outcome: Optional[str] = None     # success | failure | unknown
 
+    # Extensibilidad estructurada: almacena campos normalizados que no tienen
+    # un atributo explícito en la clase (ej. dns_query, hashes, registry_key,
+    # parent_command_line).
+    # Evita que SecurityEvent se convierta en un objeto gigante y garantiza
+    # que la telemetría esté tipada y predecible.
+    properties: dict[str, Any] = field(default_factory=dict)
+
     # Metadatos libres + campos crudos originales
     raw: dict[str, Any] = field(default_factory=dict)
     tags: list[str] = field(default_factory=list)

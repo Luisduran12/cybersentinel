@@ -1,0 +1,393 @@
+# CyberSentinel Sigma Rules — Manifest
+# Fase 1 Parte 2 | pySigma 1.5.0 | Generado: 2026-09-14
+#
+# Criterios de selección (todos deben cumplirse):
+#   1. YAML válido y parseable por pySigma 1.5.0
+#   2. UUID estable (generado para adaptaciones, nunca inventado como oficial)
+#   3. tags: attack.tXXXX identificable
+#   4. status: test (adaptaciones) o stable (original SigmaHQ)
+#   5. Sólo campos disponibles en SecurityEvent (ver SIGMA-COMPATIBILITY-MATRIX.md)
+#   6. Una regla por táctica principal (8 tácticas cubiertas de 14 posibles)
+#
+# Cuando una adaptación existe, se documenta explícitamente:
+#   - adapted_from: referencia a la regla SigmaHQ original
+#   - adaptation_notes: qué cambió y por qué
+#   - NOT_IDENTICAL: esta regla NO es idéntica a la canónica SigmaHQ
+
+meta:
+  generated_by: CyberSentinel FASE-1-PARTE-2
+  pysigma_version: "1.5.0"
+  schema_version: "1.0"
+  total_rules: 15
+  tactics_covered: 8
+  techniques_covered: 13
+  directory: config/sigma_rules/selected/
+
+rules:
+  - id: 3d6d4b49-5f2e-4e29-9e37-a1b7f3e5aa01
+    file: cs-ps-encoded-cmd.yml
+    title: "PowerShell Encoded Command (CyberSentinel Adaptation)"
+    status: test
+    type: process_creation
+    fields_used:
+      - name: CommandLine
+        maps_to: command_line
+        modifier: re
+        available: true
+    mitre_technique: T1059.001
+    mitre_tactic: execution
+    level: high
+    adapted_from:
+      title: "PowerShell Encoded Command"
+      source: https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_powershell_encode.yml
+    NOT_IDENTICAL: true
+    adaptation_notes: >-
+      Regex unificado en vez de múltiples condiciones OR. Image check omitido
+      (process_name contiene solo basename, no ruta completa Windows).
+
+  - id: 7a912c1e-e8f4-4d23-8c3b-f1a2e5d9bb12
+    file: cs-whoami-exec.yml
+    title: "Whoami.exe Execution (CyberSentinel Adaptation)"
+    status: test
+    type: process_creation
+    fields_used:
+      - name: Image
+        maps_to: process_name
+        modifier: endswith
+        available: true
+        note: "process_name contiene basename; endswith funciona igual que en SigmaHQ"
+    mitre_technique: T1033
+    mitre_tactic: discovery
+    level: medium
+    adapted_from:
+      title: "Whoami.exe Execution"
+      source: https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_whoami.yml
+    NOT_IDENTICAL: true
+    adaptation_notes: >-
+      CommandLine check omitido; Image/endswith es suficiente y más robusto
+      con la telemetría limitada de SecurityEvent.
+
+  - id: b4c8f3a7-2d1e-4f9a-9c6b-e3d7a8f1cc23
+    file: cs-net-recon.yml
+    title: "Net.exe Domain and User Reconnaissance (CyberSentinel Adaptation)"
+    status: test
+    type: process_creation
+    fields_used:
+      - name: CommandLine
+        maps_to: command_line
+        modifier: contains (list=OR)
+        available: true
+    mitre_technique: T1087
+    mitre_tactic: discovery
+    level: medium
+    adapted_from:
+      title: "Net.exe Domain Recon and Shares Enumeration"
+      source: https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_net_groups_and_accounts_recon.yml
+    NOT_IDENTICAL: true
+    adaptation_notes: >-
+      Image check (net.exe / net1.exe) omitido. Ampliado para incluir net accounts.
+
+  - id: 1e5f7d2b-3a8c-4b6e-a9d1-c2f4e7b8dd34
+    file: cs-schtasks-create.yml
+    title: "Schtasks.exe Scheduled Task Creation (CyberSentinel Adaptation)"
+    status: test
+    type: process_creation
+    fields_used:
+      - name: CommandLine
+        maps_to: command_line
+        modifier: contains|all
+        available: true
+    mitre_technique: T1053.005
+    mitre_tactic: persistence
+    level: medium
+    adapted_from:
+      title: "Scheduled Task Creation with Schtasks"
+      source: https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_schtasks_creation.yml
+    NOT_IDENTICAL: true
+    adaptation_notes: >-
+      contains|all requiere ambos tokens ('schtasks' y '/create') en la misma línea.
+      Image check omitido.
+
+  - id: 9c3a1f8e-7b5d-4e2a-b6c3-d1f9a3e7ee45
+    file: cs-certutil-download.yml
+    title: "Certutil Download via URL Cache (CyberSentinel Adaptation)"
+    status: test
+    type: process_creation
+    fields_used:
+      - name: CommandLine
+        maps_to: command_line
+        modifier: contains|all / contains|any
+        available: true
+    mitre_technique: T1105
+    mitre_tactic: command-and-control
+    level: high
+    adapted_from:
+      title: "Certutil.exe Download"
+      source: https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_certutil_download.yml
+    NOT_IDENTICAL: true
+    adaptation_notes: >-
+      Dos selecciones: certutil en CommandLine + flag sospechoso. Se añade
+      -decode como variante. Image check omitido.
+
+  - id: 5f8b2c9e-1d6a-4f3b-c7e2-a4b8d1f2ff56
+    file: cs-mshta-exec.yml
+    title: "Mshta.exe Execution (CyberSentinel Adaptation)"
+    status: test
+    type: process_creation
+    fields_used:
+      - name: Image
+        maps_to: process_name
+        modifier: endswith
+        available: true
+    mitre_technique: T1218.005
+    mitre_tactic: defense-evasion
+    level: high
+    adapted_from:
+      title: "Mshta.exe Execution"
+      source: https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_mshta.yml
+    NOT_IDENTICAL: true
+    adaptation_notes: >-
+      Solo Image/endswith. CommandLine URL/script checks omitidos por falta
+      de telemetría consistente en SecurityEvent.
+
+  - id: 2d7f4a1c-9e3b-4c8a-d5f6-b9c3e7a1a167
+    file: cs-wmic-process.yml
+    title: "WMIC Remote Process Execution (CyberSentinel Adaptation)"
+    status: test
+    type: process_creation
+    fields_used:
+      - name: CommandLine
+        maps_to: command_line
+        modifier: contains|all
+        available: true
+    mitre_technique: T1047
+    mitre_tactic: execution
+    level: high
+    adapted_from:
+      title: "WMIC Process Call Creation"
+      source: https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_wmic_process_call_creation.yml
+    NOT_IDENTICAL: true
+    adaptation_notes: >-
+      contains|all con cuatro tokens ('wmic', 'process', 'call', 'create').
+      Más específico que el original para reducir falsos positivos.
+
+  - id: 8e1b5d3a-4f7c-4a9e-b2d3-c6a1f8e5bb78
+    file: cs-regsvr32-exec.yml
+    title: "Regsvr32.exe Silent Execution (CyberSentinel Adaptation)"
+    status: test
+    type: process_creation
+    fields_used:
+      - name: Image
+        maps_to: process_name
+        modifier: endswith
+        available: true
+      - name: CommandLine
+        maps_to: command_line
+        modifier: contains (list=OR)
+        available: true
+    mitre_technique: T1218.010
+    mitre_tactic: defense-evasion
+    level: high
+    adapted_from:
+      title: "Regsvr32 Network Activity"
+      source: https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_regsvr32_network_activity.yml
+    NOT_IDENTICAL: true
+    adaptation_notes: >-
+      Requiere Image (regsvr32.exe) AND CommandLine con flags/patrones sospechosos.
+      Más restrictivo que el original para reducir falsos positivos.
+
+  - id: 4a6c9f2d-8b1e-4d7a-a3b5-d7f2c9b4cc89
+    file: cs-rundll32-exec.yml
+    title: "Rundll32.exe Execution with Script Content (CyberSentinel Adaptation)"
+    status: test
+    type: process_creation
+    fields_used:
+      - name: Image
+        maps_to: process_name
+        modifier: endswith
+        available: true
+      - name: CommandLine
+        maps_to: command_line
+        modifier: contains (list=OR)
+        available: true
+    mitre_technique: T1218.011
+    mitre_tactic: defense-evasion
+    level: high
+    adapted_from:
+      title: "Rundll32 Execution from Unusual Location"
+      source: https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_rundll32_not_from_system_dir.yml
+    NOT_IDENTICAL: true
+    adaptation_notes: >-
+      Enfocado en CommandLine con contenido de script (js/vbs/mshtml).
+      La variante de Image-only resultaba en demasiados falsos positivos.
+
+  - id: 6f3d8b5e-2c7a-4e1b-b9a4-e8b5a2f3dd90
+    file: cs-large-outbound.yml
+    title: "Large Outbound Data Transfer (CyberSentinel Native)"
+    status: test
+    type: network
+    fields_used:
+      - name: bytes_out
+        maps_to: bytes_out
+        modifier: gt
+        available: true
+        note: "Campo nativo CyberSentinel; sin SigmaHQ equivalente sobre bytes brutos"
+    mitre_technique: T1048
+    mitre_tactic: exfiltration
+    level: critical
+    adapted_from: null
+    NOT_IDENTICAL: false
+    adaptation_notes: >-
+      Regla nativa CyberSentinel. Sigma format de RULE-0007 (threshold: 100MB).
+      No existe equivalente SigmaHQ con umbral de bytes_out.
+
+  - id: 0b9a4c7e-5d3f-4b8a-c6e1-f9d4c7b2ee01
+    file: cs-c2-port-connect.yml
+    title: "Connection to Known C2 Framework Ports (CyberSentinel Native)"
+    status: test
+    type: network
+    fields_used:
+      - name: dst_port
+        maps_to: dst_port
+        modifier: none (equality list)
+        available: true
+    mitre_technique: T1071
+    mitre_tactic: command-and-control
+    level: high
+    adapted_from: null
+    NOT_IDENTICAL: false
+    adaptation_notes: >-
+      Variante stateless de RULE-0006. Dispara en cualquier conexión a los
+      puertos listados; RULE-0006 agrega 3+ conexiones en ventana de 10 min.
+
+  - id: 3e6b1a9c-8f5d-4c7b-d2a3-a1c8d5f6ff12
+    file: cs-rdp-lateral.yml
+    title: "Internal RDP Connection (CyberSentinel Native)"
+    status: test
+    type: network
+    fields_used:
+      - name: dst_port
+        maps_to: dst_port
+        modifier: none (equality)
+        available: true
+      - name: src_ip
+        maps_to: src_ip
+        modifier: startswith
+        available: true
+      - name: dst_ip
+        maps_to: dst_ip
+        modifier: startswith
+        available: true
+    mitre_technique: T1021.001
+    mitre_tactic: lateral-movement
+    level: medium
+    adapted_from: null
+    NOT_IDENTICAL: false
+    adaptation_notes: >-
+      Sigma format de RULE-0005. 172.16-20 cubiertos con startswith parcial.
+      172.21-31 NOT COVERED (requiere regex o rango CIDR, no soportado en esta fase).
+
+  - id: 7d2f5c8b-1e9a-4a3c-e7b6-b4e1f9a3aa23
+    file: cs-portscan-tool.yml
+    title: "Network Port Scan Tool Execution (CyberSentinel Native)"
+    status: test
+    type: process_creation
+    fields_used:
+      - name: command_line
+        maps_to: command_line
+        modifier: re
+        available: true
+        note: "Usa nombre de campo CyberSentinel directamente (sin mapeo)"
+    mitre_technique: T1046
+    mitre_tactic: discovery
+    level: medium
+    adapted_from: null
+    NOT_IDENTICAL: false
+    adaptation_notes: >-
+      Sigma format de RULE-0004. Ampliado con zmap y rustscan.
+      Logsource category=process_creation evita falsos positivos en URLs web.
+
+  - id: 1c8e3a6d-5b7f-4d9e-a4c2-c7b5e2d8bb34
+    file: cs-auth-failure.yml
+    title: "Authentication Failure - Single Event (CyberSentinel Native)"
+    status: test
+    type: authentication
+    fields_used:
+      - name: outcome
+        maps_to: outcome
+        modifier: contains (list=OR)
+        available: true
+    mitre_technique: T1110
+    mitre_tactic: credential-access
+    level: low
+    adapted_from: null
+    NOT_IDENTICAL: false
+    adaptation_notes: >-
+      Variante stateless de RULE-0001. Señal de baja confianza para correlación;
+      RULE-0001 requiere 5+ fallos en ventana para alta confianza.
+
+  - id: 5b7d1f4c-9a2e-4b6d-b3a8-d2f6a1c9cc45
+    file: cs-auth-failure-external.yml
+    title: "Authentication Failure from External Source (CyberSentinel Native)"
+    status: test
+    type: authentication
+    fields_used:
+      - name: outcome
+        maps_to: outcome
+        modifier: contains (list=OR)
+        available: true
+      - name: src_ip
+        maps_to: src_ip
+        modifier: startswith (negated)
+        available: true
+    mitre_technique: T1110.003
+    mitre_tactic: credential-access
+    level: medium
+    adapted_from: null
+    NOT_IDENTICAL: false
+    adaptation_notes: >-
+      Nueva regla CyberSentinel. El filtro NOT filter_private_src excluye
+      RFC1918. IPv6 NOT COVERED (SecurityEvent.src_ip es solo IPv4).
+
+# ── Resumen de cobertura ────────────────────────────────────────────────────
+coverage:
+  tactics:
+    - name: execution
+      techniques: [T1059.001, T1047]
+      rules: [cs-ps-encoded-cmd, cs-wmic-process]
+    - name: discovery
+      techniques: [T1033, T1087, T1046]
+      rules: [cs-whoami-exec, cs-net-recon, cs-portscan-tool]
+    - name: persistence
+      techniques: [T1053.005]
+      rules: [cs-schtasks-create]
+    - name: defense-evasion
+      techniques: [T1218.005, T1218.010, T1218.011]
+      rules: [cs-mshta-exec, cs-regsvr32-exec, cs-rundll32-exec]
+    - name: command-and-control
+      techniques: [T1105, T1071]
+      rules: [cs-certutil-download, cs-c2-port-connect]
+    - name: exfiltration
+      techniques: [T1048]
+      rules: [cs-large-outbound]
+    - name: lateral-movement
+      techniques: [T1021.001]
+      rules: [cs-rdp-lateral]
+    - name: credential-access
+      techniques: [T1110, T1110.003]
+      rules: [cs-auth-failure, cs-auth-failure-external]
+
+  not_covered_tactics:
+    - initial-access
+    - privilege-escalation
+    - collection
+    - impact
+    - resource-development
+  reason: >-
+    Las tácticas no cubiertas requieren telemetría ausente en SecurityEvent:
+    phishing (Initial Access → file metadata, email headers),
+    token manipulation (Privilege Escalation → access token fields),
+    clipboard/screen capture (Collection → OS API calls),
+    disk wipe / encryption (Impact → file system events),
+    resource-development (no telemetría interna disponible).
+    Ver docs/SIGMA-EXCLUSIONS.md para detalles.

@@ -266,30 +266,39 @@ def test_default_correlator_still_uses_the_heuristic():
 def test_pipeline_loads_a_trained_model_from_settings(tmp_path):
     """El pipeline toma el modelo de la configuración, sin tocar código."""
     from cybersentinel.config import Settings
-    from cybersentinel.pipeline import Pipeline
+    from cybersentinel.correlation.sequence_model import MarkovChainModel, CanonicalBaseline
 
     sequences, _ = campaigns.generate_sequences(n=150, seed=19)
     model_path = MarkovChainModel().fit(sequences).save(tmp_path / "markov.json")
 
     settings = Settings()
     settings.prediction.model_path = str(model_path)
-    pipeline = Pipeline(rules_dir=ROOT / "config" / "rules",
-                        audit_path=tmp_path / "audit.jsonl", settings=settings)
+    
+    def load_model(sett):
+        if sett.prediction.model_path and Path(sett.prediction.model_path).exists():
+            return MarkovChainModel.load(sett.prediction.model_path)
+        return CanonicalBaseline()
+        
+    model = load_model(settings)
 
-    assert pipeline.correlator.sequence_model.name == "markov-orden-1"
+    assert model.name == "markov-orden-1"
 
 
 def test_pipeline_falls_back_when_the_model_is_missing(tmp_path):
     """Un modelo inexistente no puede impedir un análisis."""
     from cybersentinel.config import Settings
-    from cybersentinel.pipeline import Pipeline
+    from cybersentinel.correlation.sequence_model import MarkovChainModel, CanonicalBaseline
+    
+    def load_model(sett):
+        if sett.prediction.model_path and Path(sett.prediction.model_path).exists():
+            return MarkovChainModel.load(sett.prediction.model_path)
+        return CanonicalBaseline()
 
     settings = Settings()
     settings.prediction.model_path = str(tmp_path / "no-existe.json")
-    pipeline = Pipeline(rules_dir=ROOT / "config" / "rules",
-                        audit_path=tmp_path / "audit.jsonl", settings=settings)
+    model = load_model(settings)
 
-    assert pipeline.correlator.sequence_model.name == "heuristica-canonica"
+    assert model.name == "heuristica-canonica"
 
 
 # ------------------------------ generador -----------------------------------

@@ -1,0 +1,41 @@
+title: Rundll32.exe Execution with JavaScript/VBS (CyberSentinel Adaptation)
+id: 4a6c9f2d-8b1e-4d7a-a3b5-d7f2c9b4cc89
+status: test
+description: >-
+  Detects rundll32.exe being used to execute JavaScript or VBScript, a common
+  defense evasion technique. Adapted from SigmaHQ proc_creation_win_rundll32_js.
+
+  ADAPTATION NOTES:
+  - Fields 'Image' and 'CommandLine' map to SecurityEvent equivalents via FIELD_MAP.
+  - Image check with endswith covers both 'rundll32.exe' and 'RUNDLL32.EXE' (IGNORECASE).
+  - Requires both: process is rundll32 AND command line contains script markers.
+  - Original SigmaHQ has broader variants; this is the most compatible subset.
+
+references:
+  - https://attack.mitre.org/techniques/T1218/011/
+  - https://lolbas-project.github.io/lolbas/Binaries/Rundll32/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_rundll32_not_from_system_dir.yml
+author: CyberSentinel adaptation (original SigmaHQ community)
+date: 2026-09-14
+logsource:
+  product: cybersentinel
+  category: process_creation
+detection:
+  selection_image:
+    Image|endswith: 'rundll32.exe'
+  selection_script:
+    CommandLine|contains:
+      - 'javascript:'
+      - 'vbscript:'
+      - '.js,'
+      - '.vbs,'
+      - 'mshtml,'
+      - 'shell32.dll,ShellExec_RunDLL'
+  condition: selection_image and selection_script
+falsepositives:
+  - Some enterprise software uses rundll32 with standard DLL entry points.
+  - Testing tools in controlled security lab environments.
+level: high
+tags:
+  - attack.defense-evasion
+  - attack.t1218.011

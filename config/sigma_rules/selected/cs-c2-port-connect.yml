@@ -1,0 +1,35 @@
+title: Connection to Known C2 Framework Ports (CyberSentinel Native)
+id: 0b9a4c7e-5d3f-4b8a-c6e1-f9d4c7b2ee01
+status: test
+description: >-
+  Detects a single outbound network connection to ports commonly used by
+  post-exploitation C2 frameworks (Metasploit, Cobalt Strike, etc.).
+  Stateless variant: fires on any single connection, unlike the aggregated
+  RULE-0006 which requires 3+ connections within 10 minutes.
+
+  CyberSentinel-native rule using SecurityEvent.dst_port directly.
+  NOTE: dst_port values are SigmaNumber (integer); the 'in' list uses equality
+  comparison, not substring matching. Port 14444 does NOT match port 4444.
+
+references:
+  - https://attack.mitre.org/techniques/T1071/
+author: CyberSentinel native rule
+date: 2026-09-14
+logsource:
+  product: cybersentinel
+  category: network
+detection:
+  selection:
+    dst_port:
+      - 4444
+      - 4445
+      - 1337
+      - 31337
+  condition: selection
+falsepositives:
+  - Internal lab environment running offensive tools on these ports.
+  - Application that coincidentally selected one of these ports.
+level: high
+tags:
+  - attack.command-and-control
+  - attack.t1071

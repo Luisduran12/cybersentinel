@@ -1,0 +1,49 @@
+title: Authentication Failure from External (Non-RFC1918) Source (CyberSentinel Native)
+id: 5b7d1f4c-9a2e-4b6d-b3a8-d2f6a1c9cc45
+status: test
+description: >-
+  Detects authentication failures where the source IP is NOT a private RFC1918
+  address. External authentication failures may indicate credential stuffing,
+  password spray, or brute force from an external attacker.
+
+  FIELD USAGE (CyberSentinel-native, identity mapping):
+  - outcome: contains any failure keyword
+  - src_ip: NOT RFC1918 → expressed as: match outcome AND NOT private_src
+  - Logsource category 'authentication' maps to event.category='authentication'
+
+  NOTE: Sigma 'not' condition on a startswith list correctly handles the
+  exclusion of private IPs. The 'not' is applied to the entire OR group.
+  This covers IPv4 only; IPv6 is not handled by SecurityEvent.src_ip.
+
+references:
+  - https://attack.mitre.org/techniques/T1110/003/
+  - https://attack.mitre.org/techniques/T1078/
+author: CyberSentinel native rule
+date: 2026-09-14
+logsource:
+  product: cybersentinel
+  category: authentication
+detection:
+  selection_failure:
+    outcome|contains:
+      - 'failure'
+      - 'failed'
+      - 'denied'
+  filter_private_src:
+    src_ip|startswith:
+      - "10."
+      - "192.168."
+      - "172.16."
+      - "172.17."
+      - "172.18."
+      - "172.19."
+      - "172.20."
+      - "127."
+  condition: selection_failure and not filter_private_src
+falsepositives:
+  - Remote VPN users authenticating before tunnel is fully established.
+  - Cloud-based identity provider forwarding auth requests.
+level: medium
+tags:
+  - attack.credential-access
+  - attack.t1110.003

@@ -1,0 +1,37 @@
+title: WMIC Remote Process Execution (CyberSentinel Adaptation)
+id: 2d7f4a1c-9e3b-4c8a-d5f6-b9c3e7a1a167
+status: test
+description: >-
+  Detects wmic.exe being used to execute processes, a common Living Off the Land
+  technique used for lateral movement and execution. Adapted from SigmaHQ
+  proc_creation_win_wmic_process_call.
+
+  ADAPTATION NOTES:
+  - Field 'CommandLine' maps to SecurityEvent.command_line via FIELD_MAP.
+  - 'contains|all' ensures both 'wmic' and 'process call create' appear together.
+  - Original SigmaHQ rule also checks Image; omitted due to process_name limitations.
+
+references:
+  - https://attack.mitre.org/techniques/T1047/
+  - https://lolbas-project.github.io/lolbas/Binaries/Wmic/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_wmic_process_call_creation.yml
+author: CyberSentinel adaptation (original SigmaHQ community)
+date: 2026-09-14
+logsource:
+  product: cybersentinel
+  category: process_creation
+detection:
+  selection:
+    CommandLine|contains|all:
+      - 'wmic'
+      - 'process'
+      - 'call'
+      - 'create'
+  condition: selection
+falsepositives:
+  - Legitimate WMI-based automation and management scripts.
+  - Software deployment tools using WMI for remote execution.
+level: high
+tags:
+  - attack.execution
+  - attack.t1047

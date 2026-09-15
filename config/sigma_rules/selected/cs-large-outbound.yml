@@ -1,0 +1,29 @@
+title: Large Outbound Data Transfer - Possible Exfiltration (CyberSentinel Native)
+id: 6f3d8b5e-2c7a-4e1b-b9a4-e8b5a2f3dd90
+status: test
+description: >-
+  Detects outbound network transfers larger than 100 MB in a single flow event.
+  Possible data exfiltration via alternative protocol or cloud service.
+  CyberSentinel-native rule (no SigmaHQ equivalent using raw byte counts).
+
+  Uses SecurityEvent.bytes_out directly (CyberSentinel field name).
+  No field mapping required (bytes_out → bytes_out identity mapping).
+
+references:
+  - https://attack.mitre.org/techniques/T1048/
+author: CyberSentinel native rule
+date: 2026-09-14
+logsource:
+  product: cybersentinel
+  category: network
+detection:
+  selection:
+    bytes_out|gt: 104857600
+  condition: selection
+falsepositives:
+  - Authorized backup or cloud sync operations.
+  - Large file transfers approved by data governance policy.
+level: critical
+tags:
+  - attack.exfiltration
+  - attack.t1048

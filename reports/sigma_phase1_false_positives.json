@@ -1,0 +1,16 @@
+{
+  "metadata": {
+    "generated": "2026-09-14T22:30:11.133508+00:00",
+    "note": "Solo se analizan FP de reglas evaluables. Las reglas NOT EVALUABLE no generan FP en este dataset."
+  },
+  "false_positive_records": [],
+  "summary": {
+    "rules_with_fp": 0,
+    "total_fp": 0,
+    "decisions": {
+      "ajustable": 0,
+      "excluir": 0,
+      "aceptable": 0
+    }
+  }
+}

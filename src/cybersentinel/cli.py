@@ -68,12 +68,13 @@ def cmd_analyze(args: argparse.Namespace) -> int:
         rules_dir=DEFAULT_RULES,
         policy=_load_policy(),
         audit_path=args.audit,
-        # --use-llm solo fuerza el modo si se pide; si no, manda la configuracion.
-        use_llm=True if args.use_llm else None,
         settings=settings,
+        enable_llm=not args.no_llm,
+        enable_rag=not args.no_rag,
+        enable_cti=not args.no_cti,
     )
     report = pipeline.run_file(input_path)
-    _render_report(report)
+    _render_report(report, mostrar_todo=args.all)
 
     if args.json:
         Path(args.json).write_text(
@@ -83,7 +84,12 @@ def cmd_analyze(args: argparse.Namespace) -> int:
 
     if args.navigator:
         from .correlation import navigator
-        capa = navigator.layer_from_incidents([r.incident for r in report.results])
+        # Phase 7: IncidentResult has .evidence (DetectionEvidence) with .mitre_context
+        # layer_from_incidents accepts Any iterable — pass evidence objects directly.
+        capa = navigator.layer_from_incidents(
+            [r.evidence for r in report.results],
+            name="CyberSentinel — incidentes detectados",
+        )
         ruta = navigator.save_layer(capa, args.navigator)
         console.print(
             f"[green]Capa de ATT&CK Navigator guardada en:[/green] {ruta}\n"
@@ -92,7 +98,8 @@ def cmd_analyze(args: argparse.Namespace) -> int:
         )
 
     if args.text:
-        narrativas = "\n\n".join(r.narrative.to_text() for r in report.results)
+        # Phase 7: narrative is a plain str per IncidentResult (no .to_text())
+        narrativas = "\n\n".join(r.narrative for r in report.results)
         Path(args.text).write_text(
             narrativas or "No se detectaron incidentes.\n", encoding="utf-8"
         )
@@ -100,14 +107,47 @@ def cmd_analyze(args: argparse.Namespace) -> int:
     return 0
 
 
-def _render_report(report: PipelineReport) -> None:
+def _render_components(report: PipelineReport) -> None:
+    """
+    Qué componentes se ejecutaron de verdad.
+
+    Es lo primero que hay que poder ver: un pipeline en el que RAG o CTI no
+    tienen datos produce resultados válidos pero incompletos, y eso debe saberse
+    antes de leer ninguna conclusión.
+    """
+    tabla = Table(title="Estado de los componentes", box=box.SIMPLE)
+    tabla.add_column("Componente")
+    tabla.add_column("Estado")
+    for nombre, estado in report.component_status.items():
+        if estado.startswith("OK"):
+            color = "green"
+        elif estado.startswith(("NO_DATA", "UNAVAILABLE")):
+            color = "yellow"
+        else:
+            color = "dim"
+        tabla.add_row(nombre, f"[{color}]{estado}[/{color}]")
+    console.print(tabla)
+
+
+def _render_report(report: PipelineReport, mostrar_todo: bool = False) -> None:
+    console.print(f"\n[dim]run_id: {report.run_id}[/dim]")
+    _render_components(report)
+
     console.print(
         f"\n[bold]Eventos procesados:[/bold] {report.total_events}   "
         f"[bold]Hallazgos:[/bold] {report.total_findings}   "
-        f"[bold]Incidentes:[/bold] {len(report.results)}   "
-        f"[bold]Integridad auditoría:[/bold] "
-        f"{'[green]OK[/green]' if report.audit_integrity else '[red]COMPROMETIDA[/red]'}"
+        f"[bold]Secuencias correladas:[/bold] {len(report.correlated_incidents)}"
     )
+
+    if report.correlated_incidents:
+        console.print("\n[bold]Cadenas de ataque detectadas por correlación temporal:[/bold]")
+        for inc in report.correlated_incidents:
+            console.print(
+                f"   [cyan]{inc['incident_name']}[/cyan]: "
+                f"{' → '.join(inc['matched_sequence'])} "
+                f"[dim](confianza {inc['confidence']:.2f}, "
+                f"{inc['start_time'][11:19]}–{inc['end_time'][11:19]})[/dim]"
+            )
     if report.anomaly_threshold_used is not None:
         console.print(
             f"[dim]Umbral de anomalía aplicado: {report.anomaly_threshold_used:.3f} "
@@ -115,55 +155,97 @@ def _render_report(report: PipelineReport) -> None:
         )
     console.print()
 
-    if not report.results:
-        console.print("[dim]No se detectaron incidentes.[/dim]")
+    mostrados = report.results if mostrar_todo else report.findings
+    if not mostrados:
+        console.print(
+            "\n[dim]Ningún evento superó el umbral de alerta "
+            f"({int(len(report.results))} analizados). Usa --all para ver todos.[/dim]"
+        )
         return
 
-    for res in report.results:
-        inc = res.incident
-        sev_style = SEVERITY_STYLE.get(inc.max_severity.value, "white")
+    console.print(
+        f"\n[bold]Mostrando {len(mostrados)} de {len(report.results)} eventos "
+        f"{'(todos)' if mostrar_todo else '(solo hallazgos)'}[/bold]\n"
+    )
+    for res in mostrados:
+        ev_id = res.evidence.event_id
+        score = res.evidence.hybrid_score
+        sigma_hits = len(res.evidence.rule_matches)
+        cti_hits = len(res.evidence.cti_hits)
+        anomaly = res.evidence.anomaly_score
+        mitre_techs = res.evidence.mitre_context
+
+        # Determine severity from hybrid_score for display
+        if score >= 80:
+            sev_label, sev_style = "CRITICAL", "bold red"
+        elif score >= 60:
+            sev_label, sev_style = "HIGH", "red"
+        elif score >= 50:
+            sev_label, sev_style = "MEDIUM", "yellow"
+        else:
+            sev_label, sev_style = "LOW", "cyan"
+
         header = (
-            f"[bold]{inc.incident_id}[/bold]  ·  entidad [cyan]{inc.entity}[/cyan]  ·  "
-            f"riesgo [bold]{inc.risk_score}/100[/bold]  ·  "
-            f"severidad [{sev_style}]{inc.max_severity.value.upper()}[/{sev_style}]"
+            f"[bold]{ev_id}[/bold]  ·  "
+            f"score [{sev_style}]{score:.1f}/100[/{sev_style}]  ·  "
+            f"severidad [{sev_style}]{sev_label}[/{sev_style}]"
         )
         console.print(Panel(header, box=box.HEAVY, border_style=sev_style))
 
-        # Narrativa explicable
-        nar = res.narrative
-        console.print(f"[bold]Resumen:[/bold] {nar.summary}")
-        console.print(f"[bold]Razonamiento:[/bold] {nar.reasoning}")
-        console.print(f"[bold]Predicción:[/bold] {nar.prediction_text}")
-        console.print(f"[bold]Confianza global:[/bold] {nar.confidence:.0%}")
+        # Signals breakdown
+        console.print(f"  [bold]Sigma hits:[/bold] {sigma_hits}  |  "
+                      f"[bold]CTI hits:[/bold] {cti_hits}  |  "
+                      f"[bold]Anomaly score:[/bold] {anomaly:.3f}")
 
-        # Técnicas ATT&CK
-        if inc.techniques:
+        # MITRE techniques from evidence
+        if mitre_techs:
             techs = ", ".join(
-                f"{t} ({mitre.technique_name(t)})" for t in inc.techniques
+                f"{t} ({mitre.technique_name(t)})" for t in mitre_techs
             )
-            console.print(f"[bold]MITRE ATT&CK:[/bold] {techs}")
+            console.print(f"  [bold]MITRE ATT&CK:[/bold] {techs}")
 
-        # Evidencia
-        console.print("[bold]Evidencia:[/bold]")
-        for e in nar.evidence:
-            console.print(f"   [dim]{e}[/dim]")
+        evid = res.evidence
+        console.print(f"  [bold]event_ref:[/bold] [dim]{evid.event_ref}[/dim]  |  "
+                      f"[bold]entidad:[/bold] {evid.entity}  |  "
+                      f"[bold]estado:[/bold] {evid.detection_status}")
 
-        # Recomendaciones con veredicto de gobernanza
-        table = Table(title="Contramedidas recomendadas (gobernanza ética)", box=box.SIMPLE)
-        table.add_column("Prio", justify="center")
-        table.add_column("Acción")
-        table.add_column("Objetivo")
-        table.add_column("Decisión")
-        for rec in res.recommendations:
-            d = rec.verdict.decision.value
-            style = DECISION_STYLE.get(d, "white")
-            table.add_row(
-                str(rec.priority),
-                rec.verdict.action.action_type,
-                rec.verdict.action.target,
-                f"[{style}]{d}[/{style}]",
+        if evid.temporal_context:
+            for secuencia in evid.temporal_context:
+                console.print(f"  [bold]Correlación:[/bold] {secuencia}")
+
+        if evid.cti_hits:
+            for hit in evid.cti_hits:
+                actores = ", ".join(a.name for a in hit.related_actors) or "sin actor asociado"
+                console.print(
+                    f"  [bold]CTI:[/bold] {hit.observable_value} "
+                    f"[dim]({', '.join(hit.indicator.labels)} · {actores})[/dim]"
+                )
+        else:
+            console.print("  [bold]CTI:[/bold] [dim]CTI_MATCH=NONE[/dim]")
+
+        if evid.rag_context:
+            fuentes = ", ".join(sorted({c.filename or c.source_uri for c in evid.rag_context}))
+            console.print(f"  [bold]Contexto RAG:[/bold] [dim]{fuentes}[/dim]")
+        else:
+            console.print("  [bold]Contexto RAG:[/bold] [dim]sin contexto recuperado[/dim]")
+
+        estado_llm = evid.llm_status
+        color_llm = "green" if estado_llm == "OK" else "yellow"
+        console.print(
+            f"  [bold]LLM:[/bold] [{color_llm}]{estado_llm}[/{color_llm}]"
+            f"{'  [yellow](respaldo determinista)[/yellow]' if evid.fallback_used else ''}"
+        )
+        if res.narrative:
+            console.print(f"  [bold]Explicación:[/bold] {res.narrative}")
+
+        if res.recommendations:
+            acciones = ", ".join(
+                f"{r.verdict.action.action_type}[{r.verdict.decision.value}]"
+                for r in res.recommendations[:5]
             )
-        console.print(table)
+            console.print(f"  [bold]Contramedidas:[/bold] [dim]{acciones}[/dim]")
+        console.print()
+
         console.print()
 
 
@@ -487,6 +569,125 @@ def _render_evaluation(evaluation: Any) -> None:
     )
 
 
+DEFAULT_FEEDBACK_STORE = ROOT / "data" / "feedback" / "decisions.jsonl"
+
+
+def cmd_decide(args: argparse.Namespace) -> int:
+    """
+    Registra la decisión de un analista sobre un hallazgo (human-in-the-loop).
+
+    Cierra el bucle: la evidencia que el agente produjo se sella dentro de la
+    decisión, de modo que un cambio posterior en las reglas no pueda reescribir
+    lo que el analista vio cuando decidió.
+    """
+    from datetime import datetime, timezone
+
+    from .governance.dataset_manager import DatasetManager
+    from .governance.feedback import HumanDecision, StructuredDecision
+
+    reporte_path = Path(args.report)
+    if not reporte_path.exists():
+        console.print(f"[red]No existe el reporte:[/red] {reporte_path}")
+        console.print("[dim]Genéralo con: analyze -i <telemetría> --json <reporte>[/dim]")
+        return 1
+
+    reporte = json.loads(reporte_path.read_text(encoding="utf-8"))
+    incidentes = reporte.get("incidents", [])
+    objetivo = next(
+        (i for i in incidentes if i["evidence"].get("event_ref") == args.event_ref), None
+    )
+    if objetivo is None:
+        console.print(f"[red]No hay ningún evento con event_ref={args.event_ref}[/red]")
+        console.print(
+            "[dim]Los event_ref disponibles se ven en la salida de analyze "
+            "o en el campo evidence.event_ref del reporte.[/dim]"
+        )
+        return 1
+
+    evidencia = objetivo["evidence"]
+    manager = DatasetManager(store_path=args.store or DEFAULT_FEEDBACK_STORE)
+    decision = StructuredDecision(
+        detection_id=f"{evidencia['run_id']}:{evidencia['event_ref']}",
+        event_id=evidencia["event_ref"],
+        # Marca de tiempo del EVENTO, no del etiquetado: usar la segunda
+        # introduciría fuga temporal al construir particiones.
+        timestamp=datetime.fromisoformat(evidencia["created_at"]),
+        analyst_decision=HumanDecision(args.decision),
+        confidence=args.confidence,
+        reason=args.reason,
+        # La evidencia queda sellada tal y como la vio el analista.
+        selected_evidence=evidencia,
+        analyst_id=args.analyst,
+        model_version=reporte.get("component_status", {}).get("ml", "desconocida"),
+        rule_version=reporte.get("component_status", {}).get("sigma", "desconocida"),
+        data_source=str(reporte_path),
+        created_at=datetime.now(tz=timezone.utc),
+    )
+
+    if not manager.submit_decision(decision):
+        console.print("[red]La decisión fue rechazada por el gestor de dataset.[/red]")
+        return 2
+
+    console.print(Panel.fit(
+        f"[bold cyan]Decisión registrada[/bold cyan]\n"
+        f"[dim]{decision.fingerprint()}[/dim]", box=box.ROUNDED,
+    ))
+    console.print(f"  [bold]Evento:[/bold] {decision.event_id}")
+    console.print(f"  [bold]Decisión:[/bold] {decision.analyst_decision.value}")
+    console.print(f"  [bold]Analista:[/bold] {decision.analyst_id}   "
+                  f"[bold]Confianza:[/bold] {decision.confidence:.2f}")
+    console.print(f"  [bold]run_id:[/bold] [dim]{evidencia['run_id']}[/dim]")
+
+    metricas = manager.get_metrics()
+    console.print(f"\n[bold]Estado del dataset de feedback:[/bold] {metricas}")
+    console.print(f"[green]Persistido en:[/green] {manager.store_path}")
+
+    if args.audit:
+        log = AuditLog(args.audit)
+        log.record(
+            actor=f"human:{decision.analyst_id}",
+            action="analyst_decision",
+            detail={
+                "run_id": evidencia["run_id"],
+                "event_ref": decision.event_id,
+                "decision": decision.analyst_decision.value,
+                "confidence": decision.confidence,
+                "reason": decision.reason,
+                "fingerprint": decision.fingerprint(),
+            },
+        )
+        console.print(f"[green]Registrado en la auditoría:[/green] {args.audit}")
+    return 0
+
+
+def cmd_feedback_status(args: argparse.Namespace) -> int:
+    """Muestra el estado del dataset de decisiones humanas."""
+    from .governance.dataset_manager import DatasetManager
+
+    ruta = Path(args.store or DEFAULT_FEEDBACK_STORE)
+    manager = DatasetManager(store_path=ruta)
+    if not ruta.exists():
+        console.print(f"[yellow]Todavía no hay decisiones registradas en {ruta}.[/yellow]")
+        return 0
+
+    console.print(Panel.fit(
+        "[bold cyan]CyberSentinel[/bold cyan] — Dataset de feedback humano",
+        box=box.ROUNDED,
+    ))
+    metricas = manager.get_metrics()
+    tabla = Table(box=box.SIMPLE)
+    tabla.add_column("Métrica")
+    tabla.add_column("Valor", justify="right")
+    for clave, valor in metricas.items():
+        tabla.add_row(str(clave), str(valor))
+    console.print(tabla)
+    console.print(
+        "[dim]UNCERTAIN y CONFLICT no son etiquetas de entrenamiento: quedan "
+        "registradas, pero no alimentan un modelo supervisado.[/dim]"
+    )
+    return 0
+
+
 def cmd_verify_audit(args: argparse.Namespace) -> int:
     path = Path(args.audit)
     if not path.exists():
@@ -517,6 +718,11 @@ def main(argv: list[str] | None = None) -> int:
     p_an.add_argument("--text", help="Ruta para volcar las narrativas en texto plano "
                                      "(util para pegarlas en la memoria).")
     p_an.add_argument("--navigator", help="Ruta para exportar una capa de ATT&CK Navigator.")
+    p_an.add_argument("--all", action="store_true",
+                      help="Mostrar todos los eventos, no solo los hallazgos.")
+    p_an.add_argument("--no-llm", action="store_true", help="Desactivar la explicación.")
+    p_an.add_argument("--no-rag", action="store_true", help="Desactivar la recuperación de contexto.")
+    p_an.add_argument("--no-cti", action="store_true", help="Desactivar el enriquecimiento CTI.")
     p_an.add_argument("--config", help="Ruta a config.yaml (por defecto config/config.yaml).")
     p_an.add_argument("--model", help="Modelo de predicción entrenado (JSON). "
                                       "Sin él se usa la heurística canónica.")
@@ -572,6 +778,26 @@ def main(argv: list[str] | None = None) -> int:
     p_ed.add_argument("--curves", help="Ruta del PNG con las curvas ROC y precisión-exhaustividad.")
     p_ed.add_argument("--json", help="Ruta para volcar las métricas en JSON.")
     p_ed.set_defaults(func=cmd_evaluate_detection)
+
+    p_hd = sub.add_parser(
+        "decide", help="Registra la decisión de un analista sobre un hallazgo (HITL).",
+    )
+    p_hd.add_argument("--report", required=True, help="Reporte JSON producido por analyze.")
+    p_hd.add_argument("--event-ref", required=True, help="event_ref del hallazgo a etiquetar.")
+    p_hd.add_argument("--decision", required=True,
+                      choices=("TRUE_POSITIVE", "FALSE_POSITIVE", "BENIGN", "UNCERTAIN"))
+    p_hd.add_argument("--analyst", required=True, help="Identificador del analista.")
+    p_hd.add_argument("--reason", default="", help="Justificación de la decisión.")
+    p_hd.add_argument("--confidence", type=float, default=1.0, help="Confianza (0.0–1.0).")
+    p_hd.add_argument("--store", help="Ruta del almacén de decisiones (JSONL).")
+    p_hd.add_argument("--audit", help="Ruta del log de auditoría donde registrar la decisión.")
+    p_hd.set_defaults(func=cmd_decide)
+
+    p_fs = sub.add_parser(
+        "feedback-status", help="Estado del dataset de decisiones humanas.",
+    )
+    p_fs.add_argument("--store", help="Ruta del almacén de decisiones (JSONL).")
+    p_fs.set_defaults(func=cmd_feedback_status)
 
     p_va = sub.add_parser("verify-audit", help="Verifica la integridad del log de auditoría.")
     p_va.add_argument("--audit", default="audit_log.jsonl")

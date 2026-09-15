@@ -64,6 +64,19 @@ def _timestamp(record: dict[str, Any], *keys: str) -> tuple[datetime, list[str]]
 def parse_sysmon(record: dict[str, Any]) -> SecurityEvent:
     """Normaliza un evento estilo Sysmon (creación de proceso, red, etc.)."""
     ts, tags = _timestamp(record, "timestamp", "UtcTime", "@timestamp")
+    
+    properties = {}
+    for key, source_keys in {
+        "parent_command_line": ("ParentCommandLine",),
+        "hashes": ("Hashes",),
+        "original_file_name": ("OriginalFileName",),
+        "current_directory": ("CurrentDirectory",),
+        "integrity_level": ("IntegrityLevel",),
+    }.items():
+        val = _s(record, *source_keys)
+        if val is not None:
+            properties[key] = val
+
     return SecurityEvent(
         event_id=str(_s(record, "event_id", "EventID", default="")) or "sysmon",
         timestamp=ts,
@@ -78,6 +91,7 @@ def parse_sysmon(record: dict[str, Any]) -> SecurityEvent:
         dst_ip=_s(record, "dst_ip", "DestinationIp"),
         dst_port=_maybe_int(_s(record, "dst_port", "DestinationPort")),
         outcome=_s(record, "outcome", default="unknown"),
+        properties=properties,
         raw=record,
         tags=tags,
     )

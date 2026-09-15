@@ -3,8 +3,23 @@ numpy>=1.24
 pandas>=2.0
 PyYAML>=6.0
 rich>=13.0
-# Opcional: solo si se usa --use-llm
+# pySigma: parser/AST para reglas Sigma publicas
+pysigma>=1.5.0,<2.0
+
+# CTI: parseo de bundles STIX 2.1
+stix2>=3.0
+
+# RAG: segmentacion, indice vectorial y contrato de embeddings.
+# Los embeddings por defecto son locales (LSA sobre TF-IDF con scikit-learn):
+# no hacen falta descargas ni red en tiempo de ejecucion.
+langchain-core>=0.3
+langchain-community>=0.3
+langchain-text-splitters>=0.3
+faiss-cpu>=1.8
+# Opcional: explicacion con Claude. Sin estos paquetes (o sin ANTHROPIC_API_KEY)
+# el agente usa el respaldo determinista y lo declara en llm_status.
 # anthropic>=0.40
+# langchain-anthropic>=0.3
 
 # Opcional: solo para exportar las curvas ROC / precision-exhaustividad a PNG
 # matplotlib>=3.7

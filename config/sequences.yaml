@@ -1,0 +1,34 @@
+# Reglas de correlacion temporal (TemporalCorrelator).
+#
+# Una regla de secuencia se cumple cuando las tecnicas indicadas aparecen EN ESE
+# ORDEN, sobre la misma entidad, dentro de la ventana temporal. Es lo que
+# distingue tres alertas sueltas de una cadena de ataque.
+#
+# Las tecnicas referenciadas deben existir en config/rules/: correlacionar sobre
+# tecnicas que ninguna regla puede disparar no produciria nunca una secuencia.
+
+sequences:
+  - name: "Acceso por fuerza bruta seguido de ejecucion"
+    techniques_sequence: ["T1110", "T1059"]
+    window_minutes: 30
+    group_by: ["host"]
+
+  - name: "Ejecucion seguida de persistencia"
+    techniques_sequence: ["T1059", "T1053"]
+    window_minutes: 30
+    group_by: ["host"]
+
+  - name: "Descubrimiento seguido de movimiento lateral"
+    techniques_sequence: ["T1046", "T1021"]
+    window_minutes: 60
+    group_by: ["host"]
+
+  - name: "Canal de mando seguido de exfiltracion"
+    techniques_sequence: ["T1071", "T1048"]
+    window_minutes: 60
+    group_by: ["host"]
+
+  - name: "Cadena completa: credenciales, ejecucion, persistencia y exfiltracion"
+    techniques_sequence: ["T1110", "T1059", "T1053", "T1048"]
+    window_minutes: 120
+    group_by: ["host"]

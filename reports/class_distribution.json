@@ -1,0 +1,16 @@
+{
+  "total": 2011,
+  "total_attacks": 11,
+  "train": {
+    "total": 1206,
+    "attacks": 0
+  },
+  "val": {
+    "total": 402,
+    "attacks": 0
+  },
+  "test": {
+    "total": 403,
+    "attacks": 11
+  }
+}

@@ -1,0 +1,32 @@
+title: Whoami.exe Execution (CyberSentinel Adaptation)
+id: 7a912c1e-e8f4-4d23-8c3b-f1a2e5d9bb12
+status: test
+description: >-
+  Detects execution of whoami.exe, commonly used by attackers for situational
+  awareness after initial access. Adapted from SigmaHQ proc_creation_win_whoami.
+
+  ADAPTATION NOTES:
+  - Field 'CommandLine' maps to SecurityEvent.command_line via FIELD_MAP.
+  - Field 'Image' maps to SecurityEvent.process_name via FIELD_MAP.
+  - Image check uses endswith since process_name contains basename only
+    (not full path). Original checks 'Image|endswith: \whoami.exe'.
+
+references:
+  - https://attack.mitre.org/techniques/T1033/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_whoami.yml
+author: CyberSentinel adaptation (original SigmaHQ community)
+date: 2026-09-14
+logsource:
+  product: cybersentinel
+  category: process_creation
+detection:
+  selection:
+    Image|endswith: 'whoami.exe'
+  condition: selection
+falsepositives:
+  - Legitimate administrator troubleshooting session context.
+  - Security audit scripts that verify running user context.
+level: medium
+tags:
+  - attack.discovery
+  - attack.t1033

@@ -1,0 +1,27 @@
+{
+  "TN_sample": [
+    {
+      "event_id": "benign_700",
+      "timestamp": "2026-09-15T09:45:10+00:00",
+      "command_line": "conhost.exe 0xffffffff",
+      "score": 0.4998,
+      "is_anomaly": false,
+      "true_label": 0,
+      "top_features": [
+        [
+          "is_night",
+          1000000000.0
+        ],
+        [
+          "hour_cos",
+          5.2515
+        ],
+        [
+          "cmd_special_chars",
+          0.6748
+        ]
+      ]
+    }
+  ],
+  "FN": []
+}

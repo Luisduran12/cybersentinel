@@ -30,24 +30,9 @@ from typing import Any
 import numpy as np
 
 from ..schema import SecurityEvent, Severity
+from ..ml.base import MLModel, Dataset
+from ..ml.features import FeatureExtractor, FEATURE_LABELS_ES
 
-# Etiquetas legibles para la narrativa explicable.
-FEATURE_LABELS_ES: dict[str, str] = {
-    "hour_sin": "hora del dia",
-    "hour_cos": "hora del dia",
-    "is_night": "actividad nocturna",
-    "is_failure": "resultado fallido",
-    "cmd_len": "longitud del comando",
-    "cmd_special_chars": "caracteres especiales en el comando",
-    "cmd_entropy": "entropia del comando (ofuscacion)",
-    "bytes_out_log": "volumen de datos saliente",
-    "bytes_in_log": "volumen de datos entrante",
-    "bytes_ratio": "asimetria entre datos enviados y recibidos",
-    "is_rare_port": "puerto de destino poco comun",
-    "port_rarity": "rareza del puerto en la linea base",
-    "user_rarity": "rareza del usuario en la linea base",
-    "src_ip_rarity": "rareza de la IP de origen en la linea base",
-}
 
 
 @dataclass
@@ -79,90 +64,10 @@ class AnomalyResult:
         return out
 
 
-class FeatureExtractor:
-    """
-    Convierte SecurityEvent en un vector numérico estable e interpretable.
-
-    Debe ajustarse (`fit`) sobre la línea base antes de extraer: las
-    características de rareza se calculan contra las frecuencias observadas en
-    esa línea base. Un valor nunca visto tiene rareza máxima (1.0).
-    """
-
-    FEATURE_NAMES = [
-        "hour_sin", "hour_cos", "is_night", "is_failure",
-        "cmd_len", "cmd_special_chars", "cmd_entropy",
-        "bytes_out_log", "bytes_in_log", "bytes_ratio",
-        "is_rare_port", "port_rarity",
-        "user_rarity", "src_ip_rarity",
-    ]
-
-    COMMON_PORTS = {80, 443, 22, 53, 25, 3389, 445, 139, 21, 23, 3306, 8080}
-    FAILURE_TOKENS = {"failure", "failed", "denied", "deny", "block", "401", "403"}
-
-    def __init__(self) -> None:
-        self._users: Counter[str] = Counter()
-        self._ips: Counter[str] = Counter()
-        self._ports: Counter[str] = Counter()
-        self._total = 0
-
-    def fit(self, events: list[SecurityEvent]) -> "FeatureExtractor":
-        """Aprende las frecuencias de entidades en la línea base."""
-        self._users = Counter(e.user or "" for e in events)
-        self._ips = Counter(e.src_ip or "" for e in events)
-        self._ports = Counter(str(e.dst_port or "") for e in events)
-        self._total = len(events)
-        return self
-
-    def _rarity(self, counter: Counter[str], value: str) -> float:
-        """
-        Rareza en [0, 1]: 0 = valor omnipresente, 1 = nunca visto en la base.
-
-        Es una frecuencia relativa invertida, no un hash: a diferencia de
-        codificar el usuario como un entero, esto sí tiene sentido ordinal
-        (más alto = más inusual) y por tanto es explicable.
-        """
-        if self._total == 0:
-            return 0.0
-        return 1.0 - (counter.get(value, 0) / self._total)
-
-    def extract(self, event: SecurityEvent) -> np.ndarray:
-        cmd = event.command_line or ""
-        hour = event.timestamp.hour
-        angle = 2.0 * np.pi * hour / 24.0
-        port = event.dst_port
-        vec = [
-            # La hora es cíclica: 23:00 y 00:00 son adyacentes, no opuestas.
-            float(np.sin(angle)),
-            float(np.cos(angle)),
-            1.0 if (hour < 6 or hour > 22) else 0.0,
-            1.0 if str(event.outcome).lower() in self.FAILURE_TOKENS else 0.0,
-            float(len(cmd)),
-            float(sum(1 for ch in cmd if not ch.isalnum() and not ch.isspace())),
-            _shannon_entropy(cmd),
-            float(np.log1p(event.bytes_out or 0)),
-            float(np.log1p(event.bytes_in or 0)),
-            # Asimetria del flujo: una exfiltracion envia mucho y recibe poco;
-            # una descarga hace lo contrario. 0.5 = simetrico o sin datos.
-            _ratio(event.bytes_out, event.bytes_in),
-            1.0 if (port and port not in self.COMMON_PORTS) else 0.0,
-            self._rarity(self._ports, str(port or "")),
-            self._rarity(self._users, event.user or ""),
-            self._rarity(self._ips, event.src_ip or ""),
-        ]
-        return np.array(vec, dtype=float)
-
-    def matrix(self, events: list[SecurityEvent]) -> np.ndarray:
-        if not events:
-            return np.empty((0, len(self.FEATURE_NAMES)))
-        return np.vstack([self.extract(e) for e in events])
-
-
-class AnomalyDetector:
-    """Detector de anomalías basado en Isolation Forest."""
+class AnomalyDetector(MLModel):
+    """Detector de anomalías basado en Isolation Forest (Fase 4)."""
 
     MIN_TRAINING_EVENTS = 5
-
-    #: Percentil de la línea base que marca el umbral sugerido de alerta.
     BASELINE_PERCENTILE = 99.0
 
     def __init__(
@@ -186,48 +91,79 @@ class AnomalyDetector:
 
     @property
     def suggested_threshold(self) -> float:
-        """
-        Umbral de alerta derivado de la línea base, no de una constante mágica.
-
-        Es el percentil 99 de las puntuaciones observadas al entrenar: por
-        definición, un lote que se parece a su línea base produce alrededor de un
-        1% de hallazgos, no un 8% fijado de antemano. Si el modelo no está
-        entrenado, cae a la frontera de decisión del algoritmo (0.5).
-        """
         if self._baseline_scores is None or self._baseline_scores.size == 0:
             return 0.5
         return float(
             max(np.percentile(self._baseline_scores, self.BASELINE_PERCENTILE), 0.5)
         )
 
-    def fit(self, events: list[SecurityEvent]) -> "AnomalyDetector":
+    def fit(self, dataset_or_events: Dataset | list[SecurityEvent]) -> "AnomalyDetector":
         """
-        Entrena el modelo sobre una línea base de comportamiento.
-
-        Nota metodológica: el pipeline entrena y puntúa sobre el mismo lote, lo
-        que es aceptable para una demo no supervisada pero no para medir. Para la
-        evaluación cuantitativa (Fase 4) hay que entrenar sobre tráfico
-        etiquetado como benigno y puntuar sobre un conjunto separado.
+        Entrena el modelo (y el FeatureExtractor) estrictamente usando el dataset provisto,
+        que DEBE ser únicamente el set de entrenamiento.
         """
         from sklearn.ensemble import IsolationForest
 
-        self.extractor.fit(events)
-        X = self.extractor.matrix(events)
+        if isinstance(dataset_or_events, list):
+            dataset = Dataset(X=np.array([]), events=dataset_or_events)
+        else:
+            dataset = dataset_or_events
+
+        # Si el dataset trae eventos, entrena los léxicos (usuarios, IPs, puertos)
+        if dataset.events and not self.extractor._is_fitted:
+            self.extractor.fit(dataset.events)
+        
+        # Si el Dataset X no viene pre-calculado pero hay eventos, extraemos
+        if dataset.X.size == 0 and dataset.events:
+            dataset.X = self.extractor.extract_batch(dataset.events)
+
+        X = dataset.X
         if X.shape[0] < self.MIN_TRAINING_EVENTS:
-            # Muy pocos datos para ML fiable; el modelo queda inactivo.
             self._model = None
             return self
+
         self._means = X.mean(axis=0)
-        self._stds = X.std(axis=0) + 1e-9
+        stds = X.std(axis=0)
+        stds[stds < 1e-5] = 1.0
+        self._stds = stds
+        
         Xn = (X - self._means) / self._stds
+        
         self._model = IsolationForest(
             contamination=self.contamination,
             random_state=self.random_state,
             n_estimators=self.n_estimators,
         ).fit(Xn)
-        # Distribución de la línea base: define qué es "raro aquí".
+        
         self._baseline_scores = np.clip(-self._model.score_samples(Xn), 0.0, 1.0)
         return self
+
+
+
+    def predict(self, dataset: Dataset) -> np.ndarray:
+        if not self.is_fitted or self._means is None:
+            return np.ones(dataset.X.shape[0])
+        Xn = (dataset.X - self._means) / self._stds
+        return self._model.predict(Xn)
+
+    def predict_proba(self, dataset: Dataset) -> np.ndarray:
+        if not self.is_fitted or self._means is None:
+            return np.zeros(dataset.X.shape[0])
+        Xn = (dataset.X - self._means) / self._stds
+        return np.clip(-self._model.score_samples(Xn), 0.0, 1.0)
+
+    def evaluate(self, dataset: Dataset) -> dict[str, float]:
+        from sklearn.metrics import roc_auc_score
+        preds = self.predict(dataset)
+        proba = self.predict_proba(dataset)
+        metrics = {}
+        if dataset.y is not None:
+            # -1 is anomaly (label 1), 1 is normal (label 0)
+            binary_preds = (preds == -1).astype(int)
+            metrics["accuracy"] = (binary_preds == dataset.y).mean()
+            if len(set(dataset.y)) > 1:
+                metrics["roc_auc"] = roc_auc_score(dataset.y, proba)
+        return metrics
 
     def score(self, events: list[SecurityEvent]) -> list[AnomalyResult]:
         """
@@ -243,10 +179,17 @@ class AnomalyDetector:
         if not events:
             return []
 
-        X = self.extractor.matrix(events)
+        # Soporte para backwards compatibility con `score(events)` pero
+        # usando `predict_proba` por debajo, lo que previene reentrenamiento indeseado.
+        
+        # Generar dataset dummy para usar predict_proba
+        X = self.extractor.extract_batch(events)
+        dataset = Dataset(X=X, events=events)
+        
+        scores = self.predict_proba(dataset)
+        preds = self.predict(dataset)
+        
         Xn = (X - self._means) / self._stds
-        scores = np.clip(-self._model.score_samples(Xn), 0.0, 1.0)
-        preds = self._model.predict(Xn)   # -1 anómalo, 1 normal
 
         return [
             AnomalyResult(

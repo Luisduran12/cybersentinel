@@ -1,0 +1,41 @@
+title: Net.exe Domain and User Reconnaissance (CyberSentinel Adaptation)
+id: b4c8f3a7-2d1e-4f9a-9c6b-e3d7a8f1cc23
+status: test
+description: >-
+  Detects net.exe / net1.exe commands used for user and group enumeration.
+  Adapted from SigmaHQ proc_creation_win_net_recon.
+
+  ADAPTATION NOTES:
+  - Field 'CommandLine' maps to SecurityEvent.command_line via FIELD_MAP.
+  - 'contains|any' expands to OR across the value list in pySigma AST.
+  - Original SigmaHQ rule also checks Image (net.exe/net1.exe); omitted here
+    since process_name detail may vary. CommandLine check is sufficient.
+
+references:
+  - https://attack.mitre.org/techniques/T1087/
+  - https://attack.mitre.org/techniques/T1069/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_net_groups_and_accounts_recon.yml
+author: CyberSentinel adaptation (original SigmaHQ community)
+date: 2026-09-14
+logsource:
+  product: cybersentinel
+  category: process_creation
+detection:
+  selection:
+    CommandLine|contains:
+      - 'net user'
+      - 'net group'
+      - 'net localgroup'
+      - 'net accounts'
+      - 'net1 user'
+      - 'net1 group'
+      - 'net1 localgroup'
+  condition: selection
+falsepositives:
+  - System administrators checking user accounts.
+  - Helpdesk scripts for user context verification.
+level: medium
+tags:
+  - attack.discovery
+  - attack.t1087
+  - attack.t1069

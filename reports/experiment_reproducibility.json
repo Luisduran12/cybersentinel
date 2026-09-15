@@ -1,0 +1,10 @@
+{
+  "version": "1.1",
+  "seed": 42,
+  "timestamp": "2026-09-14T23:12:39.328224+00:00",
+  "model": "IsolationForest",
+  "hyperparameters": {
+    "contamination": "auto",
+    "n_estimators": 200
+  }
+}

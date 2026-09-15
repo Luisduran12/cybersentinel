@@ -1,0 +1,249 @@
+{
+  "metadata": {
+    "generated": "2026-09-14T22:30:11.133508+00:00",
+    "python_version": "3.11.15",
+    "pysigma_version": "1.5.0",
+    "git_commit": "fbfcef9",
+    "dataset": "/home/user/cybersentinel/data/synthetic_flows_unsw_format.csv",
+    "dataset_events": 5000,
+    "dataset_attacks": 500,
+    "dataset_benign": 4500,
+    "dataset_attack_categories": {
+      "Exfiltration": 46,
+      "Exploits": 141,
+      "Reconnaissance": 162,
+      "DoS": 93,
+      "Backdoor": 58
+    },
+    "random_seed": 42,
+    "total_eval_time_ms": 133.396
+  },
+  "rules": [
+    {
+      "rule_id": "5b7d1f4c-9a2e-4b6d-b3a8-d2f6a1c9cc45",
+      "rule_title": "Authentication Failure from External (Non-RFC1918) Source (CyberSentinel Native)",
+      "mitre_technique": "T1110.003",
+      "mitre_tactic": "credential-access",
+      "evaluable_on_unsw_nb15": false,
+      "not_evaluable_reason": "Requiere category=authentication, outcome con fallo y src_ip externo. Misma razón que cs-auth-failure: UNSW-NB15 no tiene telemetría de autenticación."
+    },
+    {
+      "rule_id": "1c8e3a6d-5b7f-4d9e-a4c2-c7b5e2d8bb34",
+      "rule_title": "Authentication Failure - Single Event (CyberSentinel Native)",
+      "mitre_technique": "T1110",
+      "mitre_tactic": "credential-access",
+      "evaluable_on_unsw_nb15": false,
+      "not_evaluable_reason": "Requiere category=authentication y campo outcome con 'failure'/'failed'/'denied'. UNSW-NB15 no contiene eventos de autenticación; el campo 'state' de UNSW mapea a outcome pero la categoría del evento es 'network', no 'authentication'."
+    },
+    {
+      "rule_id": "0b9a4c7e-5d3f-4b8a-c6e1-f9d4c7b2ee01",
+      "rule_title": "Connection to Known C2 Framework Ports (CyberSentinel Native)",
+      "mitre_technique": "T1071",
+      "mitre_tactic": "command-and-control",
+      "evaluable_on_unsw_nb15": true,
+      "tp": 41,
+      "fp": 0,
+      "fn": 459,
+      "tn": 4500,
+      "total_fired": 41,
+      "total_events": 5000,
+      "precision": 1.0,
+      "recall": 0.082,
+      "f1": 0.1516,
+      "fpr": 0.0,
+      "exec_time_ms": 63.557
+    },
+    {
+      "rule_id": "9c3a1f8e-7b5d-4e2a-b6c3-d1f9a3e7ee45",
+      "rule_title": "Certutil Download via URL Cache (CyberSentinel Adaptation)",
+      "mitre_technique": "T1105",
+      "mitre_tactic": "command-and-control",
+      "evaluable_on_unsw_nb15": false,
+      "not_evaluable_reason": "Requiere category=process_creation y command_line con flags de certutil. UNSW-NB15 no contiene telemetría de procesos."
+    },
+    {
+      "rule_id": "6f3d8b5e-2c7a-4e1b-b9a4-e8b5a2f3dd90",
+      "rule_title": "Large Outbound Data Transfer - Possible Exfiltration (CyberSentinel Native)",
+      "mitre_technique": "T1048",
+      "mitre_tactic": "exfiltration",
+      "evaluable_on_unsw_nb15": true,
+      "tp": 0,
+      "fp": 0,
+      "fn": 500,
+      "tn": 4500,
+      "total_fired": 0,
+      "total_events": 5000,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "fpr": 0.0,
+      "exec_time_ms": 15.821
+    },
+    {
+      "rule_id": "5f8b2c9e-1d6a-4f3b-c7e2-a4b8d1f2ff56",
+      "rule_title": "Mshta.exe Execution - Defense Evasion (CyberSentinel Adaptation)",
+      "mitre_technique": "T1218.005",
+      "mitre_tactic": "defense-evasion",
+      "evaluable_on_unsw_nb15": false,
+      "not_evaluable_reason": "Requiere category=process_creation y process_name='mshta.exe'. UNSW-NB15 no contiene nombres de proceso."
+    },
+    {
+      "rule_id": "b4c8f3a7-2d1e-4f9a-9c6b-e3d7a8f1cc23",
+      "rule_title": "Net.exe Domain and User Reconnaissance (CyberSentinel Adaptation)",
+      "mitre_technique": "T1069",
+      "mitre_tactic": "discovery",
+      "evaluable_on_unsw_nb15": false,
+      "not_evaluable_reason": "Requiere category=process_creation y command_line con 'net user/group'. UNSW-NB15 no contiene telemetría de procesos Windows."
+    },
+    {
+      "rule_id": "7d2f5c8b-1e9a-4a3c-e7b6-b4e1f9a3aa23",
+      "rule_title": "Network Port Scan Tool Execution (CyberSentinel Native)",
+      "mitre_technique": "T1046",
+      "mitre_tactic": "discovery",
+      "evaluable_on_unsw_nb15": false,
+      "not_evaluable_reason": "Requiere category=process_creation y command_line con nombre de herramienta. UNSW-NB15 no contiene telemetría de procesos. Nota: el escaneo de puertos en UNSW-NB15 se observa como flujos de red, no como ejecución de proceso."
+    },
+    {
+      "rule_id": "3d6d4b49-5f2e-4e29-9e37-a1b7f3e5aa01",
+      "rule_title": "PowerShell Encoded Command (CyberSentinel Adaptation)",
+      "mitre_technique": "T1059.001",
+      "mitre_tactic": "execution",
+      "evaluable_on_unsw_nb15": false,
+      "not_evaluable_reason": "Requiere category=process_creation y campo command_line. UNSW-NB15 solo produce eventos category=network (flujos); command_line no está disponible en SecurityEvent normalizado desde UNSW."
+    },
+    {
+      "rule_id": "3e6b1a9c-8f5d-4c7b-d2a3-a1c8d5f6ff12",
+      "rule_title": "Internal RDP Connection - Possible Lateral Movement (CyberSentinel Native)",
+      "mitre_technique": "T1021.001",
+      "mitre_tactic": "lateral-movement",
+      "evaluable_on_unsw_nb15": true,
+      "tp": 0,
+      "fp": 0,
+      "fn": 500,
+      "tn": 4500,
+      "total_fired": 0,
+      "total_events": 5000,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "fpr": 0.0,
+      "exec_time_ms": 23.236
+    },
+    {
+      "rule_id": "8e1b5d3a-4f7c-4a9e-b2d3-c6a1f8e5bb78",
+      "rule_title": "Regsvr32.exe Silent Execution (CyberSentinel Adaptation)",
+      "mitre_technique": "T1218.010",
+      "mitre_tactic": "defense-evasion",
+      "evaluable_on_unsw_nb15": false,
+      "not_evaluable_reason": "Requiere category=process_creation, process_name y command_line. Ambos campos ausentes en UNSW-NB15."
+    },
+    {
+      "rule_id": "4a6c9f2d-8b1e-4d7a-a3b5-d7f2c9b4cc89",
+      "rule_title": "Rundll32.exe Execution with JavaScript/VBS (CyberSentinel Adaptation)",
+      "mitre_technique": "T1218.011",
+      "mitre_tactic": "defense-evasion",
+      "evaluable_on_unsw_nb15": false,
+      "not_evaluable_reason": "Requiere category=process_creation, process_name y command_line. Ambos campos ausentes en UNSW-NB15."
+    },
+    {
+      "rule_id": "1e5f7d2b-3a8c-4b6e-a9d1-c2f4e7b8dd34",
+      "rule_title": "Schtasks.exe Scheduled Task Creation (CyberSentinel Adaptation)",
+      "mitre_technique": "T1053.005",
+      "mitre_tactic": "persistence",
+      "evaluable_on_unsw_nb15": false,
+      "not_evaluable_reason": "Requiere category=process_creation y command_line con 'schtasks /create'. UNSW-NB15 no contiene telemetría de procesos."
+    },
+    {
+      "rule_id": "7a912c1e-e8f4-4d23-8c3b-f1a2e5d9bb12",
+      "rule_title": "Whoami.exe Execution (CyberSentinel Adaptation)",
+      "mitre_technique": "T1033",
+      "mitre_tactic": "discovery",
+      "evaluable_on_unsw_nb15": false,
+      "not_evaluable_reason": "Requiere category=process_creation y campo process_name. UNSW-NB15 no captura nombres de proceso ni rutas de binario."
+    },
+    {
+      "rule_id": "2d7f4a1c-9e3b-4c8a-d5f6-b9c3e7a1a167",
+      "rule_title": "WMIC Remote Process Execution (CyberSentinel Adaptation)",
+      "mitre_technique": "T1047",
+      "mitre_tactic": "execution",
+      "evaluable_on_unsw_nb15": false,
+      "not_evaluable_reason": "Requiere category=process_creation y command_line con 'wmic process call create'. UNSW-NB15 no contiene telemetría de procesos."
+    },
+    {
+      "rule_id": "RULE-0001",
+      "rule_title": "Fuerza bruta de autenticacion",
+      "mitre_technique": "T1110",
+      "mitre_tactic": "credential-access",
+      "evaluable_on_unsw_nb15": false,
+      "not_evaluable_reason": "Requiere category=authentication. UNSW-NB15 produce category=network."
+    },
+    {
+      "rule_id": "RULE-0006",
+      "rule_title": "Posible baliza C2 (conexiones repetidas a puerto de herramientas ofensivas)",
+      "mitre_technique": "T1071",
+      "mitre_tactic": "command-and-control",
+      "evaluable_on_unsw_nb15": false,
+      "not_evaluable_reason": "Requiere aggregation (3+ conexiones en 10 min). El evaluador stateless no soporta aggregation Sigma nativa. Además el count() temporal no está implementado para RulesEngine.evaluate_event()."
+    },
+    {
+      "rule_id": "RULE-0002",
+      "rule_title": "PowerShell ofuscado o codificado",
+      "mitre_technique": "T1059",
+      "mitre_tactic": "execution",
+      "evaluable_on_unsw_nb15": false,
+      "not_evaluable_reason": "Requiere category=process y command_line. UNSW-NB15 no tiene telemetría de proceso."
+    },
+    {
+      "rule_id": "RULE-0007",
+      "rule_title": "Exfiltracion por gran volumen de datos",
+      "mitre_technique": "T1048",
+      "mitre_tactic": "exfiltration",
+      "evaluable_on_unsw_nb15": true,
+      "tp": 0,
+      "fp": 0,
+      "fn": 500,
+      "tn": 4500,
+      "total_fired": 0,
+      "total_events": 5000,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "fpr": 0.0,
+      "exec_time_ms": 12.818
+    },
+    {
+      "rule_id": "RULE-0004",
+      "rule_title": "Escaneo de servicios de red",
+      "mitre_technique": "T1046",
+      "mitre_tactic": "discovery",
+      "evaluable_on_unsw_nb15": false,
+      "not_evaluable_reason": "Requiere category=process y command_line. UNSW-NB15 no tiene telemetría de proceso."
+    },
+    {
+      "rule_id": "RULE-0005",
+      "rule_title": "Conexion RDP entre hosts internos (posible movimiento lateral)",
+      "mitre_technique": "T1021",
+      "mitre_tactic": "lateral-movement",
+      "evaluable_on_unsw_nb15": true,
+      "tp": 0,
+      "fp": 0,
+      "fn": 500,
+      "tn": 4500,
+      "total_fired": 0,
+      "total_events": 5000,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "fpr": 0.0,
+      "exec_time_ms": 16.008
+    },
+    {
+      "rule_id": "RULE-0003",
+      "rule_title": "Creacion de tarea programada (posible persistencia)",
+      "mitre_technique": "T1053",
+      "mitre_tactic": "persistence",
+      "evaluable_on_unsw_nb15": false,
+      "not_evaluable_reason": "Requiere category=process y command_line. UNSW-NB15 no tiene telemetría de proceso."
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+title: Internal RDP Connection - Possible Lateral Movement (CyberSentinel Native)
+id: 3e6b1a9c-8f5d-4c7b-d2a3-a1c8d5f6ff12
+status: test
+description: >-
+  Detects RDP (port 3389) connections where both source and destination IP
+  are RFC1918 private addresses, indicating possible lateral movement.
+  CyberSentinel-native rule adapted to Sigma format from RULE-0005.
+
+  FIELD USAGE (CyberSentinel-native, no mapping required):
+  - dst_port: integer equality comparison via SigmaNumber
+  - src_ip / dst_ip: startswith check for RFC1918 ranges
+  Note: 172.16.0.0/12 is partially covered via '172.1' startswith prefix.
+  Full coverage requires regex (see cs-rdp-lateral-full.yml - NOT SELECTED).
+
+references:
+  - https://attack.mitre.org/techniques/T1021/001/
+author: CyberSentinel native rule (adapted from RULE-0005)
+date: 2026-09-14
+logsource:
+  product: cybersentinel
+  category: network
+detection:
+  selection_port:
+    dst_port: 3389
+  selection_src:
+    src_ip|startswith:
+      - "10."
+      - "192.168."
+      - "172.16."
+      - "172.17."
+      - "172.18."
+      - "172.19."
+      - "172.20."
+  selection_dst:
+    dst_ip|startswith:
+      - "10."
+      - "192.168."
+      - "172.16."
+      - "172.17."
+      - "172.18."
+      - "172.19."
+      - "172.20."
+  condition: selection_port and selection_src and selection_dst
+falsepositives:
+  - Routine remote desktop administration from the management jump host.
+  - Helpdesk support tools using RDP for internal assistance.
+level: medium
+tags:
+  - attack.lateral-movement
+  - attack.t1021.001

@@ -1,0 +1,41 @@
+title: Regsvr32.exe Silent Execution (CyberSentinel Adaptation)
+id: 8e1b5d3a-4f7c-4a9e-b2d3-c6a1f8e5bb78
+status: test
+description: >-
+  Detects regsvr32.exe execution with /s (silent) and /u (unregister) or
+  remote script references. Regsvr32 is a commonly abused LOLBin for bypassing
+  AppLocker and executing COM scriptlets. Adapted from SigmaHQ proc_creation_win_regsvr32.
+
+  ADAPTATION NOTES:
+  - Field 'Image' maps to SecurityEvent.process_name via FIELD_MAP (basename).
+  - Field 'CommandLine' maps to SecurityEvent.command_line via FIELD_MAP.
+  - 'endswith: regsvr32.exe' covers both Image and process_name correctly.
+  - Filter added to exclude known-benign patterns (DLL re-registration).
+
+references:
+  - https://attack.mitre.org/techniques/T1218/010/
+  - https://lolbas-project.github.io/lolbas/Binaries/Regsvr32/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_regsvr32_network_activity.yml
+author: CyberSentinel adaptation (original SigmaHQ community)
+date: 2026-09-14
+logsource:
+  product: cybersentinel
+  category: process_creation
+detection:
+  selection_image:
+    Image|endswith: 'regsvr32.exe'
+  selection_suspicious:
+    CommandLine|contains:
+      - '/s /u'
+      - 'scrobj.dll'
+      - 'http://'
+      - 'https://'
+      - '.sct'
+  condition: selection_image and selection_suspicious
+falsepositives:
+  - COM component unregistration during software uninstallation.
+  - IT automation tools registering COM objects remotely.
+level: high
+tags:
+  - attack.defense-evasion
+  - attack.t1218.010
