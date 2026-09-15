@@ -1,0 +1,79 @@
+{
+  "evaluation_type": "EXPLORATORY EVALUATION",
+  "run_id": "c6fecd1b-1b56-4ea2-85a7-5b4234a9336d",
+  "file": "UNSW-NB15_1.csv",
+  "stage": "full",
+  "test_metrics": {
+    "threshold": 0.681874,
+    "TP": 2120,
+    "TN": 31936,
+    "FP": 1978,
+    "FN": 1329,
+    "precision": 0.5173,
+    "recall": 0.6147,
+    "f1": 0.5618,
+    "fpr": 0.0583,
+    "specificity": 0.9417,
+    "accuracy": 0.9115,
+    "n": 37363,
+    "positives": 3449,
+    "positive_rate": 0.0923,
+    "roc_auc": 0.9462,
+    "pr_auc": 0.4561
+  },
+  "recall_by_category": {
+    "Generic": {
+      "total": 1201,
+      "detectados": 1164,
+      "recall": 0.9692
+    },
+    "Exploits": {
+      "total": 889,
+      "detectados": 406,
+      "recall": 0.4567
+    },
+    "Reconnaissance": {
+      "total": 378,
+      "detectados": 196,
+      "recall": 0.5185
+    },
+    "Fuzzers": {
+      "total": 780,
+      "detectados": 243,
+      "recall": 0.3115
+    },
+    "Shellcode": {
+      "total": 46,
+      "detectados": 20,
+      "recall": 0.4348
+    },
+    "DoS": {
+      "total": 133,
+      "detectados": 81,
+      "recall": 0.609
+    },
+    "Analysis": {
+      "total": 4,
+      "detectados": 1,
+      "recall": 0.25
+    },
+    "Worms": {
+      "total": 3,
+      "detectados": 2,
+      "recall": 0.6667
+    },
+    "Backdoor": {
+      "total": 15,
+      "detectados": 7,
+      "recall": 0.4667
+    }
+  },
+  "anomaly_score_stats_test": {
+    "min": 0.5261606721603115,
+    "max": 0.7637082283949795,
+    "mean": 0.5943990215994029,
+    "median": 0.5793717178302391,
+    "std": 0.05039796509696209,
+    "distinct": 19874
+  }
+}

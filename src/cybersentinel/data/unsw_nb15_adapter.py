@@ -126,9 +126,17 @@ def _clean(name: str) -> str:
 
 
 def _value(row: dict[str, Any], key: str) -> Any:
+    """
+    Valor de una columna, ya limpio.
+
+    Se retira el BOM además de los espacios: `UNSW-NB15_1.csv` empieza con un
+    BOM UTF-8, y como ese archivo no tiene cabecera el BOM queda pegado al
+    **primer valor de datos**, produciendo una IP de origen
+    `'\ufeff59.166.0.0'` que no casaria con nada.
+    """
     raw = row.get(key)
     if isinstance(raw, str):
-        raw = raw.strip()
+        raw = raw.strip().lstrip("\ufeff").strip()
     return None if raw in (None, "", "-", "0x000b") else raw
 
 

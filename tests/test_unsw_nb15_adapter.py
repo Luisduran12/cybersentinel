@@ -144,6 +144,19 @@ def test_file_hash_is_stable():
     assert len(file_sha256(ruta)) == 64
 
 
+def test_bom_does_not_contaminate_the_first_value():
+    """
+    `UNSW-NB15_1.csv` empieza con un BOM UTF-8. Como ese archivo no tiene
+    cabecera, el BOM queda pegado al primer valor de datos: sin limpiarlo, la
+    primera IP de origen del archivo seria '\ufeff59.166.0.0'.
+    """
+    adapter = UNSWNB15Adapter()
+    registro = adapter.to_record(
+        {"srcip": "\ufeff59.166.0.0", "dsport": "53", "label": "0"}, "prueba:1"
+    )
+    assert registro.event.src_ip == "59.166.0.0"
+
+
 def test_adapter_handles_hexadecimal_ports():
     """UNSW-NB15 escribe algunos puertos en hexadecimal."""
     adapter = UNSWNB15Adapter()

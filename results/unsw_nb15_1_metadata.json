@@ -1,0 +1,394 @@
+{
+  "evaluation_type": "EXPLORATORY EVALUATION",
+  "dataset": "UNSW-NB15",
+  "source": "https://research.unsw.edu.au/projects/unsw-nb15-dataset",
+  "file": "UNSW-NB15_1.csv",
+  "sha256": "7d851bbeabd27894ce39c8e78835c73341fc946652fb7743b9eff193b55eb511",
+  "file_size_bytes": 168979718,
+  "number_of_records": 700001,
+  "records_in_file": 700001,
+  "columns": [
+    "srcip",
+    "sport",
+    "dstip",
+    "dsport",
+    "proto",
+    "state",
+    "dur",
+    "sbytes",
+    "dbytes",
+    "sttl",
+    "dttl",
+    "sloss",
+    "dloss",
+    "service",
+    "sload",
+    "dload",
+    "spkts",
+    "dpkts",
+    "swin",
+    "dwin",
+    "stcpb",
+    "dtcpb",
+    "smeansz",
+    "dmeansz",
+    "trans_depth",
+    "res_bdy_len",
+    "sjit",
+    "djit",
+    "stime",
+    "ltime",
+    "sintpkt",
+    "dintpkt",
+    "tcprtt",
+    "synack",
+    "ackdat",
+    "is_sm_ips_ports",
+    "ct_state_ttl",
+    "ct_flw_http_mthd",
+    "is_ftp_login",
+    "ct_ftp_cmd",
+    "ct_srv_src",
+    "ct_srv_dst",
+    "ct_dst_ltm",
+    "ct_src_ltm",
+    "ct_src_dport_ltm",
+    "ct_dst_sport_ltm",
+    "ct_dst_src_ltm",
+    "attack_cat",
+    "label"
+  ],
+  "n_columns": 49,
+  "seed": 42,
+  "model_parameters": {
+    "algorithm": "IsolationForest",
+    "contamination": "auto",
+    "n_estimators": 200,
+    "random_state": 42,
+    "trained_on": "solo flujos benignos de TRAIN",
+    "n_training_records": 99091
+  },
+  "feature_mapping": {
+    "srcip": "src_ip",
+    "dstip": "dst_ip",
+    "sport": "src_port",
+    "dsport": "dst_port",
+    "proto": "protocol",
+    "service": "protocol (respaldo si falta proto)",
+    "sbytes": "bytes_out",
+    "dbytes": "bytes_in",
+    "state": "outcome",
+    "stime": "timestamp (epoch Unix; solo en los CSV crudos)",
+    "dur": "properties.duration_s",
+    "spkts": "properties.packets_out",
+    "dpkts": "properties.packets_in",
+    "sttl": "properties.ttl_out",
+    "dttl": "properties.ttl_in",
+    "sloss": "properties.loss_out",
+    "dloss": "properties.loss_in",
+    "sload": "properties.load_out",
+    "dload": "properties.load_in",
+    "attack_cat": "etiqueta de verdad-terreno (categoría)",
+    "label": "etiqueta de verdad-terreno (0/1)"
+  },
+  "feature_eligibility": {
+    "n_features_total": 19,
+    "n_features_informativas": 8,
+    "informativas": [
+      "bytes_out_log",
+      "bytes_in_log",
+      "bytes_ratio",
+      "is_rare_port",
+      "port_rarity",
+      "src_ip_rarity",
+      "events_in_window",
+      "time_since_prev_log"
+    ],
+    "detalle": {
+      "bytes_out_log": {
+        "std": 1.427298,
+        "informativa": true,
+        "motivo": "varía en los datos"
+      },
+      "bytes_in_log": {
+        "std": 2.335453,
+        "informativa": true,
+        "motivo": "varía en los datos"
+      },
+      "bytes_ratio": {
+        "std": 0.253002,
+        "informativa": true,
+        "motivo": "varía en los datos"
+      },
+      "is_rare_port": {
+        "std": 0.48275,
+        "informativa": true,
+        "motivo": "varía en los datos"
+      },
+      "port_rarity": {
+        "std": 0.069085,
+        "informativa": true,
+        "motivo": "varía en los datos"
+      },
+      "cmd_len": {
+        "std": 0.0,
+        "informativa": false,
+        "motivo": "constante: el dataset no aporta este campo"
+      },
+      "cmd_special_chars": {
+        "std": 0.0,
+        "informativa": false,
+        "motivo": "constante: el dataset no aporta este campo"
+      },
+      "cmd_entropy": {
+        "std": 0.0,
+        "informativa": false,
+        "motivo": "constante: el dataset no aporta este campo"
+      },
+      "user_rarity": {
+        "std": 0.0,
+        "informativa": false,
+        "motivo": "constante: el dataset no aporta este campo"
+      },
+      "src_ip_rarity": {
+        "std": 0.021347,
+        "informativa": true,
+        "motivo": "varía en los datos"
+      },
+      "has_hash": {
+        "std": 0.0,
+        "informativa": false,
+        "motivo": "constante: el dataset no aporta este campo"
+      },
+      "has_parent_cmd": {
+        "std": 0.0,
+        "informativa": false,
+        "motivo": "constante: el dataset no aporta este campo"
+      },
+      "is_process": {
+        "std": 0.0,
+        "informativa": false,
+        "motivo": "constante: el dataset no aporta este campo"
+      },
+      "is_network": {
+        "std": 0.0,
+        "informativa": false,
+        "motivo": "constante: el dataset no aporta este campo"
+      },
+      "hour_sin": {
+        "std": 0.0,
+        "informativa": false,
+        "motivo": "constante: el dataset no aporta este campo"
+      },
+      "hour_cos": {
+        "std": 0.0,
+        "informativa": false,
+        "motivo": "constante: el dataset no aporta este campo"
+      },
+      "is_night": {
+        "std": 0.0,
+        "informativa": false,
+        "motivo": "constante: el dataset no aporta este campo"
+      },
+      "events_in_window": {
+        "std": 1.127597,
+        "informativa": true,
+        "motivo": "varía en los datos"
+      },
+      "time_since_prev_log": {
+        "std": 0.619592,
+        "informativa": true,
+        "motivo": "varía en los datos"
+      }
+    }
+  },
+  "split": {
+    "method": "temporal 60/20/20",
+    "train": 112087,
+    "validation": 37362,
+    "test": 37363,
+    "threshold_selected_on": "VALIDATION"
+  },
+  "threshold": 0.6818738427574689,
+  "threshold_sweep_validation": [
+    {
+      "percentile": 50.0,
+      "threshold": 0.588895,
+      "precision": 0.3088,
+      "recall": 1.0,
+      "f1": 0.4719,
+      "fpr": 0.4088
+    },
+    {
+      "percentile": 52.5,
+      "threshold": 0.592656,
+      "precision": 0.3251,
+      "recall": 1.0,
+      "f1": 0.4907,
+      "fpr": 0.3791
+    },
+    {
+      "percentile": 55.0,
+      "threshold": 0.596671,
+      "precision": 0.3432,
+      "recall": 1.0,
+      "f1": 0.511,
+      "fpr": 0.3496
+    },
+    {
+      "percentile": 57.5,
+      "threshold": 0.600496,
+      "precision": 0.3634,
+      "recall": 1.0,
+      "f1": 0.5331,
+      "fpr": 0.32
+    },
+    {
+      "percentile": 60.0,
+      "threshold": 0.605319,
+      "precision": 0.3861,
+      "recall": 1.0,
+      "f1": 0.5571,
+      "fpr": 0.2904
+    },
+    {
+      "percentile": 62.5,
+      "threshold": 0.610945,
+      "precision": 0.4118,
+      "recall": 1.0,
+      "f1": 0.5834,
+      "fpr": 0.2609
+    },
+    {
+      "percentile": 65.0,
+      "threshold": 0.61687,
+      "precision": 0.441,
+      "recall": 0.9995,
+      "f1": 0.612,
+      "fpr": 0.2314
+    },
+    {
+      "percentile": 67.5,
+      "threshold": 0.625084,
+      "precision": 0.4732,
+      "recall": 0.9958,
+      "f1": 0.6415,
+      "fpr": 0.2025
+    },
+    {
+      "percentile": 70.0,
+      "threshold": 0.63585,
+      "precision": 0.5014,
+      "recall": 0.9742,
+      "f1": 0.662,
+      "fpr": 0.1769
+    },
+    {
+      "percentile": 72.5,
+      "threshold": 0.645238,
+      "precision": 0.5347,
+      "recall": 0.9522,
+      "f1": 0.6848,
+      "fpr": 0.1513
+    },
+    {
+      "percentile": 75.0,
+      "threshold": 0.659868,
+      "precision": 0.5664,
+      "recall": 0.917,
+      "f1": 0.7003,
+      "fpr": 0.1282
+    },
+    {
+      "percentile": 77.5,
+      "threshold": 0.67779,
+      "precision": 0.5772,
+      "recall": 0.8418,
+      "f1": 0.6848,
+      "fpr": 0.1126
+    },
+    {
+      "percentile": 80.0,
+      "threshold": 0.681874,
+      "precision": 0.6275,
+      "recall": 0.8192,
+      "f1": 0.7107,
+      "fpr": 0.0888
+    },
+    {
+      "percentile": 82.5,
+      "threshold": 0.681874,
+      "precision": 0.6275,
+      "recall": 0.8192,
+      "f1": 0.7107,
+      "fpr": 0.0888
+    },
+    {
+      "percentile": 85.0,
+      "threshold": 0.688578,
+      "precision": 0.7105,
+      "recall": 0.7007,
+      "f1": 0.7056,
+      "fpr": 0.0521
+    },
+    {
+      "percentile": 87.5,
+      "threshold": 0.688578,
+      "precision": 0.7105,
+      "recall": 0.7007,
+      "f1": 0.7056,
+      "fpr": 0.0521
+    },
+    {
+      "percentile": 90.0,
+      "threshold": 0.688578,
+      "precision": 0.7105,
+      "recall": 0.7007,
+      "f1": 0.7056,
+      "fpr": 0.0521
+    },
+    {
+      "percentile": 92.5,
+      "threshold": 0.69584,
+      "precision": 0.5338,
+      "recall": 0.2598,
+      "f1": 0.3495,
+      "fpr": 0.0414
+    },
+    {
+      "percentile": 95.0,
+      "threshold": 0.699123,
+      "precision": 0.5734,
+      "recall": 0.2255,
+      "f1": 0.3237,
+      "fpr": 0.0306
+    },
+    {
+      "percentile": 97.5,
+      "threshold": 0.709002,
+      "precision": 0.3968,
+      "recall": 0.0643,
+      "f1": 0.1107,
+      "fpr": 0.0179
+    }
+  ],
+  "run_id": "c6fecd1b-1b56-4ea2-85a7-5b4234a9336d",
+  "execution_timestamp": "2026-09-15T17:00:07+00:00",
+  "timings_s": {
+    "read": 28.63,
+    "fit": 6.02,
+    "score": 1.52,
+    "total": 40.15
+  },
+  "pipeline_stage_check": null,
+  "evaluable_window": {
+    "restringida": true,
+    "inicio": "2015-01-22T11:49:37+00:00",
+    "fin_evaluable": "2015-01-22T13:47:28+00:00",
+    "fin_archivo": "2015-01-22T19:44:02+00:00",
+    "registros_totales": 700001,
+    "registros_evaluables": 186812,
+    "registros_descartados": 513189,
+    "motivo": "tras el ultimo ataque no queda ninguna clase positiva, asi que un corte temporal dejaria TEST con una sola clase"
+  }
+}
