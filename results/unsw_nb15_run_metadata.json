@@ -1,0 +1,373 @@
+{
+  "run_id": "74a788fa-a87a-458b-8c30-c9f76b6d4372",
+  "timestamp": "2026-09-15T11:28:08+00:00",
+  "dataset": {
+    "name": "UNSW-NB15",
+    "source": "https://research.unsw.edu.au/projects/unsw-nb15-dataset",
+    "files": [
+      "UNSW-NB15_2.csv",
+      "UNSW-NB15_3.csv",
+      "UNSW-NB15_4.csv"
+    ],
+    "sha256": {
+      "UNSW-NB15_2.csv": "6130ad02873cc6069ae695cf2844f2e8c2e9a9a1b7532dd82ab8f202757cacf8",
+      "UNSW-NB15_3.csv": "ae990a96c3dfcd425ce2801aadb1727a34d5e0ae6d8215dbcdae60dedfaef640",
+      "UNSW-NB15_4.csv": "cdf563692d51d405541dd659ddcdad9fa01f001f05fe9fc4b67f00ca12fbc96a"
+    },
+    "records_loaded": 300000,
+    "limit_applied": 300000
+  },
+  "seed": 42,
+  "model_parameters": {
+    "algorithm": "IsolationForest",
+    "contamination": "auto",
+    "n_estimators": 200,
+    "random_state": 42,
+    "trained_on": "solo flujos benignos de TRAIN",
+    "n_training_records": 154873
+  },
+  "feature_mapping": {
+    "srcip": "src_ip",
+    "dstip": "dst_ip",
+    "sport": "src_port",
+    "dsport": "dst_port",
+    "proto": "protocol",
+    "service": "protocol (respaldo si falta proto)",
+    "sbytes": "bytes_out",
+    "dbytes": "bytes_in",
+    "state": "outcome",
+    "stime": "timestamp (epoch Unix; solo en los CSV crudos)",
+    "dur": "properties.duration_s",
+    "spkts": "properties.packets_out",
+    "dpkts": "properties.packets_in",
+    "sttl": "properties.ttl_out",
+    "dttl": "properties.ttl_in",
+    "sloss": "properties.loss_out",
+    "dloss": "properties.loss_in",
+    "sload": "properties.load_out",
+    "dload": "properties.load_in",
+    "attack_cat": "etiqueta de verdad-terreno (categoría)",
+    "label": "etiqueta de verdad-terreno (0/1)"
+  },
+  "feature_eligibility": {
+    "n_features_total": 19,
+    "n_features_informativas": 10,
+    "informativas": [
+      "bytes_out_log",
+      "bytes_in_log",
+      "bytes_ratio",
+      "is_rare_port",
+      "port_rarity",
+      "src_ip_rarity",
+      "hour_sin",
+      "hour_cos",
+      "events_in_window",
+      "time_since_prev_log"
+    ],
+    "detalle": {
+      "bytes_out_log": {
+        "std": 1.587906,
+        "informativa": true,
+        "motivo": "varía en los datos"
+      },
+      "bytes_in_log": {
+        "std": 2.398911,
+        "informativa": true,
+        "motivo": "varía en los datos"
+      },
+      "bytes_ratio": {
+        "std": 0.263065,
+        "informativa": true,
+        "motivo": "varía en los datos"
+      },
+      "is_rare_port": {
+        "std": 0.489693,
+        "informativa": true,
+        "motivo": "varía en los datos"
+      },
+      "port_rarity": {
+        "std": 0.100373,
+        "informativa": true,
+        "motivo": "varía en los datos"
+      },
+      "cmd_len": {
+        "std": 0.0,
+        "informativa": false,
+        "motivo": "constante: el dataset no aporta este campo"
+      },
+      "cmd_special_chars": {
+        "std": 0.0,
+        "informativa": false,
+        "motivo": "constante: el dataset no aporta este campo"
+      },
+      "cmd_entropy": {
+        "std": 0.0,
+        "informativa": false,
+        "motivo": "constante: el dataset no aporta este campo"
+      },
+      "user_rarity": {
+        "std": 0.0,
+        "informativa": false,
+        "motivo": "constante: el dataset no aporta este campo"
+      },
+      "src_ip_rarity": {
+        "std": 0.010154,
+        "informativa": true,
+        "motivo": "varía en los datos"
+      },
+      "has_hash": {
+        "std": 0.0,
+        "informativa": false,
+        "motivo": "constante: el dataset no aporta este campo"
+      },
+      "has_parent_cmd": {
+        "std": 0.0,
+        "informativa": false,
+        "motivo": "constante: el dataset no aporta este campo"
+      },
+      "is_process": {
+        "std": 0.0,
+        "informativa": false,
+        "motivo": "constante: el dataset no aporta este campo"
+      },
+      "is_network": {
+        "std": 0.0,
+        "informativa": false,
+        "motivo": "constante: el dataset no aporta este campo"
+      },
+      "hour_sin": {
+        "std": 0.046835,
+        "informativa": true,
+        "motivo": "varía en los datos"
+      },
+      "hour_cos": {
+        "std": 0.113071,
+        "informativa": true,
+        "motivo": "varía en los datos"
+      },
+      "is_night": {
+        "std": 0.0,
+        "informativa": false,
+        "motivo": "constante: el dataset no aporta este campo"
+      },
+      "events_in_window": {
+        "std": 0.722348,
+        "informativa": true,
+        "motivo": "varía en los datos"
+      },
+      "time_since_prev_log": {
+        "std": 0.870256,
+        "informativa": true,
+        "motivo": "varía en los datos"
+      }
+    }
+  },
+  "component_eligibility": {
+    "isolation_forest": {
+      "estado": "evaluable",
+      "motivo": "el dataset aporta volumen, puertos y estado de conexion"
+    },
+    "sigma": {
+      "estado": "no evaluable",
+      "motivo": "las reglas del proyecto son de telemetria de host (linea de comandos, proceso padre). UNSW-NB15 son flujos de red sin linea de comandos (command_line presente: False). Una regla que no puede activarse no mide nada: NO significa que Sigma no funcione."
+    },
+    "correlacion_temporal": {
+      "estado": "parcialmente evaluable",
+      "motivo": "hay marca de tiempo, pero las secuencias definidas encadenan tecnicas ATT&CK que solo las reglas de host pueden producir"
+    },
+    "mitre_attack": {
+      "estado": "no evaluable",
+      "motivo": "la tecnica ATT&CK se deriva de la regla Sigma que se activa. Sin activaciones de regla no hay tecnica observada. Las categorias de UNSW-NB15 (Exploits, Fuzzers...) no son tecnicas ATT&CK y mapearlas seria inventar una correspondencia."
+    },
+    "cti": {
+      "estado": "no evaluable",
+      "motivo": "las IPs del dataset son de un laboratorio de 2015 (direcciones presentes: True); no existen indicadores de inteligencia reales para ellas. Fabricarlos invalidaria la medida."
+    },
+    "rag_llm": {
+      "estado": "no evaluable",
+      "motivo": "producen texto explicativo, no una decision de deteccion: no hay verdad-terreno contra la que medirlos en este dataset."
+    }
+  },
+  "split": {
+    "method": "temporal 60/20/20 por orden cronologico",
+    "train": 180000,
+    "validation": 60000,
+    "test": 60000,
+    "threshold_selected_on": "VALIDATION"
+  },
+  "threshold": 0.6426137137372665,
+  "threshold_sweep_validation": [
+    {
+      "percentile": 50.0,
+      "threshold": 0.567936,
+      "precision": 0.3469,
+      "recall": 1.0,
+      "f1": 0.5151,
+      "fpr": 0.3951
+    },
+    {
+      "percentile": 52.5,
+      "threshold": 0.570874,
+      "precision": 0.3651,
+      "recall": 1.0,
+      "f1": 0.5349,
+      "fpr": 0.3648
+    },
+    {
+      "percentile": 55.0,
+      "threshold": 0.575512,
+      "precision": 0.3854,
+      "recall": 1.0,
+      "f1": 0.5564,
+      "fpr": 0.3346
+    },
+    {
+      "percentile": 57.5,
+      "threshold": 0.580877,
+      "precision": 0.4081,
+      "recall": 1.0,
+      "f1": 0.5796,
+      "fpr": 0.3044
+    },
+    {
+      "percentile": 60.0,
+      "threshold": 0.586988,
+      "precision": 0.4336,
+      "recall": 1.0,
+      "f1": 0.6049,
+      "fpr": 0.2741
+    },
+    {
+      "percentile": 62.5,
+      "threshold": 0.594564,
+      "precision": 0.4625,
+      "recall": 1.0,
+      "f1": 0.6325,
+      "fpr": 0.2439
+    },
+    {
+      "percentile": 65.0,
+      "threshold": 0.608541,
+      "precision": 0.4955,
+      "recall": 1.0,
+      "f1": 0.6627,
+      "fpr": 0.2136
+    },
+    {
+      "percentile": 67.5,
+      "threshold": 0.642614,
+      "precision": 0.5277,
+      "recall": 0.9889,
+      "f1": 0.6882,
+      "fpr": 0.1857
+    },
+    {
+      "percentile": 70.0,
+      "threshold": 0.659896,
+      "precision": 0.5288,
+      "recall": 0.9147,
+      "f1": 0.6701,
+      "fpr": 0.171
+    },
+    {
+      "percentile": 72.5,
+      "threshold": 0.661007,
+      "precision": 0.5559,
+      "recall": 0.8823,
+      "f1": 0.682,
+      "fpr": 0.1479
+    },
+    {
+      "percentile": 75.0,
+      "threshold": 0.661605,
+      "precision": 0.5593,
+      "recall": 0.8167,
+      "f1": 0.6639,
+      "fpr": 0.135
+    },
+    {
+      "percentile": 77.5,
+      "threshold": 0.662646,
+      "precision": 0.5588,
+      "recall": 0.7272,
+      "f1": 0.632,
+      "fpr": 0.1205
+    },
+    {
+      "percentile": 80.0,
+      "threshold": 0.665041,
+      "precision": 0.5571,
+      "recall": 0.6429,
+      "f1": 0.5969,
+      "fpr": 0.1073
+    },
+    {
+      "percentile": 82.5,
+      "threshold": 0.666296,
+      "precision": 0.598,
+      "recall": 0.6074,
+      "f1": 0.6027,
+      "fpr": 0.0857
+    },
+    {
+      "percentile": 85.0,
+      "threshold": 0.666715,
+      "precision": 0.5934,
+      "recall": 0.5133,
+      "f1": 0.5504,
+      "fpr": 0.0738
+    },
+    {
+      "percentile": 87.5,
+      "threshold": 0.667735,
+      "precision": 0.5817,
+      "recall": 0.4193,
+      "f1": 0.4873,
+      "fpr": 0.0633
+    },
+    {
+      "percentile": 90.0,
+      "threshold": 0.670035,
+      "precision": 0.6282,
+      "recall": 0.3622,
+      "f1": 0.4595,
+      "fpr": 0.045
+    },
+    {
+      "percentile": 92.5,
+      "threshold": 0.673447,
+      "precision": 0.6506,
+      "recall": 0.2817,
+      "f1": 0.3931,
+      "fpr": 0.0317
+    },
+    {
+      "percentile": 95.0,
+      "threshold": 0.676992,
+      "precision": 0.6372,
+      "recall": 0.1839,
+      "f1": 0.2855,
+      "fpr": 0.022
+    },
+    {
+      "percentile": 97.5,
+      "threshold": 0.682528,
+      "precision": 0.582,
+      "recall": 0.0839,
+      "f1": 0.1466,
+      "fpr": 0.0126
+    }
+  ],
+  "score_distribution_test": {
+    "min": 0.48452522757211836,
+    "max": 0.744048987895614,
+    "mean": 0.6000279777622886,
+    "median": 0.5805597804066415,
+    "std": 0.06221346363346503,
+    "distinct_values": 31447
+  },
+  "execution_time_s": 106.12,
+  "fit_time_s": 9.12,
+  "score_time_s": 2.56,
+  "throughput_events_per_s": 23463.9
+}

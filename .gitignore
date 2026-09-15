@@ -11,3 +11,6 @@ data/synthetic_flows_unsw_format.csv
 docs/figuras/
 data/attack/enterprise-attack.json
 data/feedback/
+
+# Dataset UNSW-NB15: no se versiona (aprox. 640 MB)
+data/unsw_nb15/

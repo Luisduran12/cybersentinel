@@ -1,0 +1,68 @@
+{
+  "run_id": "74a788fa-a87a-458b-8c30-c9f76b6d4372",
+  "test_metrics": {
+    "threshold": 0.642614,
+    "TP": 12949,
+    "TN": 34493,
+    "FP": 12375,
+    "FN": 183,
+    "precision": 0.5113,
+    "recall": 0.9861,
+    "f1": 0.6734,
+    "fpr": 0.264,
+    "specificity": 0.736,
+    "accuracy": 0.7907,
+    "n": 60000,
+    "positives": 13132,
+    "positive_rate": 0.2189,
+    "roc_auc": 0.8855,
+    "pr_auc": 0.566
+  },
+  "recall_by_category": {
+    "Exploits": {
+      "total": 1545,
+      "detectados": 1484,
+      "recall": 0.9605
+    },
+    "Backdoor": {
+      "total": 94,
+      "detectados": 86,
+      "recall": 0.9149
+    },
+    "Analysis": {
+      "total": 103,
+      "detectados": 103,
+      "recall": 1.0
+    },
+    "Fuzzers": {
+      "total": 747,
+      "detectados": 691,
+      "recall": 0.925
+    },
+    "Reconnaissance": {
+      "total": 482,
+      "detectados": 434,
+      "recall": 0.9004
+    },
+    "Generic": {
+      "total": 9423,
+      "detectados": 9421,
+      "recall": 0.9998
+    },
+    "DoS": {
+      "total": 685,
+      "detectados": 680,
+      "recall": 0.9927
+    },
+    "Shellcode": {
+      "total": 46,
+      "detectados": 43,
+      "recall": 0.9348
+    },
+    "Worms": {
+      "total": 7,
+      "detectados": 7,
+      "recall": 1.0
+    }
+  }
+}

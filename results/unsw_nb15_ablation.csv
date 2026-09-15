@@ -1,0 +1,4 @@
+configuracion,evaluable,precision,recall,f1,pr_auc,roc_auc,nota
+A. Isolation Forest,True,0.5113,0.9861,0.6734,0.566,0.8855,unico componente con verdad-terreno en este dataset
+B. + Correlacion temporal,False,,,,,,"NOT EVALUABLE: las 5 secuencias encadenan tecnicas ATT&CK que solo producen las reglas de host; sobre flujos de red no se activa ninguna, asi que no puede aportar ni restar."
+C. Sistema completo,False,,,,,,"NOT EVALUABLE: Sigma, ATT&CK, CTI y RAG no son aplicables a este dataset (ver component_eligibility). Presentar una cifra aqui seria atribuir al sistema completo el merito del unico componente que si participa."
