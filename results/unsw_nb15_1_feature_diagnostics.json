@@ -1,0 +1,185 @@
+{
+  "score_distribution": {
+    "min": 0.5261606721603115,
+    "max": 0.7637082283949795,
+    "mean": 0.5943990215994029,
+    "median": 0.5793717178302391,
+    "std": 0.05039796509696209,
+    "p75": 0.616373928955421,
+    "p90": 0.6837122222914574,
+    "p95": 0.7000463042745124,
+    "p99": 0.7276905524626148
+  },
+  "n_test": 37363,
+  "n_attacks": 3449,
+  "is_anomaly_count": 30203,
+  "is_anomaly_label1": 3449,
+  "is_anomaly_label0": 26754,
+  "metrics": {
+    "is_anomaly_cont015": {
+      "TP": 3449,
+      "FP": 26754,
+      "FN": 0,
+      "TN": 7160,
+      "precision": 0.114193954242956,
+      "recall": 1.0,
+      "f1": 0.20498038749554262,
+      "fpr": 0.7888777496019344
+    },
+    "threshold_p95_test": {
+      "TP": 810,
+      "FP": 1071,
+      "FN": 2639,
+      "TN": 32843,
+      "precision": 0.430622009569378,
+      "recall": 0.23485068135691506,
+      "f1": 0.30393996247654786,
+      "fpr": 0.031579878516246974
+    },
+    "threshold_val_calibrated": {
+      "TP": 2120,
+      "FP": 1978,
+      "FN": 1329,
+      "TN": 31936,
+      "precision": 0.5173255246461689,
+      "recall": 0.6146709191069876,
+      "f1": 0.5618126407844176,
+      "fpr": 0.05832399598985669
+    }
+  },
+  "feature_discrimination": [
+    {
+      "feature": "src_ip_rarity",
+      "std": 0.03167930575855305,
+      "auc": 0.9597287874965849,
+      "mean_label0": 0.9129955088415845,
+      "mean_label1": 0.9920128681222898
+    },
+    {
+      "feature": "bytes_ratio",
+      "std": 0.3154920721682468,
+      "auc": 0.8182825461698157,
+      "mean_label0": 0.3758156218493335,
+      "mean_label1": 0.7731497786027738
+    },
+    {
+      "feature": "events_in_window",
+      "std": 0.8356477647101462,
+      "auc": 0.2046879044060298,
+      "mean_label0": 6.12235139483138,
+      "mean_label1": 5.418560840200007
+    },
+    {
+      "feature": "bytes_in_log",
+      "std": 3.1863124612513825,
+      "auc": 0.2160831980429477,
+      "mean_label0": 7.792026389946741,
+      "mean_label1": 3.6194135622253687
+    },
+    {
+      "feature": "bytes_out_log",
+      "std": 1.5824101533573356,
+      "auc": 0.29433587434578823,
+      "mean_label0": 7.22040932704943,
+      "mean_label1": 6.305008693062028
+    },
+    {
+      "feature": "port_rarity",
+      "std": 0.07977488950525928,
+      "auc": 0.36872440281083463,
+      "mean_label0": 0.93833304947195,
+      "mean_label1": 0.9110914852717494
+    },
+    {
+      "feature": "is_rare_port",
+      "std": 0.4925938174746247,
+      "auc": 0.3699591917153433,
+      "mean_label0": 0.609748186589609,
+      "mean_label1": 0.3496665700202957
+    },
+    {
+      "feature": "time_since_prev_log",
+      "std": 0.5782279307920022,
+      "auc": 0.6084922810486498,
+      "mean_label0": 0.3179097781489773,
+      "mean_label1": 0.5781262651971363
+    },
+    {
+      "feature": "cmd_len",
+      "std": 0.0,
+      "auc": null,
+      "mean_label0": null,
+      "mean_label1": null
+    },
+    {
+      "feature": "cmd_special_chars",
+      "std": 0.0,
+      "auc": null,
+      "mean_label0": null,
+      "mean_label1": null
+    },
+    {
+      "feature": "cmd_entropy",
+      "std": 0.0,
+      "auc": null,
+      "mean_label0": null,
+      "mean_label1": null
+    },
+    {
+      "feature": "user_rarity",
+      "std": 0.0,
+      "auc": null,
+      "mean_label0": null,
+      "mean_label1": null
+    },
+    {
+      "feature": "has_hash",
+      "std": 0.0,
+      "auc": null,
+      "mean_label0": null,
+      "mean_label1": null
+    },
+    {
+      "feature": "has_parent_cmd",
+      "std": 0.0,
+      "auc": null,
+      "mean_label0": null,
+      "mean_label1": null
+    },
+    {
+      "feature": "is_process",
+      "std": 0.0,
+      "auc": null,
+      "mean_label0": null,
+      "mean_label1": null
+    },
+    {
+      "feature": "is_network",
+      "std": 0.0,
+      "auc": null,
+      "mean_label0": null,
+      "mean_label1": null
+    },
+    {
+      "feature": "hour_sin",
+      "std": 0.0,
+      "auc": null,
+      "mean_label0": null,
+      "mean_label1": null
+    },
+    {
+      "feature": "hour_cos",
+      "std": 0.0,
+      "auc": null,
+      "mean_label0": null,
+      "mean_label1": null
+    },
+    {
+      "feature": "is_night",
+      "std": 0.0,
+      "auc": null,
+      "mean_label0": null,
+      "mean_label1": null
+    }
+  ]
+}
