@@ -42,7 +42,7 @@ Fecha: 2026-09-15 · Commit auditado: `a0d807a` · `src/`: 8 293 líneas en 43 m
 | 19 | **Respuesta controlada** | **B** | `ResponsePlanner` + `GovernancePolicy` conectados; clasifica en permitida / requiere aprobación / prohibida | **Todo es dry-run**: no hay ejecutores reales (EDR, firewall) ni flujo de aprobación | P2 |
 | 20 | **Autenticación de API** | **A** | `api/security/`: clave de API para sensores (SHA-256, **19 062 verif./s** medidas) y JWT HS256 para personas (scrypt n=2¹⁵). 41 pruebas nombran el ataque que frenan: `alg:none`, firma manipulada, token de otro secreto, clave revocada, enumeración de usuarios, fuerza bruta | MFA; rotación de contraseñas | P2 |
 | 21 | **Autorización RBAC** | **A** | 5 roles (sensor/analyst/responder/auditor/admin) sobre 7 permisos. El código pregunta por permiso, nunca por rol. Probado: el sensor no lee incidentes, el analista no ingiere, el auditor no escribe, el admin no inyecta telemetría | Permisos por origen de telemetría (multi-tenant) | P2 |
-| 22 | **TLS** | **E** | 0 ocurrencias de ssl/tls/https. **Ahora es el eslabón débil**: con autenticación real pero sin cifrado, las credenciales viajan en claro | Terminación TLS y cifrado en tránsito | **P0** |
+| 22 | **TLS** | **A** | `security/transport.py`: el texto en claro solo se acepta desde bucle local; desde fuera exige HTTPS o un proxy declarado, y si no, **403 antes de autenticar**. `cybersentinel serve` se niega a abrir un puerto remoto sin certificado. HSTS solo sobre conexión ya segura. 9 pruebas | mTLS y fijación de certificado; rotación automática | P2 |
 | 23 | **Gestión de secretos** | **B** | `CYBERSENTINEL_AUDIT_KEY` y `ANTHROPIC_API_KEY` por variable de entorno. 0 ocurrencias de vault/keyring | Almacén de secretos, rotación, no-exposición en logs | **P1** |
 | 24 | **Rate limiting** | **A** | Cubo de fichas por cliente en dos ejes (peticiones y eventos), política por rol, cubos acotados por LRU. Verificado contra uvicorn real: 110×202 / 50×429 en una ráfaga de 160. **2,4 µs** por comprobación | Estado compartido entre réplicas (hoy es por proceso) | **P1** |
 | 25 | **Audit log** | **A** | Cadena HMAC-SHA256 + ancla externa. Detecta edición, **truncado** y reescritura completa — con prueba por cada ataque | Anclaje en medio independiente (WORM / sellado de tiempo) | **P1** |
@@ -61,17 +61,17 @@ Fecha: 2026-09-15 · Commit auditado: `a0d807a` · `src/`: 8 293 líneas en 43 m
 
 | Estado | Nº | Capacidades |
 |:--:|--:|---|
-| **A** — funcional | **15** | Sysmon, firewall, normalización, Sigma propio, Isolation Forest, ATT&CK, CTI, RAG, HITL, audit log, latencia, falsos positivos, **autenticación**, **RBAC**, **rate limiting** |
+| **A** — funcional | **16** | Sysmon, firewall, normalización, Sigma propio, Isolation Forest, ATT&CK, CTI, RAG, HITL, audit log, latencia, falsos positivos, **autenticación**, **RBAC**, **rate limiting**, **TLS** |
 | **B** — parcial | **9** | Múltiples fuentes, correlación temporal, LLM, respuesta, secretos, observabilidad, persistencia, **gestión de incidentes**, (Sigma público si se cuenta como parcial) |
 | **C** — mock/hardcode | **2** | `hybrid_score`, umbral `ready_for_training` |
 | **D** — desconectado | **3** | Sigma público (pySigma), Markov/kill-chain, `explanation/explainer.py` |
-| **E** — no implementado | **6** | auditd, Suricata, TLS, escalabilidad, HA, SIEM/EDR |
+| **E** — no implementado | **5** | auditd, Suricata, escalabilidad, HA, SIEM/EDR |
 
-> Actualizado tras `docs/SECURITY.md` y `docs/SOC-PANEL.md`: autenticación, RBAC
-> y límite de caudal pasan de **E** a **A**; gestión de incidentes, de **E** a
-> **B**. «Tiempo real» pasó a **B** con la API de ingestión.
-> **TLS sigue en E y ahora es el eslabón débil**: hay credenciales que proteger
-> y viajan en claro.
+> Actualizado tras `docs/SECURITY.md` y `docs/SOC-PANEL.md`: autenticación,
+> RBAC, límite de caudal y TLS pasan de **E** a **A**; gestión de incidentes, de
+> **E** a **B**. «Tiempo real» pasó a **B** con la API de ingestión.
+> **Lo que queda en P0/P1 es de escala, no de seguridad**: alta disponibilidad
+> y estado compartido. Hoy todo vive en un proceso con SQLite.
 
 ---
 
@@ -226,7 +226,7 @@ desbloquea.
 |---|---|---|
 | B1 | **Persistencia en PostgreSQL** (#31) | Prerrequisito duro de incidentes, RBAC, HA y multiusuario. Todo lo demás depende de esto |
 | B2 | ~~**Gestión de incidentes**~~ → **hecho a medias** (#18) | Ya hay entidad persistente, ciclo de vida y panel. Falta agrupar una campaña en un solo incidente: hoy una cadena de 8 pasos son 8 incidentes |
-| B3 | ~~**API + OIDC/JWT + RBAC**~~ → **hecho** (#20, #21, #24); **falta TLS** (#22) | Es la frontera del producto. Los usuarios se persistieron en SQLite en vez de esperar a PostgreSQL: la migración es un cambio de conexión, no de diseño |
+| B3 | ~~**API + TLS + OIDC/JWT + RBAC**~~ → **hecho** (#20, #21, #22, #24) | Es la frontera del producto. Los usuarios se persistieron en SQLite en vez de esperar a PostgreSQL: la migración es un cambio de conexión, no de diseño. No es OIDC: sustituir `security/tokens.py` no toca ni los roles ni un solo manejador |
 | B4 | **Exportar métricas (OTel/Prometheus)** (#26) | La instrumentación ya existe en `TraceContext`; falta el exportador. Barato y necesario para operar |
 
 *Aquí es donde el laboratorio se convierte en servicio.*

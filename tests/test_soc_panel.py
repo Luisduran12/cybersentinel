@@ -74,7 +74,8 @@ def soc(tmp_path_factory):
         enable_rag=False, enable_llm=False,
     )
 
-    with TestClient(create_app(svc, gate=puerta)) as cliente:
+    with TestClient(create_app(svc, gate=puerta),
+                    base_url="https://testserver") as cliente:
         eventos = [_sysmon(i) for i in range(20)]
         eventos.append(_sysmon(300, process_name="powershell.exe",
                                command_line="powershell.exe -nop -w hidden -enc SQBFAFgA"))
@@ -472,11 +473,22 @@ def test_el_panel_no_depende_de_la_red():
     """
     Sin descargas externas: un centro de operaciones puede estar en una red
     aislada, y un panel que pide una fuente a un CDN se queda en blanco.
+
+    Se buscan **referencias**, no la cadena «https» suelta: el propio panel
+    menciona el esquema al avisar de que la conexión no está cifrada, y una
+    comprobación por subcadena confundiría ese aviso con una dependencia.
     """
+    patrones = [
+        r'(?:src|href)\s*=\s*["\']https?://',   # <script>, <link>, <img>
+        r'url\(\s*["\']?(?:https?:)?//',        # @import y url() en CSS
+        r'(?:fetch|import)\s*\(\s*["\']https?://',  # peticiones desde el JS
+        r'["\']//[a-z0-9.-]+\.[a-z]{2,}/',       # rutas relativas al protocolo
+    ]
     for archivo in ("index.html", "panel.css", "panel.js"):
         contenido = (PANEL / archivo).read_text(encoding="utf-8")
-        assert "http://" not in contenido
-        assert "https://" not in contenido.replace("https://</code>", "")
+        for patron in patrones:
+            encontrado = re.search(patron, contenido, re.I)
+            assert not encontrado, f"{archivo} referencia algo externo: {encontrado.group(0)}"
 
 
 def test_el_panel_guarda_el_token_en_sessionstorage():

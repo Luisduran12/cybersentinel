@@ -32,10 +32,10 @@ Toda ruta que no sea una sonda de salud exige credencial y permiso (ver
 puede consultarlas mata el proceso creyéndolo muerto, y `/ready` sin credencial
 devuelve solo si acepta tráfico, no el detalle de los componentes.
 
-**Lo que sigue faltando y hay que decirlo antes de exponerla:** TLS. El servicio
-habla HTTP en claro; sin terminación TLS delante —proxy o `uvicorn --ssl-keyfile`—
-las credenciales viajan legibles y toda la autenticación de arriba no sirve de
-nada. Es el siguiente requisito, no un detalle de despliegue.
+El texto en claro solo se acepta desde la propia máquina: desde cualquier otro
+origen se exige TLS —terminado aquí o por un proxy de confianza— y, si no lo
+hay, la petición se rechaza con 403 en vez de dejar viajar la credencial. Ver
+`security/transport.py`.
 """
 from __future__ import annotations
 
@@ -67,7 +67,7 @@ from .incidents import Filtro, IncidentError, IncidentStore
 from .queue import IngestQueue, QueueFull
 from .security import (
     AuthError, Permission, Principal, Role, SecurityConfig, SecurityGate,
-    charge_events, limit_anonymous, requires, role_matrix,
+    TransportPolicy, charge_events, limit_anonymous, requires, role_matrix,
 )
 from .store import ResultStore
 from .worker import IngestWorker, QueuedEvent
@@ -200,7 +200,8 @@ def _default_gate() -> SecurityGate:
 
 
 def create_app(svc: IngestService | None = None,
-               gate: SecurityGate | None = None) -> FastAPI:
+               gate: SecurityGate | None = None,
+               transport: TransportPolicy | None = None) -> FastAPI:
     """
     Construye la aplicación. Sin `svc` crea el servicio por defecto.
 
@@ -415,7 +416,8 @@ def create_app(svc: IngestService | None = None,
                 "hasta entonces el componente ML informa UNAVAILABLE"
             ),
             "components": s.pipeline.component_status,
-            "security": puerta.status(),
+            "security": {**puerta.status(),
+                         "transport": request.app.state.transport.status()},
         }, status_code=codigo)
 
     @app.get("/api/v1/metrics", summary="Caudal, latencia y errores")
@@ -580,6 +582,36 @@ def create_app(svc: IngestService | None = None,
                            "haya decidido")
         return {"decision": decision.to_dict(), "incident": resultado,
                 "close_note": nota_cierre}
+
+    # --- Transporte -------------------------------------------------------
+    app.state.transport = transport or TransportPolicy.from_env()
+
+    @app.middleware("http")
+    async def _exigir_tls(request: Request, call_next):
+        """
+        Rechaza el texto en claro desde orígenes remotos, antes de tocar nada.
+
+        Va por delante de la autenticación a propósito: comprobar una
+        contraseña que acaba de viajar legible por la red no la hace menos
+        legible. Si la conexión no es segura, la credencial ya está
+        comprometida y lo único útil es no seguir.
+
+        `/api/v1/health` queda fuera: es la sonda del orquestador, no lleva
+        credenciales ni revela nada, y devolver 403 ahí haría que se reiniciara
+        el proceso por un problema de red.
+        """
+        politica: TransportPolicy = request.app.state.transport
+        if request.url.path != "/api/v1/health":
+            motivo = politica.refusal_reason(request)
+            if motivo:
+                return JSONResponse(
+                    {"error": "tls_requerido", "reason": motivo},
+                    status_code=status.HTTP_403_FORBIDDEN,
+                )
+        respuesta = await call_next(request)
+        for clave, valor in politica.response_headers(request).items():
+            respuesta.headers.setdefault(clave, valor)
+        return respuesta
 
     # --- Panel SOC --------------------------------------------------------
     @app.middleware("http")

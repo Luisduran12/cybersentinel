@@ -316,17 +316,34 @@ bruta, agotamiento de memoria por IPs falsas— y el coste está medido:
 **113 ms** de scrypt que cuesta una contraseña. Esa diferencia de 2 165× es la
 razón de que se deriven distinto.
 
-**Lo que falta y hay que decirlo: TLS.** El servicio habla HTTP en claro; sin un
-terminador TLS delante, las credenciales viajan legibles. Detalle completo,
-límites conocidos y variables de entorno en
+**El texto en claro solo se acepta desde la propia máquina.** Desde cualquier
+otro origen se exige TLS —terminado por el servicio o por un proxy declarado— y,
+si no lo hay, la petición se rechaza con 403 **antes de autenticar**: verificar
+una contraseña que acaba de viajar legible no la hace menos legible. La misma
+regla se aplica antes de abrir el puerto:
+
+```bash
+$ cybersentinel serve --host 0.0.0.0
+Me niego a escuchar en 0.0.0.0:8000 sin TLS.
+  • Certificado real:   --tls-cert cert.pem --tls-key key.pem
+  • Laboratorio:        --dev-cert
+  • Solo esta máquina:  --host 127.0.0.1
+```
+
+Un despliegue que funciona sin TLS se queda sin TLS: el aviso se pierde entre
+los mensajes de arranque. Un 403 en la primera petición se arregla el primer
+día. La escotilla existe (`--allow-plaintext`, para un proxy que no añade
+cabeceras) y queda declarada en `/api/v1/ready`.
+
+Detalle completo, límites conocidos y variables de entorno en
 [`docs/SECURITY.md`](docs/SECURITY.md).
 
 ## Panel SOC
 
 ```bash
 cybersentinel auth create-user --username rosa --role responder
-uvicorn cybersentinel.api.app:app --host 0.0.0.0 --port 8000
-# → http://localhost:8000/soc/
+cybersentinel serve --dev-cert --host 0.0.0.0    # o --tls-cert/--tls-key
+# → https://localhost:8000/soc/
 ```
 
 Hasta aquí el sistema detectaba pero no dejaba **investigar**: cada ejecución

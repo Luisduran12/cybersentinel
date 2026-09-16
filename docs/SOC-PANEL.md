@@ -209,9 +209,12 @@ Cadena de auditoría íntegra. Cadena íntegra y anclada.
 export CYBERSENTINEL_JWT_SECRET=$(openssl rand -hex 32)
 export CYBERSENTINEL_AUDIT_KEY=$(openssl rand -hex 32)
 cybersentinel auth create-user --username rosa --role responder
-uvicorn cybersentinel.api.app:app --host 0.0.0.0 --port 8000
+cybersentinel serve --host 0.0.0.0 --dev-cert
 ```
 
-El panel queda en `http://localhost:8000/soc/` (y `/` redirige allí). Recuerda
-lo que dice `docs/SECURITY.md`: **sin un terminador TLS delante, la contraseña
-del analista viaja en claro.**
+El panel queda en `https://localhost:8000/soc/` (y `/` redirige allí).
+
+Si la página se abre por HTTP desde una máquina que no es la tuya, el formulario
+de acceso **se deshabilita** y lo dice: la contraseña viajaría legible. Sobre
+bucle local solo aparece una nota. El aviso se calcula, no está escrito fijo —un
+aviso que sale siempre deja de leerse—.

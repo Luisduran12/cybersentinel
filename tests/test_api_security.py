@@ -28,7 +28,8 @@ sys.path.insert(0, str(ROOT / "src"))
 from cybersentinel.api.app import IngestService, create_app  # noqa: E402
 from cybersentinel.api.security import (  # noqa: E402
     AuthError, IdentityStore, LimitPolicy, Permission, RateLimiter, Role,
-    SecurityConfig, SecurityGate, TokenError, TokenSigner, permissions_for,
+    SecurityConfig, SecurityGate, TokenError, TokenSigner, TransportPolicy,
+    permissions_for,
 )
 from cybersentinel.api.security.tokens import load_secret  # noqa: E402
 from cybersentinel.governance import AuditLog  # noqa: E402
@@ -83,7 +84,8 @@ def entorno(tmp_path_factory):
         audit_path=directorio / "audit.jsonl", queue_maxsize=2000, batch_size=200,
         enable_rag=False, enable_llm=False,
     )
-    with TestClient(create_app(svc, gate=puerta)) as cliente:
+    with TestClient(create_app(svc, gate=puerta),
+                    base_url="https://testserver") as cliente:
         yield {"cliente": cliente, "puerta": puerta, "almacen": almacen,
                "sensor": sensor, "auditoria": auditoria, "dir": directorio,
                "limitador": limitador}
@@ -473,7 +475,8 @@ def test_limite_de_eventos_en_la_api(tmp_path):
     svc = IngestService(rules_dir=RULES, db_path=directorio / "e.db",
                         audit_path=None, queue_maxsize=500, batch_size=100,
                         enable_rag=False, enable_llm=False)
-    with TestClient(create_app(svc, gate=puerta)) as cliente:
+    with TestClient(create_app(svc, gate=puerta),
+                    base_url="https://testserver") as cliente:
         cabecera = {"X-API-Key": clave.token}
         lote = {"events": [_evento(i) for i in range(5)]}
         assert cliente.post("/api/v1/events", json=lote, headers=cabecera).status_code == 202
@@ -533,3 +536,123 @@ def test_los_fallos_repetidos_no_inflan_la_auditoria(entorno, tmp_path):
     entradas = [e for e in auditoria.entries if e.action == "auth_failed"]
     assert len(entradas) == 1
     assert entradas[0].detail["failures_since_last_entry"] == 1
+
+
+# ------------------------------- transporte ---------------------------------
+@pytest.fixture(scope="module")
+def app_tls(tmp_path_factory):
+    """Aplicación mínima para probar la política de transporte."""
+    directorio = tmp_path_factory.mktemp("tls")
+    almacen = IdentityStore(directorio / "identities.db")
+    clave = almacen.create_api_key("sensor-tls", Role.SENSOR)
+    abierto = LimitPolicy(10_000, 20_000, 10_000_000, 20_000_000)
+    puerta = SecurityGate(SecurityConfig(
+        identity_db=directorio / "identities.db", jwt_secret=SECRETO,
+        rate_limiter=RateLimiter({r.value: abierto for r in Role} | {"anonymous": abierto}),
+    ))
+    svc = IngestService(rules_dir=RULES, db_path=directorio / "e.db",
+                        incidents_path=directorio / "i.db", audit_path=None,
+                        queue_maxsize=500, batch_size=100,
+                        enable_rag=False, enable_llm=False)
+    return {"app": create_app(svc, gate=puerta), "key": clave.token, "svc": svc}
+
+
+def _cliente(app_tls, *, esquema="http", origen=("203.0.113.9", 4444), **kwargs):
+    return TestClient(app_tls["app"], base_url=f"{esquema}://testserver",
+                      client=origen, **kwargs)
+
+
+def test_texto_en_claro_desde_fuera_se_rechaza(app_tls):
+    """
+    Ataque: escuchar la red. Comprobar una contraseña que acaba de viajar
+    legible no la hace menos legible; lo único útil es no seguir.
+    """
+    with _cliente(app_tls) as c:
+        r = c.post("/api/v1/events", json={"events": [_evento()]},
+                   headers={"X-API-Key": app_tls["key"]})
+    assert r.status_code == 403
+    assert r.json()["error"] == "tls_requerido"
+    assert "viajarían en claro" in r.json()["reason"]
+
+
+def test_con_tls_la_misma_peticion_pasa(app_tls):
+    with _cliente(app_tls, esquema="https") as c:
+        r = c.post("/api/v1/events", json={"events": [_evento()]},
+                   headers={"X-API-Key": app_tls["key"]})
+    assert r.status_code == 202
+
+
+def test_el_bucle_local_puede_usar_texto_en_claro(app_tls):
+    """Desarrollo en la propia máquina: no hay red que escuchar."""
+    with _cliente(app_tls, origen=("127.0.0.1", 5555)) as c:
+        r = c.post("/api/v1/events", json={"events": [_evento()]},
+                   headers={"X-API-Key": app_tls["key"]})
+    assert r.status_code == 202
+
+
+def test_la_sonda_de_salud_responde_aunque_no_haya_tls(app_tls):
+    """
+    Devolver 403 en `/health` haría que el orquestador reiniciase el proceso
+    por un problema de red. No lleva credenciales ni revela nada.
+    """
+    with _cliente(app_tls) as c:
+        assert c.get("/api/v1/health").status_code == 200
+
+
+def test_x_forwarded_proto_no_se_cree_sin_proxy_declarado(app_tls):
+    """
+    Falsificación de cabecera: si `X-Forwarded-Proto` se creyera siempre,
+    cualquiera se declara seguro escribiendo una línea y la comprobación no
+    sirve de nada.
+    """
+    with _cliente(app_tls) as c:
+        r = c.post("/api/v1/events", json={"events": [_evento()]},
+                   headers={"X-API-Key": app_tls["key"],
+                            "X-Forwarded-Proto": "https"})
+    assert r.status_code == 403
+
+
+def test_con_proxy_declarado_si_se_admite_x_forwarded_proto(app_tls, monkeypatch):
+    politica = TransportPolicy(allow_plaintext=False, trust_forwarded=True)
+    monkeypatch.setattr(app_tls["app"].state, "transport", politica, raising=False)
+    with _cliente(app_tls) as c:
+        r = c.post("/api/v1/events", json={"events": [_evento()]},
+                   headers={"X-API-Key": app_tls["key"],
+                            "X-Forwarded-Proto": "https"})
+    assert r.status_code == 202
+
+
+def test_la_escotilla_queda_declarada(app_tls, monkeypatch):
+    """
+    `ALLOW_PLAINTEXT` existe para el terminador TLS que no añade cabeceras de
+    reenvío. Se admite, pero nadie puede decir después que no lo sabía.
+    """
+    politica = TransportPolicy(allow_plaintext=True, trust_forwarded=False)
+    monkeypatch.setattr(app_tls["app"].state, "transport", politica, raising=False)
+    with _cliente(app_tls) as c:
+        assert c.post("/api/v1/events", json={"events": [_evento()]},
+                      headers={"X-API-Key": app_tls["key"]}).status_code == 202
+    assert "ALLOW_PLAINTEXT" in politica.status()["plaintext_allowed_from"]
+    assert politica.status()["warning"]
+
+
+def test_hsts_solo_sobre_una_conexion_ya_segura(app_tls):
+    """
+    Anunciar HSTS por HTTP no protege de nada —quien lee la respuesta puede
+    quitarlo— y puede dejar inaccesible un laboratorio sin certificado.
+    """
+    with _cliente(app_tls, esquema="https") as c:
+        segura = c.get("/api/v1/health")
+    with _cliente(app_tls, origen=("127.0.0.1", 5555)) as c:
+        clara = c.get("/api/v1/health")
+    assert "max-age=31536000" in segura.headers["Strict-Transport-Security"]
+    assert "Strict-Transport-Security" not in clara.headers
+
+
+def test_la_politica_por_defecto_no_admite_texto_en_claro(monkeypatch):
+    monkeypatch.delenv("CYBERSENTINEL_ALLOW_PLAINTEXT", raising=False)
+    monkeypatch.delenv("CYBERSENTINEL_TRUST_FORWARDED_FOR", raising=False)
+    politica = TransportPolicy.from_env()
+    assert politica.allow_plaintext is False
+    assert politica.trust_forwarded is False
+    assert politica.status()["warning"] is None

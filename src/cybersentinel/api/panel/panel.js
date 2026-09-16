@@ -99,6 +99,41 @@ async function api(ruta, opciones = {}) {
   return cuerpo;
 }
 
+/* --- aviso sobre la conexión ------------------------------------------ */
+function avisarDelTransporte() {
+  /*
+   * El aviso se calcula, no se escribe fijo.
+   *
+   * Un texto estático que dice «comprueba que ponga https» aparece también
+   * cuando la conexión ya es segura, y un aviso que sale siempre deja de
+   * leerse. Aquí solo se muestra cuando de verdad hay algo que advertir, y con
+   * el tono que corresponde: sobre bucle local es una nota, sobre una red es
+   * un problema.
+   */
+  const nodo = $("#aviso-transporte");
+  const seguro = location.protocol === "https:";
+  const local = ["localhost", "127.0.0.1", "[::1]", "::1"].includes(location.hostname);
+
+  if (seguro) { nodo.hidden = true; return; }
+
+  nodo.hidden = false;
+  if (local) {
+    nodo.textContent = "Conexión sin cifrar sobre bucle local. Vale para "
+      + "desarrollo; la API rechazará credenciales en claro desde cualquier "
+      + "otro origen.";
+  } else {
+    nodo.classList.add("grave");
+    nodo.textContent = "Esta conexión NO está cifrada y no viene de tu máquina: "
+      + "la contraseña viajaría legible. No la escribas. Accede por https:// o "
+      + "avisa a quien administre el servicio.";
+    $("#entrar").disabled = true;
+    $("#usuario").disabled = true;
+    $("#clave").disabled = true;
+  }
+}
+
+avisarDelTransporte();
+
 /* --- acceso ----------------------------------------------------------- */
 $("#login-form").addEventListener("submit", async (ev) => {
   ev.preventDefault();

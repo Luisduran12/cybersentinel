@@ -1,8 +1,8 @@
 # Frontera del servicio — autenticación, RBAC y límite de caudal
 
-> Estado: implementado y probado. 41 pruebas específicas en
+> Estado: implementado y probado. 50 pruebas específicas en
 > `tests/test_api_security.py`, verificado además contra un servidor uvicorn
-> real. **Falta TLS**: ver [Lo que sigue sin estar](#lo-que-sigue-sin-estar).
+> real, con y sin TLS.
 
 Antes de esto, cualquiera con acceso de red al puerto 8000 podía inyectar
 telemetría en el pipeline y leer el historial completo de incidentes. La API
@@ -107,6 +107,74 @@ necesidad de acertar ninguna: el propio mecanismo de defensa sería la palanca.
 Y el fallo de autenticación se cobra del cubo **anónimo del origen**, no del de
 nadie más: quien prueba credenciales agota su propia cuota.
 
+### 5. El texto en claro solo se acepta desde la propia máquina
+
+Con autenticación real pero sin cifrado, todo lo anterior es decorado: la
+contraseña del analista y la clave del sensor viajan legibles, y quien las
+capture no necesita romper nada. La política (`security/transport.py`) **falla
+cerrada** y no necesita configuración:
+
+| Origen | Conexión | Resultado |
+|---|---|---|
+| Bucle local (`127.0.0.1`, `::1`) | HTTP | **se acepta** — no hay red que escuchar |
+| Remoto | HTTPS (uvicorn con certificado) | **se acepta** |
+| Remoto | HTTP + `X-Forwarded-Proto: https` **y** proxy declarado | **se acepta** |
+| Remoto | HTTP + `X-Forwarded-Proto: https` sin proxy declarado | **403** |
+| Remoto | HTTP | **403** |
+
+Dos detalles que cambian el resultado:
+
+- **Se comprueba antes de autenticar.** Verificar una contraseña que acaba de
+  viajar legible no la hace menos legible. Si la conexión no es segura, la
+  credencial ya está comprometida y lo único útil es no seguir.
+- **`X-Forwarded-Proto` no se cree sin un proxy declarado.** Si se creyera
+  siempre, cualquiera se declara seguro escribiendo una línea de cabecera.
+- **HSTS solo sobre una conexión ya segura.** Anunciarlo por HTTP no protege de
+  nada —quien lee la respuesta puede quitarlo— y puede dejar inaccesible un
+  laboratorio que luego no tenga certificado.
+
+`/api/v1/health` queda fuera de la comprobación: es la sonda del orquestador, no
+lleva credenciales, y un 403 ahí provocaría reinicios por un problema de red.
+
+**Por qué un rechazo y no un aviso.** Un despliegue que funciona sin TLS se
+queda sin TLS: el aviso se pierde entre los mensajes de arranque y nadie vuelve
+a mirarlo. Un 403 en la primera petición se arregla el primer día.
+
+La misma regla se aplica **antes de abrir el puerto**:
+
+```
+$ cybersentinel serve --host 0.0.0.0 --port 8000
+╭──────────────────────────────────────────────────────────────╮
+│ Me niego a escuchar en 0.0.0.0:8000 sin TLS.                 │
+│                                                              │
+│ Las credenciales de sensores y analistas viajarían en claro,  │
+│ y la autenticación no serviría de nada.                      │
+│                                                              │
+│ Opciones:                                                    │
+│   • Certificado real:   --tls-cert cert.pem --tls-key key.pem │
+│   • Laboratorio:        --dev-cert                           │
+│   • Solo esta máquina:  --host 127.0.0.1                     │
+│   • Hay un proxy TLS delante que no añade cabeceras:         │
+│       --allow-plaintext  (queda declarado en /ready)         │
+╰──────────────────────────────────────────────────────────────╯
+```
+
+Comprobarlo solo por petición no basta: para cuando el primer 403 avisa, el
+puerto ya está publicado y las credenciales del primer sensor pueden haber
+viajado.
+
+**La escotilla.** `--allow-plaintext` (o `CYBERSENTINEL_ALLOW_PLAINTEXT=1`)
+existe para el caso real de un terminador TLS que no añade cabeceras de reenvío.
+Se admite, se registra en el arranque y aparece en `/api/v1/ready`, para que
+nadie pueda decir después que no lo sabía.
+
+**`--dev-cert`** genera un autofirmado con `openssl` para laboratorio y lo dice
+en voz alta: cifra el tránsito pero **no autentica al servidor**, así que no
+protege de un intermediario. El aviso del navegador es correcto.
+
+**Lo que esto no es:** no hay mTLS —no se valida el certificado del cliente— ni
+fijación de certificado, ni rotación automática.
+
 ---
 
 ## Lo que se probó, nombrando el ataque
@@ -134,6 +202,9 @@ comprueban que ataques concretos fallan:
 | Agotar memoria con IPs falsas | `test_los_cubos_no_crecen_sin_limite` | cubos acotados (LRU) |
 | Inflar el log de auditoría con fallos | `test_los_fallos_repetidos_no_inflan_la_auditoria` | agregados por ventana de 60 s |
 | Filtrar secretos por la auditoría | `test_la_auditoria_no_guarda_secretos` | ni contraseñas ni claves |
+| Escuchar la red (credencial en claro) | `test_texto_en_claro_desde_fuera_se_rechaza` | 403 antes de autenticar |
+| Falsificar `X-Forwarded-Proto` | `test_x_forwarded_proto_no_se_cree_sin_proxy_declarado` | 403; solo vale con proxy declarado |
+| HSTS anunciado por HTTP (inútil y peligroso) | `test_hsts_solo_sobre_una_conexion_ya_segura` | solo se envía sobre TLS |
 
 Verificado además contra un uvicorn real, no solo con `TestClient`:
 
@@ -194,8 +265,21 @@ cybersentinel auth roles                     # matriz de autorización
 
 ```bash
 export CYBERSENTINEL_JWT_SECRET=$(openssl rand -hex 32)   # ≥32 bytes
+export CYBERSENTINEL_AUDIT_KEY=$(openssl rand -hex 32)
 export CYBERSENTINEL_IDENTITY_DB=/var/lib/cybersentinel/identities.db
-uvicorn cybersentinel.api.app:app --host 0.0.0.0 --port 8000
+
+# Producción: certificado emitido por una autoridad
+cybersentinel serve --host 0.0.0.0 --port 8443 \
+    --tls-cert /etc/ssl/cybersentinel.pem --tls-key /etc/ssl/cybersentinel.key
+
+# Detrás de un proxy que termina TLS
+cybersentinel serve --host 0.0.0.0 --trust-proxy
+
+# Laboratorio (certificado autofirmado, el navegador avisará)
+cybersentinel serve --host 0.0.0.0 --dev-cert
+
+# Solo esta máquina
+cybersentinel serve
 ```
 
 Sin `CYBERSENTINEL_JWT_SECRET` el servicio **arranca igualmente** con un secreto
@@ -229,14 +313,15 @@ curl http://localhost:8000/api/v1/incidents -H "Authorization: Bearer $TOKEN"
 | `CYBERSENTINEL_JWT_SECRET` | *(efímero + aviso)* | Firma de los tokens. ≥32 bytes |
 | `CYBERSENTINEL_IDENTITY_DB` | `data/runtime/identities.db` | Almacén de credenciales |
 | `CYBERSENTINEL_TOKEN_TTL` | `3600` | Vida del token, en segundos |
-| `CYBERSENTINEL_TRUST_FORWARDED_FOR` | `0` | Leer la IP de `X-Forwarded-For` |
+| `CYBERSENTINEL_TRUST_FORWARDED_FOR` | `0` | Creer `X-Forwarded-For` y `X-Forwarded-Proto` |
+| `CYBERSENTINEL_ALLOW_PLAINTEXT` | `0` | Aceptar credenciales sin cifrar desde cualquier origen |
 | `CYBERSENTINEL_RL_SENSOR_RPS` / `_BURST` | `50` / `100` | Peticiones por sensor |
 | `CYBERSENTINEL_RL_SENSOR_EPS` / `_BURST` | `20000` / `40000` | Eventos por sensor |
 | `CYBERSENTINEL_RL_ANON_RPS` / `_BURST` | `1` / `10` | Peticiones sin autenticar |
 
 `CYBERSENTINEL_TRUST_FORWARDED_FOR` viene **desactivado** a propósito: confiar en
-esa cabecera sin un proxy delante permite a cualquiera falsificar su origen y
-saltarse el límite por IP.
+esas cabeceras sin un proxy delante permite a cualquiera falsificar su origen
+—para saltarse el límite por IP— y declararse seguro sin estarlo.
 
 ---
 
@@ -244,10 +329,9 @@ saltarse el límite por IP.
 
 Declarado aquí para que no haya que descubrirlo en producción.
 
-1. **TLS.** El servicio habla HTTP en claro. Sin terminación TLS delante —proxy
-   o `uvicorn --ssl-keyfile --ssl-certfile`— las credenciales viajan legibles y
-   toda la autenticación de arriba no sirve de nada. **Es el siguiente
-   requisito, no un detalle de despliegue.**
+1. **Sin mTLS ni fijación de certificado.** Se exige que la conexión esté
+   cifrada; no se valida quién es el cliente a nivel de transporte ni contra qué
+   autoridad se emitió el certificado del servidor.
 
 2. **Los límites son por proceso.** Los cubos viven en memoria. Con N réplicas,
    el límite efectivo es N veces el configurado. Mover el estado a un almacén
@@ -281,6 +365,7 @@ src/cybersentinel/api/security/
 ├── identity.py   personas (scrypt) y sensores (clave de API), en SQLite
 ├── tokens.py     JWT HS256 con la biblioteca estándar
 ├── ratelimit.py  cubo de fichas por cliente, dos ejes
+├── transport.py  exige TLS a todo lo que no venga de la propia máquina
 └── guard.py      los une, aplica el orden y deja constancia
 ```
 

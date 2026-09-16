@@ -68,6 +68,11 @@ button { font: inherit; cursor: pointer; }
   background: rgba(210,153,34,.1); border-left: 3px solid var(--aviso);
   border-radius: 0 6px 6px 0; color: var(--tenue); font-size: 12px;
 }
+.aviso.grave {
+  background: rgba(248, 81, 73, .12);
+  border-left-color: var(--critica);
+  color: var(--critica);
+}
 .error { margin: 12px 0 0; color: var(--critica); font-size: 13px; }
 
 /* --- Cabecera ------------------------------------------------------- */

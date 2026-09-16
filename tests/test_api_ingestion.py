@@ -98,7 +98,11 @@ def puerta(tmp_path_factory):
 
 @pytest.fixture(scope="module")
 def cliente(servicio, puerta):
-    with TestClient(create_app(servicio, gate=puerta)) as c:
+    # `https://` no es decorativo: desde que la API exige TLS a los orígenes
+    # remotos, un cliente en texto plano recibiría 403. Usarlo aquí hace que
+    # la suite recorra el mismo camino que un despliegue real.
+    with TestClient(create_app(servicio, gate=puerta),
+                    base_url="https://testserver") as c:
         # El cliente por defecto es un sensor: es quien ingiere.
         c.headers.update({"X-API-Key": puerta.sensor_key})
         yield c
@@ -241,7 +245,8 @@ def test_api_devuelve_429_cuando_el_buffer_esta_lleno(tmp_path):
                         audit_path=None, queue_maxsize=2, batch_size=500,
                         enable_rag=False, enable_llm=False)
     svc.worker.stop()          # nadie drena: el buffer se llena seguro
-    with TestClient(create_app(svc, gate=puerta)) as c:
+    with TestClient(create_app(svc, gate=puerta),
+                    base_url="https://testserver") as c:
         svc.worker.stop()      # el lifespan lo arranca; se detiene para llenar el buffer
         r = c.post("/api/v1/events", json={"events": [_evento(i) for i in range(50)]},
                    headers={"X-API-Key": clave.token})

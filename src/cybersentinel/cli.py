@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -896,6 +897,116 @@ def cmd_auth_roles(args: argparse.Namespace) -> int:
     return 0
 
 
+LOOPBACK_HOSTS = {"127.0.0.1", "::1", "localhost"}
+
+
+def _generar_certificado_de_laboratorio(destino: Path) -> tuple[Path, Path]:
+    """
+    Genera un certificado autofirmado con `openssl`, solo para laboratorio.
+
+    No se usa una biblioteca de criptografía porque añadiría una dependencia
+    para algo que no se ejecuta en producción: en producción el certificado lo
+    emite una autoridad, no este comando.
+
+    El navegador avisará de que no confía en él, y ese aviso es correcto: un
+    certificado autofirmado cifra el tránsito pero **no autentica al servidor**,
+    así que no protege de un intermediario que se ponga en medio.
+    """
+    import shutil
+    import subprocess
+
+    if shutil.which("openssl") is None:
+        raise RuntimeError(
+            "no se encontró `openssl`. Genera el certificado a mano y pásalo "
+            "con --tls-cert / --tls-key"
+        )
+
+    destino.mkdir(parents=True, exist_ok=True)
+    cert, clave = destino / "dev-cert.pem", destino / "dev-key.pem"
+    if cert.exists() and clave.exists():
+        return cert, clave
+
+    subprocess.run(
+        ["openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes",
+         "-keyout", str(clave), "-out", str(cert), "-days", "90",
+         "-subj", "/CN=localhost",
+         "-addext", "subjectAltName=DNS:localhost,IP:127.0.0.1"],
+        check=True, capture_output=True,
+    )
+    clave.chmod(0o600)
+    return cert, clave
+
+
+def cmd_serve(args: argparse.Namespace) -> int:
+    """
+    Arranca el servicio, exigiendo TLS para cualquier escucha no local.
+
+    La comprobación se hace **antes** de abrir el puerto, y no solo por
+    petición: un despliegue que arranca sin TLS ya ha publicado el puerto, y
+    para cuando el primer 403 avisa, las credenciales del primer sensor ya
+    pueden haber viajado.
+    """
+    import uvicorn
+
+    cert = Path(args.tls_cert) if args.tls_cert else None
+    clave = Path(args.tls_key) if args.tls_key else None
+
+    if args.dev_cert:
+        if cert or clave:
+            console.print("[red]--dev-cert no se combina con --tls-cert/--tls-key.[/red]")
+            return 1
+        try:
+            cert, clave = _generar_certificado_de_laboratorio(
+                Path(args.dev_cert_dir or (ROOT / "data" / "runtime" / "dev-tls")))
+        except (RuntimeError, Exception) as exc:  # noqa: B014
+            console.print(f"[red]No se pudo generar el certificado: {exc}[/red]")
+            return 1
+        console.print(Panel.fit(
+            f"[yellow]Certificado autofirmado de laboratorio[/yellow]\n"
+            f"[dim]{cert}[/dim]\n\n"
+            "Cifra el tránsito pero [bold]no autentica al servidor[/bold]: el "
+            "navegador avisará, y el aviso es correcto.\nNo sirve para "
+            "producción.", box=box.ROUNDED, border_style="yellow"))
+
+    if bool(cert) != bool(clave):
+        console.print("[red]--tls-cert y --tls-key van juntos.[/red]")
+        return 1
+
+    remoto = args.host not in LOOPBACK_HOSTS and args.host != ""
+    if remoto and not cert and not args.allow_plaintext:
+        console.print(Panel.fit(
+            f"[red]Me niego a escuchar en {args.host}:{args.port} sin TLS.[/red]\n\n"
+            "Las credenciales de sensores y analistas viajarían en claro, y la "
+            "autenticación no serviría de nada.\n\n"
+            "[bold]Opciones:[/bold]\n"
+            "  • Certificado real:   --tls-cert cert.pem --tls-key key.pem\n"
+            "  • Laboratorio:        --dev-cert\n"
+            "  • Solo esta máquina:  --host 127.0.0.1\n"
+            "  • Hay un proxy TLS delante que no añade cabeceras:\n"
+            "      --allow-plaintext  [dim](queda declarado en /ready)[/dim]",
+            box=box.ROUNDED, border_style="red"))
+        return 2
+
+    if args.allow_plaintext:
+        os.environ["CYBERSENTINEL_ALLOW_PLAINTEXT"] = "1"
+    if args.trust_proxy:
+        os.environ["CYBERSENTINEL_TRUST_FORWARDED_FOR"] = "1"
+
+    esquema = "https" if cert else "http"
+    console.print(f"[green]Panel SOC:[/green] {esquema}://{args.host}:{args.port}/soc/")
+    if not cert:
+        console.print("[dim]Sin TLS en el servicio: solo se aceptarán credenciales "
+                      "desde el bucle local o a través de un proxy declarado.[/dim]")
+
+    uvicorn.run(
+        "cybersentinel.api.app:app", host=args.host, port=args.port,
+        ssl_certfile=str(cert) if cert else None,
+        ssl_keyfile=str(clave) if clave else None,
+        log_level=args.log_level,
+    )
+    return 0
+
+
 def _auditar(args: argparse.Namespace, actor: str, action: str,
              detail: dict[str, Any]) -> None:
     """Deja constancia de los cambios de credencial en la cadena de auditoría."""
@@ -1010,6 +1121,29 @@ def main(argv: list[str] | None = None) -> int:
     p_va = sub.add_parser("verify-audit", help="Verifica la integridad del log de auditoría.")
     p_va.add_argument("--audit", default="audit_log.jsonl")
     p_va.set_defaults(func=cmd_verify_audit)
+
+    p_sv = sub.add_parser(
+        "serve", help="Arranca la API y el panel SOC (exige TLS fuera del bucle local).",
+    )
+    p_sv.add_argument("--host", default="127.0.0.1",
+                      help="Interfaz de escucha. Fuera del bucle local exige TLS.")
+    p_sv.add_argument("--port", type=int, default=8000)
+    p_sv.add_argument("--tls-cert", help="Certificado en PEM.")
+    p_sv.add_argument("--tls-key", help="Clave privada en PEM.")
+    p_sv.add_argument("--dev-cert", action="store_true",
+                      help="Genera un certificado autofirmado. SOLO laboratorio: "
+                           "cifra, pero no autentica al servidor.")
+    p_sv.add_argument("--dev-cert-dir", help="Dónde dejar el certificado de laboratorio.")
+    p_sv.add_argument("--allow-plaintext", action="store_true",
+                      help="Aceptar credenciales sin cifrar desde cualquier origen. "
+                           "Solo correcto si hay un terminador TLS delante que no "
+                           "añade X-Forwarded-Proto. Queda declarado en /ready.")
+    p_sv.add_argument("--trust-proxy", action="store_true",
+                      help="Creer X-Forwarded-Proto y X-Forwarded-For. Actívalo solo "
+                           "si hay un proxy de confianza delante.")
+    p_sv.add_argument("--log-level", default="info",
+                      choices=("critical", "error", "warning", "info", "debug"))
+    p_sv.set_defaults(func=cmd_serve)
 
     p_au = sub.add_parser(
         "auth", help="Gestiona las credenciales de la API (personas y sensores).",
