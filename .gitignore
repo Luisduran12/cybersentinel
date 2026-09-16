@@ -7,6 +7,9 @@ report.json
 .pytest_cache/
 data/campaigns.jsonl
 *.jsonl.anchor
+# Candados de exclusion (auditoria entre procesos, propiedad del registro)
+*.lock
+.owner.lock
 data/synthetic_flows_unsw_format.csv
 docs/figuras/
 data/attack/enterprise-attack.json
