@@ -92,3 +92,92 @@ class IngestResponse(BaseModel):
     queued: int
     annotations: dict[str, int] = Field(default_factory=dict)
     errors: list[dict[str, Any]] = Field(default_factory=list)
+
+
+# --- Contratos de la frontera de seguridad -------------------------------
+class TokenRequest(BaseModel):
+    """
+    Petición de token de sesión.
+
+    Las credenciales van en el cuerpo, no en la URL: una contraseña en la
+    cadena de consulta acaba en los logs del proxy, en el historial del
+    navegador y en la cabecera `Referer`.
+    """
+
+    username: str = Field(..., min_length=1, max_length=128)
+    password: str = Field(..., min_length=1, max_length=512)
+
+
+class TokenResponse(BaseModel):
+    """Token emitido, con lo que el cliente necesita para usarlo y renovarlo."""
+
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int
+    role: str
+    permissions: list[str] = Field(default_factory=list)
+
+
+class CreateKeyRequest(BaseModel):
+    """Alta de una credencial de máquina."""
+
+    label: str = Field(..., min_length=1, max_length=128,
+                       description="Para qué sensor es. Aparece en la auditoría.")
+    role: str = Field(default="sensor", max_length=32)
+    expires_in_days: int | None = Field(default=365, ge=1, le=3650)
+
+
+class CreatedKeyResponse(BaseModel):
+    """
+    Respuesta del alta. `api_key` es lo único que no se vuelve a mostrar:
+    el almacén guarda solo su hash.
+    """
+
+    key_id: str
+    api_key: str
+    role: str
+    label: str
+    expires_at: str | None
+    note: str = ("Guarda la clave ahora: no se puede recuperar. "
+                 "Si se pierde, revócala y emite otra.")
+
+
+# --- Contratos del panel SOC ---------------------------------------------
+class IncidentPatch(BaseModel):
+    """
+    Cambio sobre un incidente. Todos los campos son opcionales y se aplican
+    juntos: asignar y pasar a «en curso» es una sola acción del analista y debe
+    ser una sola entrada coherente en la cronología, no dos peticiones que
+    pueden quedarse a medias.
+    """
+
+    state: str | None = Field(default=None, description="new | triaged | in_progress | closed")
+    owner: str | None = Field(default=None, max_length=128)
+    severity: str | None = Field(default=None, description="low | medium | high | critical")
+    resolution: str | None = Field(
+        default=None,
+        description="Obligatoria al cerrar: true_positive | false_positive | benign | duplicate")
+    note: str = Field(default="", max_length=4000)
+    clear_owner: bool = Field(default=False, description="Quitar el propietario actual.")
+
+
+class NoteRequest(BaseModel):
+    """Una anotación de la investigación. Se añade, nunca se sobrescribe."""
+
+    text: str = Field(..., min_length=1, max_length=4000)
+
+
+class DecisionRequest(BaseModel):
+    """
+    Veredicto del analista sobre el incidente (human-in-the-loop).
+
+    Alimenta el mismo almacén de decisiones que la CLI `cybersentinel decide`:
+    el panel no crea un circuito paralelo de etiquetado, porque dos fuentes de
+    verdad sobre lo que un humano decidió son cero fuentes de verdad.
+    """
+
+    decision: str = Field(..., description="TRUE_POSITIVE | FALSE_POSITIVE | BENIGN | UNCERTAIN")
+    reason: str = Field(default="", max_length=2000)
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    close: bool = Field(default=True,
+                        description="Cerrar el incidente con la resolución equivalente.")

@@ -4,21 +4,38 @@ API de ingestión de telemetría en tiempo real.
     uvicorn cybersentinel.api.app:app --host 0.0.0.0 --port 8000
 
 Endpoints:
-    POST /api/v1/events    ingesta (uno o varios eventos)
-    GET  /api/v1/health    liveness: ¿el proceso responde?
-    GET  /api/v1/ready     readiness: ¿puede aceptar tráfico útil?
-    GET  /api/v1/metrics   caudal, latencias p50/p95/p99, errores
-    GET  /api/v1/incidents últimos eventos que superaron el umbral
+    POST /api/v1/auth/token   emite un token de sesión (usuario + contraseña)
+    GET  /api/v1/auth/whoami  quién soy y qué puedo hacer
+    POST /api/v1/auth/logout  revoca el token en uso
+    POST /api/v1/events       ingesta (uno o varios eventos)   · events:write
+    GET  /api/v1/health       liveness: ¿el proceso responde?  · público
+    GET  /api/v1/ready        readiness: ¿acepta tráfico útil? · público (resumido)
+    GET  /api/v1/metrics      caudal, latencias, errores       · metrics:read
+    GET  /api/v1/incidents    lo que superó el umbral          · incidents:read
+    GET  /api/v1/identities   credenciales vivas               · identity:admin
+    POST /api/v1/identities/keys      emitir clave de sensor   · identity:admin
+    DELETE /api/v1/identities/keys/{id} revocar clave          · identity:admin
+    GET  /api/v1/incidents/stats  cifras de cabecera           · incidents:read
+    GET  /api/v1/incidents/{id}   incidente con su evidencia   · incidents:read
+    PATCH /api/v1/incidents/{id}  estado, propietario, cierre  · incidents:write
+    POST /api/v1/incidents/{id}/notes     anotar               · incidents:write
+    POST /api/v1/incidents/{id}/decision  veredicto HITL       · incidents:write
+    GET  /soc/                    panel del analista           · público (estático)
 
 Diseño: la ingestión es **asíncrona**. La API valida, normaliza y encola, y
 responde 202 sin esperar al análisis. Si respondiera con el veredicto, el emisor
 quedaría bloqueado durante todo el pipeline —que incluye recuperación RAG y
 explicación— y el caudal se desplomaría.
 
-Lo que esta API NO tiene todavía, y hay que decirlo antes de exponerla:
-autenticación, autorización, TLS y límite de caudal por cliente. Está pensada
-para desplegarse **detrás** de un proxy que aporte esas cuatro cosas, no
-directamente en una red no confiable.
+Toda ruta que no sea una sonda de salud exige credencial y permiso (ver
+`security/`). Las sondas quedan abiertas a propósito: un orquestador que no
+puede consultarlas mata el proceso creyéndolo muerto, y `/ready` sin credencial
+devuelve solo si acepta tráfico, no el detalle de los componentes.
+
+**Lo que sigue faltando y hay que decirlo antes de exponerla:** TLS. El servicio
+habla HTTP en claro; sin terminación TLS delante —proxy o `uvicorn --ssl-keyfile`—
+las credenciales viajan legibles y toda la autenticación de arriba no sirve de
+nada. Es el siguiente requisito, no un detalle de despliegue.
 """
 from __future__ import annotations
 
@@ -26,22 +43,41 @@ import logging
 import os
 import time
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, Request, Response, status
-from fastapi.responses import JSONResponse
+from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
+from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
 from ..config import ROOT
+from ..governance import AuditLog
+from ..governance.dataset_manager import DatasetManager
+from ..governance.feedback import HumanDecision, StructuredDecision
 from ..ingestion import Normalizer
 from ..pipeline import ALERT_THRESHOLD, Pipeline
 from .metrics import IngestMetrics
-from .models import EventBatch, IngestResponse, RawEvent
+from .models import (
+    CreatedKeyResponse, CreateKeyRequest, DecisionRequest, EventBatch,
+    IncidentPatch, IngestResponse, NoteRequest, RawEvent, TokenRequest,
+    TokenResponse,
+)
+from .incidents import Filtro, IncidentError, IncidentStore
 from .queue import IngestQueue, QueueFull
+from .security import (
+    AuthError, Permission, Principal, Role, SecurityConfig, SecurityGate,
+    charge_events, limit_anonymous, requires, role_matrix,
+)
 from .store import ResultStore
 from .worker import IngestWorker, QueuedEvent
 
 logger = logging.getLogger(__name__)
+
+#: Raíz de los archivos del panel SOC. Se sirven desde el propio proceso: un
+#: panel que exige su propio despliegue, su propio dominio y su propia
+#: configuración de CORS es un panel que en la práctica no se instala.
+PANEL_DIR = Path(__file__).parent / "panel"
 
 #: Configuración por entorno. Sin valores mágicos escondidos en el código.
 QUEUE_MAXSIZE = int(os.environ.get("CYBERSENTINEL_QUEUE_MAXSIZE", "20000"))
@@ -49,6 +85,20 @@ BATCH_SIZE = int(os.environ.get("CYBERSENTINEL_BATCH_SIZE", "500"))
 DB_PATH = os.environ.get("CYBERSENTINEL_DB", str(ROOT / "data" / "runtime" / "events.db"))
 RULES_DIR = os.environ.get("CYBERSENTINEL_RULES", str(ROOT / "config" / "rules"))
 AUDIT_PATH = os.environ.get("CYBERSENTINEL_AUDIT", str(ROOT / "data" / "runtime" / "audit.jsonl"))
+IDENTITY_DB = os.environ.get(
+    "CYBERSENTINEL_IDENTITY_DB", str(ROOT / "data" / "runtime" / "identities.db"))
+FEEDBACK_STORE = os.environ.get(
+    "CYBERSENTINEL_FEEDBACK", str(ROOT / "data" / "feedback" / "decisions.jsonl"))
+
+#: Cómo se traduce el veredicto del analista a motivo de cierre. `UNCERTAIN`
+#: no aparece a propósito: un incidente sobre el que el analista duda no está
+#: resuelto, y cerrarlo automáticamente lo escondería del panel sin que nadie
+#: haya decidido nada.
+RESOLUCION_POR_VEREDICTO = {
+    "TRUE_POSITIVE": "true_positive",
+    "FALSE_POSITIVE": "false_positive",
+    "BENIGN": "benign",
+}
 
 
 class IngestService:
@@ -61,6 +111,8 @@ class IngestService:
         audit_path: str | Path | None = AUDIT_PATH,
         queue_maxsize: int = QUEUE_MAXSIZE,
         batch_size: int = BATCH_SIZE,
+        incidents_path: str | Path | None = None,
+        feedback_store: str | Path | None = None,
         **pipeline_kwargs: Any,
     ) -> None:
         self.normalizer = Normalizer()
@@ -70,10 +122,15 @@ class IngestService:
         )
         self.queue = IngestQueue(maxsize=queue_maxsize)
         self.store = ResultStore(db_path)
+        self.incidents = IncidentStore(
+            incidents_path or Path(db_path).with_name("incidents.db"))
         self.metrics = IngestMetrics()
+        # El mismo almacén de decisiones que usa `cybersentinel decide`: el
+        # panel no abre un circuito paralelo de etiquetado.
+        self.feedback = DatasetManager(store_path=feedback_store or FEEDBACK_STORE)
         self.worker = IngestWorker(
             pipeline=self.pipeline, cola=self.queue, store=self.store,
-            metrics=self.metrics, batch_size=batch_size,
+            incidents=self.incidents, metrics=self.metrics, batch_size=batch_size,
         )
 
     def start(self) -> None:
@@ -127,30 +184,68 @@ class IngestService:
         )
 
 
-def create_app(svc: IngestService | None = None) -> FastAPI:
+def _default_gate() -> SecurityGate:
+    """
+    Puerta por defecto: identidades en SQLite y auditoría encadenada.
+
+    La auditoría de seguridad va al **mismo** log encadenado que el resto del
+    sistema, no a uno aparte. Un registro de autenticación en un archivo propio
+    se puede borrar sin romper ninguna cadena; aquí, borrar un intento fallido
+    invalida la verificación de todo lo posterior.
+    """
+    return SecurityGate(SecurityConfig(
+        identity_db=IDENTITY_DB,
+        audit_log=AuditLog(AUDIT_PATH) if AUDIT_PATH else None,
+    ))
+
+
+def create_app(svc: IngestService | None = None,
+               gate: SecurityGate | None = None) -> FastAPI:
     """
     Construye la aplicación. Sin `svc` crea el servicio por defecto.
 
     El servicio vive en `app.state`, no en una global del módulo: con una global,
     dos aplicaciones en el mismo proceso —algo habitual en pruebas y en
     despliegues con varios montajes— se pisarían la instancia y la segunda
-    dejaría a la primera apuntando a un worker detenido.
+    dejaría a la primera apuntando a un worker detenido. La puerta de seguridad
+    vive en el mismo sitio y por la misma razón.
     """
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         app.state.service = svc or IngestService()
+        app.state.gate = gate or _default_gate()
+
+        # Un solo objeto `AuditLog` por archivo. Dos instancias sobre el mismo
+        # registro calculan `index` y `prev_hash` cada una por su cuenta y
+        # dejan dos cadenas entrelazadas; `AuditLog` ya se defiende releyendo el
+        # archivo, pero compartir la instancia evita esa relectura en cada
+        # entrada y deja la intención explícita en vez de confiada al arreglo.
+        del_pipeline = getattr(app.state.service.pipeline, "audit", None)
+        de_la_puerta = app.state.gate.audit
+        if del_pipeline is not None and (
+            de_la_puerta is None
+            or Path(de_la_puerta.path) == Path(del_pipeline.path)
+        ):
+            app.state.gate.audit = del_pipeline
+
         app.state.service.start()
-        logger.info("Servicio de ingestión listo")
+        logger.info("Servicio de ingestión listo (secreto de token: %s)",
+                    app.state.gate.signer.source)
         yield
         app.state.service.stop()
+        # El contador de usos de las claves se vuelca en diferido (ver
+        # `IdentityStore._touch_key`); en un apagado ordenado no se pierde.
+        app.state.gate.store.flush_usage()
 
     app = FastAPI(
         title="CyberSentinel — Ingestión de telemetría",
-        version="1.0.0",
+        version="1.1.0",
         description=(
             "Ingesta de telemetría en tiempo real hacia el pipeline defensivo. "
-            "Sin autenticación ni TLS: desplegar detrás de un proxy que los aporte."
+            "Autenticada (clave de API para sensores, token para personas), con "
+            "autorización por permisos y límite de caudal por cliente. "
+            "**Sin TLS**: desplegar detrás de un terminador TLS."
         ),
         lifespan=lifespan,
     )
@@ -161,10 +256,102 @@ def create_app(svc: IngestService | None = None) -> FastAPI:
             raise RuntimeError("El servicio no está inicializado")
         return servicio
 
+    # --- Frontera de seguridad -------------------------------------------
+    @app.post("/api/v1/auth/token", response_model=TokenResponse,
+              dependencies=[Depends(limit_anonymous)],
+              summary="Emitir token de sesión")
+    async def emitir_token(credenciales: TokenRequest, request: Request) -> TokenResponse:
+        """
+        Cambia usuario y contraseña por un token de vida corta.
+
+        `limit_anonymous` se aplica **antes** que el manejador: derivar la
+        contraseña con scrypt cuesta ~100 ms a propósito, y sin ese límite
+        previo el propio mecanismo de defensa sería la palanca para tumbar el
+        servicio.
+        """
+        try:
+            return TokenResponse(**request.app.state.gate.issue_token(
+                credenciales.username, credenciales.password, request))
+        except AuthError as exc:
+            cabeceras = {"WWW-Authenticate": 'Bearer realm="cybersentinel"'}
+            if exc.retry_after:
+                cabeceras["Retry-After"] = str(exc.retry_after)
+            # Mismo mensaje para usuario inexistente y contraseña incorrecta.
+            return JSONResponse(
+                {"error": "no_autenticado", "reason": exc.motivo},
+                status_code=status.HTTP_401_UNAUTHORIZED, headers=cabeceras,
+            )
+
+    @app.get("/api/v1/auth/whoami", summary="Quién soy y qué puedo hacer")
+    async def whoami(principal: Principal = Depends(requires())) -> dict[str, Any]:
+        """Sin permiso concreto: basta con estar autenticado."""
+        return {**principal.to_dict(), "token_id": principal.token_id}
+
+    @app.post("/api/v1/auth/logout", summary="Revocar el token en uso")
+    async def logout(request: Request,
+                     principal: Principal = Depends(requires())) -> dict[str, Any]:
+        if not principal.token_id:
+            return {"revoked": False,
+                    "reason": "las claves de API se revocan desde /identities, no aquí"}
+        request.app.state.gate.revoke_token(principal.token_id)
+        return {"revoked": True, "token_id": principal.token_id,
+                "note": "la lista de revocación vive en memoria: un reinicio la vacía"}
+
+    @app.get("/api/v1/auth/roles", summary="Matriz de roles y permisos")
+    async def roles(_: Principal = Depends(requires())) -> dict[str, Any]:
+        return {"roles": role_matrix()}
+
+    # --- Administración de credenciales ----------------------------------
+    @app.get("/api/v1/identities", summary="Credenciales vivas")
+    async def identidades(request: Request,
+                          principal: Principal = Depends(requires(Permission.IDENTITY_ADMIN)),
+                          include_revoked: bool = False) -> dict[str, Any]:
+        almacen = request.app.state.gate.store
+        return {"users": almacen.list_users(),
+                "api_keys": almacen.list_api_keys(include_revoked=include_revoked),
+                "summary": almacen.summary()}
+
+    @app.post("/api/v1/identities/keys", status_code=status.HTTP_201_CREATED,
+              response_model=CreatedKeyResponse, summary="Emitir clave de sensor")
+    async def crear_clave(cuerpo: CreateKeyRequest, request: Request,
+                          principal: Principal = Depends(requires(Permission.IDENTITY_ADMIN)),
+                          ) -> CreatedKeyResponse:
+        puerta = request.app.state.gate
+        try:
+            rol = Role(cuerpo.role)
+        except ValueError:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                                detail={"error": "rol_desconocido",
+                                        "valid": [r.value for r in Role]}) from None
+        emitida = puerta.store.create_api_key(
+            label=cuerpo.label, role=rol, created_by=principal.id,
+            expires_in_days=cuerpo.expires_in_days)
+        puerta._record(actor=principal.id, action="api_key_created",
+                       detail={"key_id": emitida.key_id, "role": rol.value,
+                               "label": cuerpo.label, "expires_at": emitida.expires_at})
+        return CreatedKeyResponse(
+            key_id=emitida.key_id, api_key=emitida.token, role=rol.value,
+            label=emitida.label, expires_at=emitida.expires_at)
+
+    @app.delete("/api/v1/identities/keys/{key_id}", summary="Revocar clave de sensor")
+    async def revocar_clave(key_id: str, request: Request,
+                            principal: Principal = Depends(requires(Permission.IDENTITY_ADMIN)),
+                            ) -> dict[str, Any]:
+        puerta = request.app.state.gate
+        revocada = puerta.store.revoke_api_key(key_id)
+        if revocada:
+            puerta._record(actor=principal.id, action="api_key_revoked",
+                           detail={"key_id": key_id})
+        return {"revoked": revocada, "key_id": key_id}
+
     @app.post("/api/v1/events", status_code=status.HTTP_202_ACCEPTED,
               response_model=IngestResponse, summary="Ingerir telemetría")
-    async def ingest_events(batch: EventBatch, request: Request,
-                            response: Response) -> IngestResponse:
+    async def ingest_events(batch: EventBatch, request: Request, response: Response,
+                            principal: Principal = Depends(requires(Permission.EVENTS_WRITE)),
+                            ) -> IngestResponse:
+        # El caudal de eventos se cobra aquí, con el lote ya validado y antes de
+        # normalizar nada: un cliente fuera de cuota no debe consumir pipeline.
+        charge_events(request, principal, len(batch.events))
         resultado = _svc(request).ingest(batch.events)
         if resultado.accepted == 0 and resultado.rejected:
             # Nada entró: no es un 202. Distinguir contrapresión de dato inválido.
@@ -181,7 +368,13 @@ def create_app(svc: IngestService | None = None) -> FastAPI:
 
     @app.get("/api/v1/health", summary="Liveness")
     async def health() -> dict[str, Any]:
-        """¿El proceso está vivo? No dice nada sobre si es útil."""
+        """
+        ¿El proceso está vivo? No dice nada sobre si es útil.
+
+        Pública a propósito y deliberadamente escueta: no revela versión, ni
+        componentes, ni estado interno. Es lo único que se puede saber del
+        servicio sin presentar credencial.
+        """
         return {"status": "alive", "service": "cybersentinel-ingest"}
 
     @app.get("/api/v1/ready", summary="Readiness")
@@ -191,11 +384,27 @@ def create_app(svc: IngestService | None = None) -> FastAPI:
 
         No basta con estar vivo: si el worker está caído o el buffer saturado,
         aceptar tráfico solo acumularía pérdidas.
+
+        Queda **sin credencial** porque un orquestador que no puede consultarla
+        reinicia el proceso creyéndolo muerto. A cambio, sin credencial devuelve
+        solo el veredicto: el estado de cada componente, la ocupación del buffer
+        y la configuración de la frontera son inteligencia útil para quien esté
+        preparando un ataque, y solo se sirven con `metrics:read`.
         """
         s = _svc(request)
         saturada = s.queue.utilization >= 0.95
         listo = s.worker.is_running and not saturada
-        cuerpo = {
+        codigo = status.HTTP_200_OK if listo else status.HTTP_503_SERVICE_UNAVAILABLE
+
+        puerta = request.app.state.gate
+        try:
+            principal = puerta.authenticate(request)
+        except AuthError:
+            principal = None
+        if principal is None or not principal.can(Permission.METRICS_READ):
+            return JSONResponse({"ready": listo}, status_code=codigo)
+
+        return JSONResponse({
             "ready": listo,
             "worker_running": s.worker.is_running,
             "queue_size": s.queue.size,
@@ -206,14 +415,13 @@ def create_app(svc: IngestService | None = None) -> FastAPI:
                 "hasta entonces el componente ML informa UNAVAILABLE"
             ),
             "components": s.pipeline.component_status,
-        }
-        return JSONResponse(
-            cuerpo,
-            status_code=status.HTTP_200_OK if listo else status.HTTP_503_SERVICE_UNAVAILABLE,
-        )
+            "security": puerta.status(),
+        }, status_code=codigo)
 
     @app.get("/api/v1/metrics", summary="Caudal, latencia y errores")
-    async def metrics(request: Request) -> dict[str, Any]:
+    async def metrics(request: Request,
+                      _: Principal = Depends(requires(Permission.METRICS_READ)),
+                      ) -> dict[str, Any]:
         s = _svc(request)
         datos = s.metrics.snapshot()
         datos["queue"] = {**s.queue.stats.to_dict(),
@@ -226,13 +434,188 @@ def create_app(svc: IngestService | None = None) -> FastAPI:
                            "last_run_id": s.worker.last_run_id}
         datos["store"] = s.store.summary()
         datos["alert_threshold"] = ALERT_THRESHOLD
+        datos["rate_limit"] = request.app.state.gate.limiter.stats()
         return datos
 
-    @app.get("/api/v1/incidents", summary="Eventos que superaron el umbral")
-    async def incidents(request: Request, limit: int = 50) -> dict[str, Any]:
-        s = _svc(request)
-        return {"threshold": ALERT_THRESHOLD,
-                "incidents": s.store.incidents(limit=min(limit, 500))}
+    # --- Incidentes: lo que el panel SOC consume --------------------------
+    @app.get("/api/v1/incidents/stats", summary="Cifras de cabecera del panel")
+    async def incident_stats(request: Request,
+                             _: Principal = Depends(requires(Permission.INCIDENTS_READ)),
+                             ) -> dict[str, Any]:
+        # Declarada antes que `/{incident_id}`: en caso contrario, «stats» se
+        # interpretaría como el identificador de un incidente.
+        return {**_svc(request).incidents.stats(), "threshold": ALERT_THRESHOLD}
+
+    @app.get("/api/v1/incidents", summary="Incidentes filtrables")
+    async def incidents(
+        request: Request,
+        principal: Principal = Depends(requires(Permission.INCIDENTS_READ)),
+        state: str | None = None, severity: str | None = None,
+        owner: str | None = None, entity: str | None = None,
+        technique: str | None = None, unassigned: bool = False,
+        q: str | None = None, since: str | None = None,
+        limit: int = 50, offset: int = 0,
+    ) -> dict[str, Any]:
+        resultado = _svc(request).incidents.list(Filtro(
+            state=state, severity=severity, owner=owner, entity=entity,
+            technique=technique, unassigned=unassigned, query=q, since=since,
+            limit=limit, offset=offset,
+        ))
+        return {**resultado, "threshold": ALERT_THRESHOLD,
+                "queried_by": principal.display,
+                "can_write": principal.can(Permission.INCIDENTS_WRITE)}
+
+    @app.get("/api/v1/incidents/{incident_id}", summary="Un incidente con toda su evidencia")
+    async def incident_detail(incident_id: str, request: Request,
+                              principal: Principal = Depends(requires(Permission.INCIDENTS_READ)),
+                              ) -> dict[str, Any]:
+        incidente = _svc(request).incidents.get(incident_id)
+        if incidente is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                detail={"error": "no_encontrado", "incident_id": incident_id})
+        return {**incidente, "can_write": principal.can(Permission.INCIDENTS_WRITE)}
+
+    @app.patch("/api/v1/incidents/{incident_id}", summary="Cambiar estado, propietario o severidad")
+    async def incident_update(incident_id: str, cambio: IncidentPatch, request: Request,
+                              principal: Principal = Depends(requires(Permission.INCIDENTS_WRITE)),
+                              ) -> dict[str, Any]:
+        servicio, puerta = _svc(request), request.app.state.gate
+        try:
+            incidente = servicio.incidents.update(
+                incident_id, actor=principal.display, state=cambio.state,
+                owner=cambio.owner, severity=cambio.severity,
+                resolution=cambio.resolution, note=cambio.note,
+                clear_owner=cambio.clear_owner,
+            )
+        except IncidentError as exc:
+            # 422 y no 500: el error es del cliente —una transición que no
+            # existe— y el mensaje dice qué sí se puede hacer.
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                                detail={"error": "transicion_invalida",
+                                        "reason": str(exc)}) from None
+        puerta._record(actor=principal.id, action="incident_updated",
+                       detail={"incident_id": incident_id, "state": cambio.state,
+                               "owner": cambio.owner, "severity": cambio.severity,
+                               "resolution": cambio.resolution})
+        return incidente
+
+    @app.post("/api/v1/incidents/{incident_id}/notes", status_code=status.HTTP_201_CREATED,
+              summary="Anotar la investigación")
+    async def incident_note(incident_id: str, nota: NoteRequest, request: Request,
+                            principal: Principal = Depends(requires(Permission.INCIDENTS_WRITE)),
+                            ) -> dict[str, Any]:
+        try:
+            return _svc(request).incidents.add_note(incident_id, principal.display, nota.text)
+        except IncidentError as exc:
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                detail={"error": "no_encontrado", "reason": str(exc)}) from None
+
+    @app.post("/api/v1/incidents/{incident_id}/decision", status_code=status.HTTP_201_CREATED,
+              summary="Veredicto del analista (human-in-the-loop)")
+    async def incident_decision(incident_id: str, cuerpo: DecisionRequest, request: Request,
+                                principal: Principal = Depends(requires(Permission.INCIDENTS_WRITE)),
+                                ) -> dict[str, Any]:
+        """
+        Registra el veredicto en el **mismo** almacén que `cybersentinel decide`.
+
+        El panel no abre un circuito paralelo de etiquetado: dos fuentes de
+        verdad sobre lo que un humano decidió son cero fuentes de verdad. La
+        evidencia que el analista tenía delante se sella dentro de la decisión,
+        de modo que un cambio posterior en las reglas no reescriba lo que vio.
+        """
+        servicio, puerta = _svc(request), request.app.state.gate
+        incidente = servicio.incidents.get(incident_id)
+        if incidente is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                detail={"error": "no_encontrado", "incident_id": incident_id})
+        try:
+            veredicto = HumanDecision(cuerpo.decision)
+        except ValueError:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={"error": "decision_desconocida",
+                        "valid": [d.value for d in HumanDecision]}) from None
+
+        decision = StructuredDecision(
+            detection_id=incident_id, event_id=incidente["event_ref"],
+            # Marca del EVENTO, no del etiquetado: usar la segunda introduciría
+            # fuga temporal al construir particiones de entrenamiento.
+            timestamp=datetime.fromisoformat(incidente["event_time"]),
+            analyst_decision=veredicto, confidence=cuerpo.confidence,
+            reason=cuerpo.reason,
+            selected_evidence={k: incidente[k] for k in (
+                "incident_id", "run_id", "event_ref", "event_id", "score",
+                "anomaly_score", "detection_status", "techniques", "tactics",
+                "rules", "cti", "narrative", "raw_event") if k in incidente},
+            analyst_id=principal.display,
+            model_version=servicio.pipeline.component_status.get("ml", "desconocida"),
+            rule_version=servicio.pipeline.component_status.get("sigma", "desconocida"),
+            data_source=f"soc-panel:{incident_id}",
+            created_at=datetime.now(tz=timezone.utc),
+        )
+        aceptada = servicio.feedback.submit_decision(decision)
+        if not aceptada:
+            raise HTTPException(status.HTTP_409_CONFLICT,
+                                detail={"error": "decision_rechazada",
+                                        "reason": "el gestor de dataset la rechazó "
+                                                  "(¿duplicada?)"})
+
+        servicio.incidents.record_decision(
+            incident_id, principal.display, veredicto.value, cuerpo.reason,
+            decision.fingerprint())
+        puerta._record(actor=principal.id, action="analyst_decision",
+                       detail={"incident_id": incident_id, "decision": veredicto.value,
+                               "confidence": cuerpo.confidence,
+                               "fingerprint": decision.fingerprint()})
+
+        resultado = servicio.incidents.get(incident_id)
+        motivo = RESOLUCION_POR_VEREDICTO.get(veredicto.value)
+        nota_cierre = None
+        if cuerpo.close and motivo and resultado and resultado["state"] != "closed":
+            resultado = servicio.incidents.update(
+                incident_id, actor=principal.display, state="closed", resolution=motivo)
+        elif cuerpo.close and not motivo:
+            nota_cierre = ("no se cerró: un veredicto UNCERTAIN no resuelve el "
+                           "incidente, y cerrarlo lo escondería sin que nadie "
+                           "haya decidido")
+        return {"decision": decision.to_dict(), "incident": resultado,
+                "close_note": nota_cierre}
+
+    # --- Panel SOC --------------------------------------------------------
+    @app.middleware("http")
+    async def _cabeceras_de_seguridad(request: Request, call_next):
+        """
+        Cabeceras que el navegador necesita para no ejecutar lo que no debe.
+
+        La telemetría la escribe el atacante y el panel la muestra. El código
+        del panel ya inserta todo con `textContent`, pero una política de
+        contenido estricta convierte un descuido futuro en un error de consola
+        en lugar de en ejecución de código en el navegador del analista.
+        `frame-ancestors 'none'` impide además que el panel se empotre en otra
+        página para robar clics.
+        """
+        respuesta = await call_next(request)
+        respuesta.headers.setdefault("Content-Security-Policy", (
+            "default-src 'self'; script-src 'self'; style-src 'self'; "
+            "img-src 'self' data:; connect-src 'self'; form-action 'self'; "
+            "frame-ancestors 'none'; base-uri 'none'"))
+        respuesta.headers.setdefault("X-Content-Type-Options", "nosniff")
+        respuesta.headers.setdefault("Referrer-Policy", "no-referrer")
+        respuesta.headers.setdefault("X-Frame-Options", "DENY")
+        return respuesta
+
+    @app.get("/", include_in_schema=False)
+    async def _raiz() -> RedirectResponse:
+        return RedirectResponse("/soc/")
+
+    if PANEL_DIR.is_dir():
+        # Los archivos del panel son públicos: son HTML, CSS y JavaScript sin
+        # un solo dato dentro. Todo lo que muestran lo piden a la API con el
+        # token del analista, y esa sí exige credencial y permiso.
+        app.mount("/soc", StaticFiles(directory=PANEL_DIR, html=True), name="soc")
+    else:
+        logger.warning("No se encontró el panel en %s: la API funciona, "
+                       "pero /soc no servirá nada", PANEL_DIR)
 
     @app.exception_handler(Exception)
     async def _errores(request: Request, exc: Exception) -> JSONResponse:

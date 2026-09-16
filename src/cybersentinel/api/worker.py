@@ -46,6 +46,7 @@ class IngestWorker:
         cola: IngestQueue,
         store: Any,
         metrics: IngestMetrics,
+        incidents: Any = None,
         batch_size: int = 500,
         poll_timeout: float = 0.5,
         max_retries: int = 2,
@@ -53,6 +54,7 @@ class IngestWorker:
         self.pipeline = pipeline
         self.cola = cola
         self.store = store
+        self.incidents = incidents
         self.metrics = metrics
         self.batch_size = batch_size
         self.poll_timeout = poll_timeout
@@ -135,6 +137,24 @@ class IngestWorker:
             resultado.source = encolado.source if encolado else "desconocida"
 
         self.store.save_batch(reporte.results, umbral=ALERT_THRESHOLD)
+
+        if self.incidents is not None:
+            # Dos almacenes con dos preguntas distintas: `store` responde
+            # «¿cuántos eventos vi y cómo fueron?» —resumen por evento—, y
+            # `incidents` responde «¿qué tengo que investigar?» —evidencia
+            # completa solo de lo que cruzó el umbral—. Unirlos obligaría a
+            # elegir entre guardar 129 MB por cada 20 000 eventos o dejar al
+            # analista sin el porqué de la alerta.
+            try:
+                self.incidents.save_batch(
+                    reporte.results, umbral=ALERT_THRESHOLD,
+                    eventos_por_ref={ref: q.event for ref, q in por_ref.items()},
+                )
+            except Exception:
+                # Un fallo persistiendo incidentes no puede tumbar la ingestión
+                # ni provocar un reintento del lote entero: el resumen por
+                # evento ya está a salvo y el error queda con traza.
+                logger.exception("No se pudieron persistir los incidentes del lote")
 
         ahora = time.perf_counter()
         for q in lote:

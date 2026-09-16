@@ -230,6 +230,8 @@ La suite cubre tres cosas distintas:
 | `tests/test_datasets.py` | Que los cargadores digieren los formatos reales (CSV sin cabecera, cp1252, columnas con espacios). |
 | `tests/test_detection_evaluation.py` | Que el protocolo de medición es correcto: ningún ataque en el entrenamiento, nada medido sobre datos vistos. |
 | `tests/test_mitre_attack.py` | Que la matriz oficial se integra sin romper la interfaz, y que el sistema sigue funcionando sin ella. |
+| `tests/test_api_security.py` | Que los ataques contra la frontera fallan: `alg:none`, token manipulado, clave revocada, enumeración de usuarios, fuerza bruta, cliente desbocado. Cada prueba nombra el ataque que representa. |
+| `tests/test_soc_panel.py` | Que el incidente sobrevive en disco con la evidencia que lo justifica, que el ciclo de vida no acepta transiciones inválidas, que la cronología solo crece y que el rol que solo lee no puede escribir aunque el navegador le enseñe un botón. |
 
 ## Evaluación con datasets reales
 
@@ -279,6 +281,80 @@ Ese es todo el contrato: añadir una fuente **no** obliga a tocar Sigma, el
 modelo, Markov ni la correlación, y hay una prueba que lo verifica inspeccionando
 los imports. Formatos soportados y **limitaciones conocidas de cada collector**
 en [`docs/COLLECTORS.md`](docs/COLLECTORS.md).
+
+## Frontera del servicio: autenticación, RBAC y límite de caudal
+
+La API de ingestión no se expone sin credencial. Dos tipos de cliente, dos tipos
+de credencial:
+
+```bash
+# Un sensor: clave de API. Se muestra una vez; el almacén guarda solo su hash.
+cybersentinel auth create-key --label "sysmon-SRV-APP"
+
+# Una persona: usuario y contraseña; la API devuelve un token de una hora.
+cybersentinel auth create-user --username ana --role analyst
+
+cybersentinel auth roles     # la matriz de autorización completa
+```
+
+| Rol | Puede |
+|---|---|
+| `sensor` | ingerir telemetría — **y nada más**: robar la clave de un colector no da acceso al historial |
+| `analyst` | leer incidentes y métricas |
+| `responder` | + cerrar incidentes y aprobar respuesta |
+| `auditor` | + leer la auditoría, **sin escribir nada** |
+| `admin` | gestionar credenciales — **sin poder inyectar telemetría** |
+
+El código pregunta por *permiso*, nunca por rol. El límite de caudal es por
+cliente y en dos ejes (peticiones **y** eventos): un sensor desbocado se ahoga
+solo, no deja sin servicio a los otros cuarenta.
+
+Las 41 pruebas de `tests/test_api_security.py` nombran el ataque que frenan
+—`alg:none`, firma manipulada, clave revocada, enumeración de usuarios, fuerza
+bruta, agotamiento de memoria por IPs falsas— y el coste está medido:
+**51 µs** verificar una clave de sensor, **2,4 µs** el limitador, frente a los
+**113 ms** de scrypt que cuesta una contraseña. Esa diferencia de 2 165× es la
+razón de que se deriven distinto.
+
+**Lo que falta y hay que decirlo: TLS.** El servicio habla HTTP en claro; sin un
+terminador TLS delante, las credenciales viajan legibles. Detalle completo,
+límites conocidos y variables de entorno en
+[`docs/SECURITY.md`](docs/SECURITY.md).
+
+## Panel SOC
+
+```bash
+cybersentinel auth create-user --username rosa --role responder
+uvicorn cybersentinel.api.app:app --host 0.0.0.0 --port 8000
+# → http://localhost:8000/soc/
+```
+
+Hasta aquí el sistema detectaba pero no dejaba **investigar**: cada ejecución
+producía resultados en memoria y la evidencia que justificaba la alerta se
+perdía al terminar el proceso. Ahora el incidente es una entidad persistente con
+ciclo de vida, propietario y una cronología que **solo crece**.
+
+El panel lo sirve el propio proceso: HTML, CSS y JavaScript sin cadena de
+compilación, sin dependencias y sin una sola descarga externa —un centro de
+operaciones puede estar en una red aislada—. Muestra, por incidente: qué regla
+disparó y con qué confianza, el evento normalizado completo, la explicación con
+su procedencia, las coincidencias de CTI, el contexto recuperado con su fuente
+citable y las contramedidas con su veredicto de gobernanza.
+
+Y enseña lo que un panel suele esconder: **de dónde salió la narrativa** (modelo
+o respaldo determinista), **qué componente está degradado** en vez de un
+semáforo verde, y que las contramedidas **no se ejecutan desde aquí**.
+
+Tres cosas que las pruebas no podían encontrar y sí encontró abrirlo en un
+navegador de verdad: la pantalla de acceso tapaba el panel ya cargado, la
+cabecera marcaba como degradado todo lo que funcionaba, y un `prompt()` nativo
+bloqueó la pestaña entera. Una cuarta apareció al verificar la auditoría del
+despliegue: **la cadena estaba rota** porque dos objetos `AuditLog` escribían en
+el mismo archivo. Está arreglado en la causa, con dos pruebas de regresión, y
+contado en [`docs/SOC-PANEL.md`](docs/SOC-PANEL.md).
+
+**Lo que falta:** un incidente por evento, no por campaña —una cadena de ocho
+pasos son ocho incidentes—, y no hay SLA ni actualización en vivo.
 
 ## Rendimiento y falsos positivos medidos
 
@@ -330,6 +406,11 @@ cybersentinel/
 │   │   ├── navigator.py        # capas para ATT&CK Navigator
 │   │   ├── sequence_model.py   # Markov / línea base / interfaz para LSTM
 │   │   └── evaluation.py       # precisión@k, matriz de confusión, F1
+│   ├── api/                 # ingesta en tiempo real (cola, worker, SQLite)
+│   │   ├── incidents.py        # incidente persistente: ciclo de vida y cronología
+│   │   ├── panel/              # panel SOC (HTML/CSS/JS, sin build ni dependencias)
+│   │   └── security/           # autenticación, RBAC y límite de caudal
+│   ├── collectors/          # Sysmon, Linux, firewall, Suricata → SecurityEvent
 │   ├── explanation/         # narrativa XAI (+ LLM opcional)
 │   ├── governance/          # política ética + auditoría inmutable
 │   ├── response/            # recomendación de contramedidas (human-in-the-loop)

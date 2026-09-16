@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CyberSentinel — Panel SOC</title>
+<link rel="stylesheet" href="panel.css">
+</head>
+<body>
+
+<!-- Acceso ------------------------------------------------------------ -->
+<section id="login" class="login">
+  <form id="login-form" class="login-card" autocomplete="on">
+    <h1>CyberSentinel</h1>
+    <p class="sub">Panel del centro de operaciones</p>
+    <label>Usuario<input id="usuario" name="username" autocomplete="username" required></label>
+    <label>Contraseña<input id="clave" name="password" type="password"
+                            autocomplete="current-password" required></label>
+    <button type="submit" id="entrar">Entrar</button>
+    <p id="login-error" class="error" hidden></p>
+    <p class="aviso">
+      La conexión no está cifrada salvo que haya un terminador TLS delante.
+      Comprueba que la barra de direcciones diga <code>https://</code> antes de
+      escribir la contraseña.
+    </p>
+  </form>
+</section>
+
+<!-- Panel -------------------------------------------------------------- -->
+<div id="app" hidden>
+  <header class="top">
+    <div class="marca">CyberSentinel <span class="tag">SOC</span></div>
+    <div id="salud" class="salud" title="Estado del servicio"></div>
+    <div class="quien">
+      <span id="quien-nombre"></span>
+      <span id="quien-rol" class="chip"></span>
+      <button id="salir" class="ghost">Salir</button>
+    </div>
+  </header>
+
+  <section id="cifras" class="cifras"></section>
+
+  <section class="filtros">
+    <input id="buscar" type="search" placeholder="Buscar por título, entidad, host o usuario…">
+    <select id="f-estado">
+      <option value="">Todos los estados</option>
+      <option value="new">Nuevos</option>
+      <option value="triaged">Triados</option>
+      <option value="in_progress">En curso</option>
+      <option value="closed">Cerrados</option>
+    </select>
+    <select id="f-severidad">
+      <option value="">Toda severidad</option>
+      <option value="critical">Crítica</option>
+      <option value="high">Alta</option>
+      <option value="medium">Media</option>
+      <option value="low">Baja</option>
+    </select>
+    <label class="check"><input type="checkbox" id="f-mios"> Míos</label>
+    <label class="check"><input type="checkbox" id="f-sin-duenno"> Sin asignar</label>
+    <button id="refrescar" class="ghost">Refrescar</button>
+    <span id="conteo" class="conteo"></span>
+  </section>
+
+  <main class="tablero">
+    <aside class="lista" id="lista" aria-label="Incidentes"></aside>
+    <article class="detalle" id="detalle">
+      <div class="vacio">
+        <p>Selecciona un incidente.</p>
+        <p class="sub">La lista se ordena por estado, luego severidad y luego recencia.</p>
+      </div>
+    </article>
+  </main>
+</div>
+
+<script src="panel.js"></script>
+</body>
+</html>

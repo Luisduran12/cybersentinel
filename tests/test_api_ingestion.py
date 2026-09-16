@@ -26,6 +26,9 @@ sys.path.insert(0, str(ROOT / "src"))
 from cybersentinel.api.app import IngestService, create_app  # noqa: E402
 from cybersentinel.api.models import RawEvent  # noqa: E402
 from cybersentinel.api.queue import IngestQueue, QueueFull  # noqa: E402
+from cybersentinel.api.security import (  # noqa: E402
+    IdentityStore, LimitPolicy, RateLimiter, Role, SecurityConfig, SecurityGate,
+)
 from cybersentinel.api.store import ResultStore  # noqa: E402
 
 BASE = datetime(2025, 3, 10, 10, tzinfo=timezone.utc)
@@ -69,9 +72,46 @@ def servicio(tmp_path_factory):
 
 
 @pytest.fixture(scope="module")
-def cliente(servicio):
-    with TestClient(create_app(servicio)) as c:
+def puerta(tmp_path_factory):
+    """
+    Frontera real con credenciales de prueba.
+
+    Desde que la API exige credencial, estas pruebas la presentan: comprobar la
+    ingestión con la seguridad desactivada mediría un servicio que no existe.
+    Los límites de caudal se abren de par en par porque aquí se mide el
+    pipeline, no el limitador —eso lo cubre `test_api_security.py`—.
+    """
+    directorio = tmp_path_factory.mktemp("identidades")
+    almacen = IdentityStore(directorio / "identities.db")
+    sensor = almacen.create_api_key("suite-de-pruebas", Role.SENSOR)
+    almacen.create_user("lectora", "contraseña-de-prueba-larga", Role.ANALYST)
+
+    abierto = LimitPolicy(10_000, 20_000, 10_000_000, 20_000_000)
+    gate = SecurityGate(SecurityConfig(
+        identity_db=directorio / "identities.db",
+        jwt_secret="0123456789abcdef0123456789abcdef0123456789abcdef",
+        rate_limiter=RateLimiter({r.value: abierto for r in Role} | {"anonymous": abierto}),
+    ))
+    gate.sensor_key = sensor.token  # atajo para las pruebas
+    return gate
+
+
+@pytest.fixture(scope="module")
+def cliente(servicio, puerta):
+    with TestClient(create_app(servicio, gate=puerta)) as c:
+        # El cliente por defecto es un sensor: es quien ingiere.
+        c.headers.update({"X-API-Key": puerta.sensor_key})
         yield c
+
+
+@pytest.fixture(scope="module")
+def lectora(cliente):
+    """Cabeceras de un analista, para las rutas de solo lectura."""
+    r = cliente.post("/api/v1/auth/token",
+                     json={"username": "lectora", "password": "contraseña-de-prueba-larga"},
+                     headers={"X-API-Key": ""})
+    assert r.status_code == 200, r.text
+    return {"Authorization": f"Bearer {r.json()['access_token']}", "X-API-Key": ""}
 
 
 def _esperar_procesados(servicio, esperados: int, timeout: float = 30.0) -> int:
@@ -132,8 +172,8 @@ def test_health_responde(cliente):
     assert r.status_code == 200 and r.json()["status"] == "alive"
 
 
-def test_ready_declara_el_estado_de_los_componentes(cliente):
-    r = cliente.get("/api/v1/ready")
+def test_ready_declara_el_estado_de_los_componentes(cliente, lectora):
+    r = cliente.get("/api/v1/ready", headers=lectora)
     cuerpo = r.json()
     assert r.status_code in (200, 503)
     assert cuerpo["worker_running"] is True
@@ -143,8 +183,8 @@ def test_ready_declara_el_estado_de_los_componentes(cliente):
     assert "primer lote" in cuerpo["baseline_note"]
 
 
-def test_metrics_expone_caudal_latencia_y_errores(cliente):
-    datos = cliente.get("/api/v1/metrics").json()
+def test_metrics_expone_caudal_latencia_y_errores(cliente, lectora):
+    datos = cliente.get("/api/v1/metrics", headers=lectora).json()
     for clave in ("counters", "throughput_eps", "latency_ingest_ms",
                   "latency_end_to_end_ms", "queue", "worker", "store"):
         assert clave in datos
@@ -181,14 +221,30 @@ def test_los_eventos_fallidos_no_se_pierden():
 
 
 def test_api_devuelve_429_cuando_el_buffer_esta_lleno(tmp_path):
-    """Contrapresión explícita con Retry-After, no bloqueo ni descarte."""
+    """
+    Contrapresión explícita con Retry-After, no bloqueo ni descarte.
+
+    Es un 429 distinto del que devuelve el limitador de caudal: aquel protege a
+    los clientes entre sí, este protege al servicio cuando el análisis no da
+    abasto. Por eso el sensor de esta prueba tiene el límite abierto: lo que se
+    mide es el buffer, no la cuota.
+    """
+    almacen = IdentityStore(tmp_path / "identities.db")
+    clave = almacen.create_api_key("prueba-contrapresion", Role.SENSOR)
+    abierto = LimitPolicy(10_000, 20_000, 10_000_000, 20_000_000)
+    puerta = SecurityGate(SecurityConfig(
+        identity_db=tmp_path / "identities.db",
+        jwt_secret="0123456789abcdef0123456789abcdef0123456789abcdef",
+        rate_limiter=RateLimiter({r.value: abierto for r in Role} | {"anonymous": abierto}),
+    ))
     svc = IngestService(rules_dir=RULES, db_path=tmp_path / "e.db",
                         audit_path=None, queue_maxsize=2, batch_size=500,
                         enable_rag=False, enable_llm=False)
     svc.worker.stop()          # nadie drena: el buffer se llena seguro
-    with TestClient(create_app(svc)) as c:
+    with TestClient(create_app(svc, gate=puerta)) as c:
         svc.worker.stop()      # el lifespan lo arranca; se detiene para llenar el buffer
-        r = c.post("/api/v1/events", json={"events": [_evento(i) for i in range(50)]})
+        r = c.post("/api/v1/events", json={"events": [_evento(i) for i in range(50)]},
+                   headers={"X-API-Key": clave.token})
     assert r.status_code in (429, 207)
     assert r.json()["rejected"] > 0
 
@@ -271,8 +327,8 @@ def test_e2e_el_resumen_es_consultable(servicio):
     assert sum(resumen["by_result"].values()) == resumen["total_events"]
 
 
-def test_las_metricas_reflejan_lo_realmente_procesado(servicio, cliente):
-    datos = cliente.get("/api/v1/metrics").json()
+def test_las_metricas_reflejan_lo_realmente_procesado(servicio, cliente, lectora):
+    datos = cliente.get("/api/v1/metrics", headers=lectora).json()
     assert datos["counters"]["accepted"] > 0
     assert datos["counters"]["processed"] > 0
     assert datos["throughput_eps"]["processed"] > 0

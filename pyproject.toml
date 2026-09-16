@@ -40,3 +40,8 @@ cybersentinel = "cybersentinel.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+# El panel SOC se sirve desde el propio proceso, asi que sus archivos tienen
+# que viajar dentro del paquete instalado.
+"cybersentinel.api" = ["panel/*.html", "panel/*.css", "panel/*.js"]

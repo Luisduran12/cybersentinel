@@ -753,6 +753,161 @@ def cmd_verify_audit(args: argparse.Namespace) -> int:
     return 2
 
 
+# --- Credenciales (frontera de la API) -----------------------------------
+DEFAULT_IDENTITY_DB = ROOT / "data" / "runtime" / "identities.db"
+
+
+def _identity_store(args: argparse.Namespace):
+    from .api.security import IdentityStore
+
+    return IdentityStore(getattr(args, "db", None) or DEFAULT_IDENTITY_DB)
+
+
+def _leer_password(args: argparse.Namespace) -> str:
+    """
+    Obtiene la contraseña sin dejarla en el historial ni en `ps`.
+
+    Por eso no hay `--password`: un argumento de línea de órdenes lo ve
+    cualquier proceso del sistema mientras el comando corre, y queda escrito en
+    `~/.zsh_history`. Se pide por terminal o se pasa por la entrada estándar.
+    """
+    import getpass
+
+    if args.password_stdin:
+        valor = sys.stdin.readline().rstrip("\n")
+        if not valor:
+            raise ValueError("no llegó ninguna contraseña por la entrada estándar")
+        return valor
+
+    primera = getpass.getpass("Contraseña: ")
+    segunda = getpass.getpass("Repite la contraseña: ")
+    if primera != segunda:
+        raise ValueError("las contraseñas no coinciden")
+    return primera
+
+
+def cmd_auth_create_user(args: argparse.Namespace) -> int:
+    from .api.security import Role
+
+    almacen = _identity_store(args)
+    try:
+        datos = almacen.create_user(args.username, _leer_password(args),
+                                    Role(args.role), replace=args.replace)
+    except ValueError as exc:
+        console.print(f"[red]{exc}[/red]")
+        return 1
+
+    _auditar(args, actor=f"cli:{args.username}", action="user_created",
+             detail={"username": datos["username"], "role": datos["role"]})
+    console.print(f"[green]Usuario creado:[/green] {datos['username']} "
+                  f"· rol [bold]{datos['role']}[/bold]")
+    return 0
+
+
+def cmd_auth_create_key(args: argparse.Namespace) -> int:
+    from .api.security import Role
+
+    almacen = _identity_store(args)
+    emitida = almacen.create_api_key(
+        label=args.label, role=Role(args.role), created_by="cli",
+        expires_in_days=None if args.no_expiry else args.expires_days,
+    )
+    _auditar(args, actor="cli", action="api_key_created",
+             detail={"key_id": emitida.key_id, "role": emitida.role.value,
+                     "label": emitida.label, "expires_at": emitida.expires_at})
+
+    console.print(Panel(
+        f"[bold]{emitida.token}[/bold]\n\n"
+        f"[dim]id {emitida.key_id} · rol {emitida.role.value} · "
+        f"caduca {emitida.expires_at or 'nunca (desaconsejado)'}[/dim]",
+        title="Clave de API — se muestra una sola vez",
+        subtitle="el almacén guarda solo su hash; si la pierdes, revócala y emite otra",
+        border_style="yellow", box=box.ROUNDED,
+    ))
+    return 0
+
+
+def cmd_auth_list(args: argparse.Namespace) -> int:
+    almacen = _identity_store(args)
+
+    usuarios = almacen.list_users()
+    tabla = Table(title="Personas", box=box.SIMPLE)
+    for col in ("usuario", "rol", "creado", "estado", "último acceso", "fallos"):
+        tabla.add_column(col)
+    for u in usuarios:
+        estado = "[red]deshabilitado[/red]" if u["disabled"] else (
+            "[yellow]bloqueado[/yellow]" if u["locked_until"] else "[green]activo[/green]")
+        tabla.add_row(u["username"], u["role"], u["created_at"], estado,
+                      u["last_login_at"] or "—", str(u["failed_attempts"]))
+    console.print(tabla if usuarios else "[dim]Sin usuarios.[/dim]")
+
+    claves = almacen.list_api_keys(include_revoked=args.all)
+    tabla = Table(title="Sensores (claves de API)", box=box.SIMPLE)
+    for col in ("id", "etiqueta", "rol", "creada", "caduca", "último uso", "usos", "estado"):
+        tabla.add_column(col)
+    for k in claves:
+        estado = "[red]revocada[/red]" if k["revoked_at"] else "[green]activa[/green]"
+        tabla.add_row(k["key_id"], k["label"], k["role"], k["created_at"],
+                      k["expires_at"] or "nunca", k["last_used_at"] or "—",
+                      str(k["uses"]), estado)
+    console.print(tabla if claves else "[dim]Sin claves de API.[/dim]")
+
+    if almacen.is_empty():
+        console.print("[yellow]El almacén está vacío: nadie puede autenticarse "
+                      "contra la API.[/yellow]")
+    return 0
+
+
+def cmd_auth_revoke_key(args: argparse.Namespace) -> int:
+    almacen = _identity_store(args)
+    if almacen.revoke_api_key(args.key_id):
+        _auditar(args, actor="cli", action="api_key_revoked",
+                 detail={"key_id": args.key_id})
+        console.print(f"[green]Clave {args.key_id} revocada.[/green]")
+        return 0
+    console.print(f"[yellow]No hay clave activa con id {args.key_id}.[/yellow]")
+    return 1
+
+
+def cmd_auth_disable_user(args: argparse.Namespace) -> int:
+    almacen = _identity_store(args)
+    deshabilitar = not args.enable
+    if almacen.set_disabled(args.username, deshabilitar):
+        accion = "user_disabled" if deshabilitar else "user_enabled"
+        _auditar(args, actor="cli", action=accion, detail={"username": args.username})
+        verbo = "deshabilitado" if deshabilitar else "habilitado"
+        console.print(f"[green]Usuario {args.username} {verbo}.[/green]")
+        return 0
+    console.print(f"[yellow]No existe el usuario {args.username}.[/yellow]")
+    return 1
+
+
+def cmd_auth_roles(args: argparse.Namespace) -> int:
+    from .api.security import role_matrix
+
+    tabla = Table(title="Matriz de autorización", box=box.SIMPLE_HEAVY)
+    tabla.add_column("rol", style="bold")
+    tabla.add_column("permisos")
+    for rol, permisos in role_matrix().items():
+        tabla.add_row(rol, "\n".join(permisos))
+    console.print(tabla)
+    console.print("[dim]El código pregunta por permiso, nunca por rol: añadir un "
+                  "rol es añadir una fila, no tocar los manejadores.[/dim]")
+    return 0
+
+
+def _auditar(args: argparse.Namespace, actor: str, action: str,
+             detail: dict[str, Any]) -> None:
+    """Deja constancia de los cambios de credencial en la cadena de auditoría."""
+    ruta = getattr(args, "audit", None)
+    if not ruta:
+        return
+    try:
+        AuditLog(ruta).record(actor=actor, action=action, detail=detail)
+    except Exception as exc:  # no impedir la operación por un fallo del log
+        console.print(f"[yellow]Aviso: no se pudo auditar ({exc}).[/yellow]")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="cybersentinel",
@@ -855,6 +1010,56 @@ def main(argv: list[str] | None = None) -> int:
     p_va = sub.add_parser("verify-audit", help="Verifica la integridad del log de auditoría.")
     p_va.add_argument("--audit", default="audit_log.jsonl")
     p_va.set_defaults(func=cmd_verify_audit)
+
+    p_au = sub.add_parser(
+        "auth", help="Gestiona las credenciales de la API (personas y sensores).",
+    )
+    sub_au = p_au.add_subparsers(dest="auth_command", required=True)
+
+    def _comunes(sp):
+        sp.add_argument("--db", help="Ruta del almacén de identidades "
+                                     f"(por defecto {DEFAULT_IDENTITY_DB}).")
+        sp.add_argument("--audit", default="audit_log.jsonl",
+                        help="Log de auditoría donde registrar el cambio.")
+        return sp
+
+    p_cu = _comunes(sub_au.add_parser("create-user", help="Da de alta a una persona."))
+    p_cu.add_argument("--username", required=True)
+    p_cu.add_argument("--role", required=True,
+                      choices=("analyst", "responder", "auditor", "admin"),
+                      help="sensor no se admite aquí: los sensores usan clave de API.")
+    p_cu.add_argument("--password-stdin", action="store_true",
+                      help="Leer la contraseña de la entrada estándar en vez de pedirla.")
+    p_cu.add_argument("--replace", action="store_true",
+                      help="Sobrescribir si el usuario ya existe (cambio de contraseña).")
+    p_cu.set_defaults(func=cmd_auth_create_user)
+
+    p_ck = _comunes(sub_au.add_parser("create-key", help="Emite una clave para un sensor."))
+    p_ck.add_argument("--label", required=True,
+                      help="Para qué sensor es. Aparece en la auditoría.")
+    p_ck.add_argument("--role", default="sensor",
+                      choices=("sensor", "analyst", "responder", "auditor", "admin"))
+    p_ck.add_argument("--expires-days", type=int, default=365)
+    p_ck.add_argument("--no-expiry", action="store_true",
+                      help="Sin caducidad. Desaconsejado: la credencial sobrevive "
+                           "al sensor, al equipo y a la política que la justificó.")
+    p_ck.set_defaults(func=cmd_auth_create_key)
+
+    p_al = _comunes(sub_au.add_parser("list", help="Lista personas y sensores."))
+    p_al.add_argument("--all", action="store_true", help="Incluir claves revocadas.")
+    p_al.set_defaults(func=cmd_auth_list)
+
+    p_rk = _comunes(sub_au.add_parser("revoke-key", help="Revoca una clave de sensor."))
+    p_rk.add_argument("--key-id", required=True)
+    p_rk.set_defaults(func=cmd_auth_revoke_key)
+
+    p_du = _comunes(sub_au.add_parser("disable-user", help="Deshabilita (o rehabilita) a una persona."))
+    p_du.add_argument("--username", required=True)
+    p_du.add_argument("--enable", action="store_true", help="Rehabilitar en vez de deshabilitar.")
+    p_du.set_defaults(func=cmd_auth_disable_user)
+
+    p_ar = sub_au.add_parser("roles", help="Muestra la matriz de roles y permisos.")
+    p_ar.set_defaults(func=cmd_auth_roles)
 
     args = parser.parse_args(argv)
     return args.func(args)

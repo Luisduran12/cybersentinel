@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import random
 import statistics
 import sys
@@ -85,9 +86,18 @@ def main() -> int:
                         help="Proporción de eventos sospechosos (0.0-1.0).")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--json", help="Ruta para volcar el informe.")
+    parser.add_argument("--api-key", default=os.environ.get("CYBERSENTINEL_API_KEY", ""),
+                        help="Clave de sensor (cs_<id>_<secreto>). Por defecto, "
+                             "la de CYBERSENTINEL_API_KEY. Créala con: "
+                             "cybersentinel auth create-key --label generador")
     args = parser.parse_args()
 
     import httpx
+
+    if not args.api_key:
+        print("Sin --api-key (ni CYBERSENTINEL_API_KEY): la API responderá 401.\n"
+              "  Crea una con: cybersentinel auth create-key --label generador\n")
+    cabeceras = {"X-API-Key": args.api_key} if args.api_key else {}
 
     rng = random.Random(args.seed)
     objetivo = args.rate * args.seconds
@@ -120,13 +130,18 @@ def main() -> int:
 
             t0 = time.perf_counter()
             try:
-                r = cliente.post(args.url, json={"events": lote})
+                r = cliente.post(args.url, json={"events": lote}, headers=cabeceras)
                 latencias.append((time.perf_counter() - t0) * 1000.0)
                 codigos[r.status_code] = codigos.get(r.status_code, 0) + 1
                 if r.status_code in (200, 202, 207, 429, 422):
                     datos = r.json()
-                    aceptados += datos.get("accepted", 0)
-                    rechazados += datos.get("rejected", 0)
+                    if isinstance(datos, dict):
+                        aceptados += datos.get("accepted", 0)
+                        rechazados += datos.get("rejected", 0)
+                elif r.status_code in (401, 403):
+                    # Sin esto, un fallo de credencial se leería como «0 eventos
+                    # aceptados» y parecería un problema de rendimiento.
+                    rechazados += cuantos
             except httpx.HTTPError as exc:
                 errores_red += 1
                 print(f"  error de red: {type(exc).__name__}: {exc}")

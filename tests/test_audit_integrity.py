@@ -118,3 +118,66 @@ def test_signature_uses_hmac(tmp_path):
     entry = log.entries[0]
     expected = hmac.new(KEY.encode(), entry.payload().encode(), hashlib.sha256).hexdigest()
     assert entry.entry_hash == expected
+
+
+# --- Varios escritores sobre el mismo registro ------------------------------
+def test_dos_instancias_sobre_el_mismo_archivo_no_rompen_la_cadena(tmp_path):
+    """
+    Regresión de un fallo real, no de uno imaginado.
+
+    Cuando la API empezó a auditar la autenticación en el mismo registro que el
+    pipeline, había dos objetos `AuditLog` apuntando al mismo archivo. Cada uno
+    calculaba `index` y `prev_hash` desde su propia lista en memoria, así que el
+    segundo empezaba otra vez en el índice 0 y el archivo acababa con dos
+    cadenas entrelazadas. `verify-audit` sobre un despliegue de verdad devolvía
+    «integridad COMPROMETIDA (entrada #0)».
+
+    Lo grave no era perder la verificación: era perderla justo cuando había más
+    que auditar.
+    """
+    ruta = tmp_path / "compartido.jsonl"
+    pipeline = AuditLog(ruta, secret_key="clave")
+    frontera = AuditLog(ruta, secret_key="clave")
+
+    pipeline.record("agent", "incident_analyzed", {"n": 1})
+    frontera.record("user:ana", "token_issued", {"role": "analyst"})
+    pipeline.record("agent", "incident_analyzed", {"n": 2})
+    frontera.record("user:ana", "authz_denied", {"path": "/x"})
+
+    ok, indice, detalle = AuditLog(ruta, secret_key="clave").verify_detailed()
+    assert ok, f"cadena rota en {indice}: {detalle}"
+
+    releido = AuditLog(ruta, secret_key="clave")
+    assert [e.index for e in releido.entries] == [0, 1, 2, 3]
+    assert [e.action for e in releido.entries] == [
+        "incident_analyzed", "token_issued", "incident_analyzed", "authz_denied"]
+
+
+def test_escrituras_concurrentes_mantienen_la_cadena(tmp_path):
+    """
+    La API audita desde el hilo de la petición y el worker desde el suyo: sin
+    candado, dos `record` simultáneos calculan el mismo `prev_hash` y uno de los
+    dos queda huérfano.
+    """
+    import threading
+
+    ruta = tmp_path / "concurrente.jsonl"
+    registros = [AuditLog(ruta, secret_key="k") for _ in range(4)]
+    barrera = threading.Barrier(len(registros))
+
+    def escribir(log, n):
+        barrera.wait()
+        for i in range(10):
+            log.record(f"hilo-{n}", "evento", {"i": i})
+
+    hilos = [threading.Thread(target=escribir, args=(log, n))
+             for n, log in enumerate(registros)]
+    for h in hilos:
+        h.start()
+    for h in hilos:
+        h.join()
+
+    final = AuditLog(ruta, secret_key="k")
+    assert len(final.entries) == 40
+    ok, indice, detalle = final.verify_detailed()
+    assert ok, f"cadena rota en {indice}: {detalle}"

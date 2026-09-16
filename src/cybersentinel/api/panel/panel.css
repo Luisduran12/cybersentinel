@@ -1,0 +1,234 @@
+/* Panel SOC — sin dependencias externas.
+   Una hoja de estilo propia y 400 líneas de CSS pesan menos que cualquier
+   framework y no añaden una descarga desde un CDN a un servicio que puede
+   estar en una red aislada. */
+
+:root {
+  color-scheme: dark;
+  --fondo: #0d1117;
+  --panel: #151b23;
+  --panel-alto: #1c242e;
+  --borde: #2a3441;
+  --texto: #e6edf3;
+  --tenue: #8b98a5;
+  --acento: #4c9aff;
+  --critica: #f85149;
+  --alta: #f0883e;
+  --media: #d29922;
+  --baja: #3fb950;
+  --ok: #3fb950;
+  --aviso: #d29922;
+}
+
+* { box-sizing: border-box; }
+
+/* El atributo `hidden` del navegador vale `display: none`, pero cualquier
+   `display` declarado aquí lo pisa: `.login { display: grid }` dejaba la
+   pantalla de acceso visible por encima del panel ya cargado. Se vio abriendo
+   la página en un navegador de verdad, no en las pruebas: el DOM decía
+   `hidden = true` y la captura seguía mostrando el formulario. */
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--texto);
+  font: 14px/1.5 ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+code, .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+button { font: inherit; cursor: pointer; }
+
+/* --- Acceso --------------------------------------------------------- */
+.login { display: grid; place-items: center; min-height: 100vh; padding: 16px; }
+.login-card {
+  width: min(380px, 100%);
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 28px;
+}
+.login-card h1 { margin: 0; font-size: 22px; letter-spacing: -0.02em; }
+.login-card .sub { margin: 4px 0 22px; color: var(--tenue); font-size: 13px; }
+.login-card label { display: block; margin-bottom: 14px; font-size: 12px; color: var(--tenue); }
+.login-card input {
+  width: 100%; margin-top: 6px; padding: 9px 11px;
+  background: var(--fondo); border: 1px solid var(--borde);
+  border-radius: 7px; color: var(--texto); font: inherit;
+}
+.login-card input:focus { outline: 2px solid var(--acento); outline-offset: -1px; }
+.login-card button {
+  width: 100%; padding: 10px; margin-top: 6px;
+  background: var(--acento); border: 0; border-radius: 7px;
+  color: #08121f; font-weight: 600;
+}
+.login-card button:disabled { opacity: .6; cursor: progress; }
+.aviso {
+  margin: 18px 0 0; padding: 10px 12px;
+  background: rgba(210,153,34,.1); border-left: 3px solid var(--aviso);
+  border-radius: 0 6px 6px 0; color: var(--tenue); font-size: 12px;
+}
+.error { margin: 12px 0 0; color: var(--critica); font-size: 13px; }
+
+/* --- Cabecera ------------------------------------------------------- */
+.top {
+  display: flex; align-items: center; gap: 16px;
+  padding: 12px 18px; border-bottom: 1px solid var(--borde); background: var(--panel);
+}
+.marca { font-weight: 600; letter-spacing: -0.01em; }
+.tag {
+  margin-left: 6px; padding: 2px 7px; border-radius: 5px;
+  background: var(--acento); color: #08121f; font-size: 11px; font-weight: 700;
+}
+.salud { margin-left: auto; font-size: 12px; color: var(--tenue); }
+.quien { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.chip {
+  padding: 2px 8px; border: 1px solid var(--borde); border-radius: 20px;
+  color: var(--tenue); font-size: 11px; text-transform: uppercase; letter-spacing: .04em;
+}
+.ghost {
+  padding: 5px 11px; background: transparent; border: 1px solid var(--borde);
+  border-radius: 6px; color: var(--texto);
+}
+.ghost:hover { background: var(--panel-alto); }
+
+/* --- Cifras --------------------------------------------------------- */
+.cifras { display: flex; flex-wrap: wrap; gap: 12px; padding: 14px 18px; }
+.cifra {
+  flex: 1 1 130px; padding: 12px 14px;
+  background: var(--panel); border: 1px solid var(--borde); border-radius: 9px;
+}
+.cifra b { display: block; font-size: 24px; font-weight: 650; letter-spacing: -0.02em; }
+.cifra span { color: var(--tenue); font-size: 12px; }
+.cifra.grave b { color: var(--critica); }
+
+/* --- Filtros -------------------------------------------------------- */
+.filtros {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  padding: 0 18px 14px;
+}
+.filtros input[type=search], .filtros select {
+  padding: 7px 10px; background: var(--panel); border: 1px solid var(--borde);
+  border-radius: 7px; color: var(--texto); font: inherit;
+}
+.filtros input[type=search] { flex: 1 1 260px; }
+.check { display: flex; align-items: center; gap: 6px; color: var(--tenue); font-size: 13px; }
+.conteo { margin-left: auto; color: var(--tenue); font-size: 12px; }
+
+/* --- Tablero -------------------------------------------------------- */
+.tablero {
+  display: grid; grid-template-columns: minmax(300px, 400px) 1fr;
+  gap: 14px; padding: 0 18px 24px; align-items: start;
+}
+@media (max-width: 900px) { .tablero { grid-template-columns: 1fr; } }
+
+.lista { display: flex; flex-direction: column; gap: 8px; max-height: 76vh; overflow-y: auto; }
+.tarjeta {
+  padding: 11px 13px; background: var(--panel);
+  border: 1px solid var(--borde); border-left: 3px solid var(--borde);
+  border-radius: 8px; cursor: pointer;
+}
+.tarjeta:hover { background: var(--panel-alto); }
+.tarjeta[aria-selected=true] { border-color: var(--acento); background: var(--panel-alto); }
+.tarjeta.critical { border-left-color: var(--critica); }
+.tarjeta.high { border-left-color: var(--alta); }
+.tarjeta.medium { border-left-color: var(--media); }
+.tarjeta.low { border-left-color: var(--baja); }
+.tarjeta.cerrado { opacity: .55; }
+.tarjeta h3 { margin: 0 0 5px; font-size: 13.5px; font-weight: 600; }
+.tarjeta .meta { display: flex; flex-wrap: wrap; gap: 6px; color: var(--tenue); font-size: 11.5px; }
+
+.pill {
+  padding: 1px 7px; border-radius: 20px; font-size: 11px;
+  border: 1px solid var(--borde); color: var(--tenue);
+}
+.pill.critical { color: var(--critica); border-color: var(--critica); }
+.pill.high { color: var(--alta); border-color: var(--alta); }
+.pill.medium { color: var(--media); border-color: var(--media); }
+.pill.low { color: var(--baja); border-color: var(--baja); }
+.pill.tec { color: var(--acento); border-color: var(--acento); }
+
+/* --- Detalle -------------------------------------------------------- */
+.detalle {
+  background: var(--panel); border: 1px solid var(--borde);
+  border-radius: 10px; padding: 18px; max-height: 76vh; overflow-y: auto;
+}
+.vacio { color: var(--tenue); text-align: center; padding: 60px 20px; }
+.vacio .sub { font-size: 12px; }
+.detalle h2 { margin: 0 0 4px; font-size: 18px; letter-spacing: -0.01em; }
+.detalle .idref { color: var(--tenue); font-size: 11.5px; }
+
+.bloque { margin-top: 20px; }
+.bloque > h4 {
+  margin: 0 0 9px; font-size: 11px; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--tenue);
+}
+.rejilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.dato { background: var(--fondo); border: 1px solid var(--borde); border-radius: 7px; padding: 9px 11px; }
+.dato span { display: block; color: var(--tenue); font-size: 11px; }
+.dato b { font-size: 14px; font-weight: 600; }
+
+.regla {
+  padding: 10px 12px; margin-bottom: 8px;
+  background: var(--fondo); border: 1px solid var(--borde);
+  border-left: 3px solid var(--acento); border-radius: 0 7px 7px 0;
+}
+.regla .cab { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.regla .cab b { font-size: 13px; }
+
+.narrativa {
+  padding: 12px 14px; background: var(--fondo);
+  border: 1px solid var(--borde); border-radius: 7px;
+  white-space: pre-wrap; font-size: 13px;
+}
+pre.crudo {
+  margin: 0; padding: 12px; max-height: 280px; overflow: auto;
+  background: var(--fondo); border: 1px solid var(--borde); border-radius: 7px;
+  font-size: 11.5px; color: var(--tenue);
+}
+
+.acciones { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.acciones button {
+  padding: 7px 13px; background: var(--panel-alto);
+  border: 1px solid var(--borde); border-radius: 7px; color: var(--texto);
+}
+.acciones button:hover { border-color: var(--acento); }
+.acciones button.primario { background: var(--acento); border-color: var(--acento); color: #08121f; font-weight: 600; }
+.acciones select, .acciones input, .acciones textarea {
+  padding: 7px 10px; background: var(--fondo); border: 1px solid var(--borde);
+  border-radius: 7px; color: var(--texto); font: inherit;
+}
+.acciones textarea { width: 100%; min-height: 62px; resize: vertical; }
+.solo-lectura {
+  padding: 9px 12px; background: rgba(76,154,255,.08);
+  border-left: 3px solid var(--acento); border-radius: 0 6px 6px 0;
+  color: var(--tenue); font-size: 12.5px;
+}
+
+.crono { list-style: none; margin: 0; padding: 0; }
+.crono li {
+  padding: 8px 0 8px 15px; border-left: 2px solid var(--borde);
+  position: relative; font-size: 12.5px;
+}
+.crono li::before {
+  content: ""; position: absolute; left: -5px; top: 14px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--borde);
+}
+.crono li.decision::before, .crono li.state::before { background: var(--acento); }
+.crono .cuando { color: var(--tenue); font-size: 11px; }
+
+.nota-metodo {
+  margin-top: 8px; color: var(--tenue); font-size: 11.5px; font-style: italic;
+}
+.badge-fallback {
+  padding: 1px 7px; border-radius: 20px; font-size: 11px;
+  background: rgba(210,153,34,.14); color: var(--aviso); border: 1px solid var(--aviso);
+}
+.toast {
+  position: fixed; right: 18px; bottom: 18px; z-index: 50;
+  padding: 11px 15px; border-radius: 8px;
+  background: var(--panel-alto); border: 1px solid var(--borde);
+  font-size: 13px; max-width: 380px;
+}
+.toast.mal { border-color: var(--critica); color: var(--critica); }

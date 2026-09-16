@@ -37,21 +37,21 @@ Fecha: 2026-09-15 · Commit auditado: `a0d807a` · `src/`: 8 293 líneas en 43 m
 | 14 | **CTI / STIX** | **A** | `StixIngestor` + `CTIEnricher`; coincidencia real sobre `203.0.113.66`, con filtrado de indicadores caducados y revocados probado | Feeds reales (MISP/OpenCTI/TAXII), no un bundle de laboratorio | **P1** |
 | 15 | **RAG** | **A** | 222 documentos ATT&CK indexados, embeddings **LSA reales** (no aleatorios), recuperación anclada por técnica con procedencia citable | Embeddings neuronales; corpus de CTI propio | P2 |
 | 16 | **Explicación LLM** | **B** | `llm/providers.py`: Claude real si hay credenciales, respaldo determinista declarado (`llm_status`, `fallback_used`). Protección contra inyección de prompt con pruebas | **La ruta con Claude nunca se ha ejecutado** (sin `ANTHROPIC_API_KEY` en este entorno) | P2 |
-| 17 | **HITL** | **A** | `cybersentinel decide`: `StructuredDecision` con evidencia sellada, persistida en JSONL, registrada en la auditoría | Interfaz de usuario; hoy es solo CLI | **P1** |
-| 18 | **Gestión de incidentes** | **E** | No hay entidad incidente persistente, ni estados, ni asignación, ni ciclo de vida | Modelo de incidente, estados, propietario, SLA | **P0** |
+| 17 | **HITL** | **A** | `cybersentinel decide` **y el panel SOC**: el botón de veredicto escribe en el mismo `DatasetManager` con la misma `StructuredDecision` y la evidencia sellada. `UNCERTAIN` no cierra el incidente y el panel lo dice | Acuerdo entre varios analistas sobre el mismo incidente | P2 |
+| 18 | **Gestión de incidentes** | **B** | `api/incidents.py`: entidad persistente en SQLite con evidencia completa, ciclo de vida validado (`new→triaged→in_progress→closed`, cerrar exige resolución, reabrir vuelve a triaje), propietario y cronología de solo-añadir. 31 pruebas | **Un incidente por evento, no por campaña**: una cadena de 8 pasos son 8 incidentes. Sin SLA ni notificaciones | **P1** |
 | 19 | **Respuesta controlada** | **B** | `ResponsePlanner` + `GovernancePolicy` conectados; clasifica en permitida / requiere aprobación / prohibida | **Todo es dry-run**: no hay ejecutores reales (EDR, firewall) ni flujo de aprobación | P2 |
-| 20 | **Autenticación de API** | **E** | 0 ocurrencias de jwt/oauth/api_key en `src/` | No hay API que autenticar (ver #1) | **P0** |
-| 21 | **Autorización RBAC** | **E** | 0 ocurrencias de rbac/role/permission | Modelo de roles (analista / responsable / auditor) | **P0** |
-| 22 | **TLS** | **E** | 0 ocurrencias de ssl/tls/https | Terminación TLS y cifrado en tránsito | **P0** |
+| 20 | **Autenticación de API** | **A** | `api/security/`: clave de API para sensores (SHA-256, **19 062 verif./s** medidas) y JWT HS256 para personas (scrypt n=2¹⁵). 41 pruebas nombran el ataque que frenan: `alg:none`, firma manipulada, token de otro secreto, clave revocada, enumeración de usuarios, fuerza bruta | MFA; rotación de contraseñas | P2 |
+| 21 | **Autorización RBAC** | **A** | 5 roles (sensor/analyst/responder/auditor/admin) sobre 7 permisos. El código pregunta por permiso, nunca por rol. Probado: el sensor no lee incidentes, el analista no ingiere, el auditor no escribe, el admin no inyecta telemetría | Permisos por origen de telemetría (multi-tenant) | P2 |
+| 22 | **TLS** | **E** | 0 ocurrencias de ssl/tls/https. **Ahora es el eslabón débil**: con autenticación real pero sin cifrado, las credenciales viajan en claro | Terminación TLS y cifrado en tránsito | **P0** |
 | 23 | **Gestión de secretos** | **B** | `CYBERSENTINEL_AUDIT_KEY` y `ANTHROPIC_API_KEY` por variable de entorno. 0 ocurrencias de vault/keyring | Almacén de secretos, rotación, no-exposición en logs | **P1** |
-| 24 | **Rate limiting** | **E** | 0 ocurrencias de rate limit/throttle | Límites por cliente y por origen de telemetría | P2 |
+| 24 | **Rate limiting** | **A** | Cubo de fichas por cliente en dos ejes (peticiones y eventos), política por rol, cubos acotados por LRU. Verificado contra uvicorn real: 110×202 / 50×429 en una ráfaga de 160. **2,4 µs** por comprobación | Estado compartido entre réplicas (hoy es por proceso) | **P1** |
 | 25 | **Audit log** | **A** | Cadena HMAC-SHA256 + ancla externa. Detecta edición, **truncado** y reescritura completa — con prueba por cada ataque | Anclaje en medio independiente (WORM / sellado de tiempo) | **P1** |
 | 26 | **Métricas / observabilidad** | **B** | `TraceContext`: `run_id`, `event_ref`, estado y latencia por etapa (OK/NO_DATA/DISABLED/UNAVAILABLE/ERROR) | **No exporta**: 0 ocurrencias de prometheus/opentelemetry. Sin dashboards ni alertas operativas | **P1** |
 | 27 | **Escalabilidad** | **E** | Proceso único, en memoria. `analyze --json` sobre 20 000 eventos → **129 MB de JSON y 4,2 GB de RSS**; 700 001 no termina | Procesamiento por lotes/streaming, estado externo, particionado | **P0** |
 | 28 | **Latencia medida** | **A** | Por etapa en `TraceContext`; benchmark con p95. Throughput medido: **23 270 flujos/s** en puntuación, 528 ev/s en pipeline completo | Objetivos de servicio (SLO) | P2 |
 | 29 | **Falsos positivos medidos** | **A** | **FPR 0.0583** sobre UNSW-NB15 en el punto de operación calibrado; tráfico benigno sintético → 0 incidentes críticos (prueba de regresión) | Medición continua en producción | P2 |
 | 30 | **Alta disponibilidad** | **E** | Sin estado externo, sin réplicas, sin health checks | Estado en base de datos, réplicas, recuperación | **P1** |
-| 31 | **Persistencia** | **B** | JSONL: auditoría, decisiones HITL, modelos en JSON. 0 ocurrencias de sqlite/sqlalchemy/psycopg | Base de datos para eventos, incidentes y decisiones | **P0** |
+| 31 | **Persistencia** | **B** | SQLite para eventos, **incidentes** y **credenciales**; JSONL para auditoría (cadena HMAC) y decisiones HITL | Decisiones aún en JSONL. SQLite es de un nodo: la alta disponibilidad exige una base compartida (PostgreSQL) | **P1** |
 | 32 | **Integración SIEM / EDR** | **E** | 0 ocurrencias de splunk/elastic/qradar/sentinel | Salida CEF/LEEF/ECS, webhooks, API de ingesta | **P1** |
 
 > La numeración llega a 32 porque «persistencia» e «integración SIEM/EDR» se
@@ -61,11 +61,17 @@ Fecha: 2026-09-15 · Commit auditado: `a0d807a` · `src/`: 8 293 líneas en 43 m
 
 | Estado | Nº | Capacidades |
 |:--:|--:|---|
-| **A** — funcional | **12** | Sysmon, firewall, normalización, Sigma propio, Isolation Forest, ATT&CK, CTI, RAG, HITL, audit log, latencia, falsos positivos |
-| **B** — parcial | **8** | Múltiples fuentes, correlación temporal, LLM, respuesta, secretos, observabilidad, persistencia, (Sigma público si se cuenta como parcial) |
+| **A** — funcional | **15** | Sysmon, firewall, normalización, Sigma propio, Isolation Forest, ATT&CK, CTI, RAG, HITL, audit log, latencia, falsos positivos, **autenticación**, **RBAC**, **rate limiting** |
+| **B** — parcial | **9** | Múltiples fuentes, correlación temporal, LLM, respuesta, secretos, observabilidad, persistencia, **gestión de incidentes**, (Sigma público si se cuenta como parcial) |
 | **C** — mock/hardcode | **2** | `hybrid_score`, umbral `ready_for_training` |
 | **D** — desconectado | **3** | Sigma público (pySigma), Markov/kill-chain, `explanation/explainer.py` |
-| **E** — no implementado | **10** | Tiempo real, auditd, Suricata, gestión de incidentes, auth, RBAC, TLS, rate limiting, escalabilidad, HA, SIEM/EDR |
+| **E** — no implementado | **6** | auditd, Suricata, TLS, escalabilidad, HA, SIEM/EDR |
+
+> Actualizado tras `docs/SECURITY.md` y `docs/SOC-PANEL.md`: autenticación, RBAC
+> y límite de caudal pasan de **E** a **A**; gestión de incidentes, de **E** a
+> **B**. «Tiempo real» pasó a **B** con la API de ingestión.
+> **TLS sigue en E y ahora es el eslabón débil**: hay credenciales que proteger
+> y viajan en claro.
 
 ---
 
@@ -219,8 +225,8 @@ desbloquea.
 | # | Trabajo | Por qué aquí |
 |---|---|---|
 | B1 | **Persistencia en PostgreSQL** (#31) | Prerrequisito duro de incidentes, RBAC, HA y multiusuario. Todo lo demás depende de esto |
-| B2 | **Gestión de incidentes** (#18) | Sin entidad incidente persistente no hay producto: hoy cada evento es un resultado efímero |
-| B3 | **API + TLS + OIDC/JWT + RBAC** (#20–22) | Es la frontera del producto. Va después de B1 porque RBAC necesita usuarios persistidos |
+| B2 | ~~**Gestión de incidentes**~~ → **hecho a medias** (#18) | Ya hay entidad persistente, ciclo de vida y panel. Falta agrupar una campaña en un solo incidente: hoy una cadena de 8 pasos son 8 incidentes |
+| B3 | ~~**API + OIDC/JWT + RBAC**~~ → **hecho** (#20, #21, #24); **falta TLS** (#22) | Es la frontera del producto. Los usuarios se persistieron en SQLite en vez de esperar a PostgreSQL: la migración es un cambio de conexión, no de diseño |
 | B4 | **Exportar métricas (OTel/Prometheus)** (#26) | La instrumentación ya existe en `TraceContext`; falta el exportador. Barato y necesario para operar |
 
 *Aquí es donde el laboratorio se convierte en servicio.*
@@ -250,7 +256,9 @@ desbloquea.
   B2 y B3.
 - **Embeddings neuronales** (#15). El LSA local funciona y es reproducible;
   cambiarlo añade dependencia de red sin resolver ningún bloqueo.
-- **Rate limiting** (#24). No hay API que limitar hasta B3.
+- ~~**Rate limiting** (#24)~~. Se hizo junto con B3: una vez que hay credenciales,
+  limitar por cliente es la mitad del trabajo, y sin ello la autenticación deja
+  abierta la fuerza bruta contra las contraseñas.
 
 ---
 

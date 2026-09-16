@@ -25,6 +25,7 @@ import hashlib
 import hmac
 import json
 import os
+import threading
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -32,6 +33,17 @@ from typing import Any
 
 #: Variable de entorno de la que se lee la clave de firma.
 AUDIT_KEY_ENV = "CYBERSENTINEL_AUDIT_KEY"
+
+#: Un candado por archivo de auditoría, compartido por todas las instancias que
+#: apunten a él. Ver `AuditLog._sincronizar` para el fallo que esto evita.
+_CANDADOS: dict[str, threading.Lock] = {}
+_CANDADOS_LOCK = threading.Lock()
+
+
+def _candado_de(path: Path) -> threading.Lock:
+    clave = str(path.resolve())
+    with _CANDADOS_LOCK:
+        return _CANDADOS.setdefault(clave, threading.Lock())
 
 
 @dataclass
@@ -90,6 +102,11 @@ class AuditLog:
             key = key.encode()
         self.key: bytes | None = key or None
         self.entries: list[AuditEntry] = []
+        # El candado es **por archivo**, no por instancia: con uno por objeto,
+        # cuatro `AuditLog` sobre el mismo registro tendrían cuatro candados
+        # distintos y podrían intercalarse entre releer y escribir. Lo que hay
+        # que serializar es el acceso al archivo, que es el recurso compartido.
+        self._lock = _candado_de(self.path)
         if self.path.exists():
             self._load()
 
@@ -103,33 +120,65 @@ class AuditLog:
         return "hmac-sha256" if self.is_signed else "sha256"
 
     def _load(self) -> None:
+        self.entries = []
+        known = {f for f in AuditEntry.__dataclass_fields__}
         with open(self.path, "r", encoding="utf-8") as fh:
             for line in fh:
                 line = line.strip()
                 if not line:
                     continue
                 d = json.loads(line)
-                known = {f for f in AuditEntry.__dataclass_fields__}
                 self.entries.append(AuditEntry(**{k: v for k, v in d.items() if k in known}))
+
+    def _lineas_en_disco(self) -> int:
+        if not self.path.exists():
+            return 0
+        with open(self.path, "r", encoding="utf-8") as fh:
+            return sum(1 for linea in fh if linea.strip())
+
+    def _sincronizar(self) -> None:
+        """
+        Relee el archivo si ha crecido por debajo de esta instancia.
+
+        Sin esto, **dos objetos `AuditLog` sobre el mismo archivo rompen la
+        cadena en silencio**: cada uno calcula `index` y `prev_hash` a partir de
+        su propia lista en memoria, así que el segundo escribe otra vez desde el
+        índice 0 y la verificación falla en la primera entrada intercalada.
+
+        No es hipotético: pasó en cuanto la API empezó a auditar la
+        autenticación en el mismo registro que el pipeline, y solo se vio al
+        ejecutar `verify-audit` sobre un despliegue real. La cadena valía cero
+        justo cuando había más cosas que auditar.
+
+        **Límite declarado:** esto resuelve el caso de varias instancias en el
+        mismo proceso. Dos *procesos* escribiendo a la vez siguen pudiendo
+        entrelazarse entre la lectura y el `write`; para eso hace falta un
+        bloqueo de archivo (o un único escritor), y es una de las cosas que la
+        alta disponibilidad tiene que resolver.
+        """
+        if self._lineas_en_disco() != len(self.entries):
+            self._load()
 
     def record(self, actor: str, action: str, detail: dict[str, Any]) -> AuditEntry:
         """Añade una entrada firmada a la cadena y actualiza el ancla."""
-        prev = self.entries[-1].entry_hash if self.entries else self.GENESIS
-        entry = AuditEntry(
-            index=len(self.entries),
-            timestamp=datetime.now(tz=timezone.utc).isoformat(),
-            actor=actor,
-            action=action,
-            detail=detail,
-            prev_hash=prev,
-            algo=self.algo,
-        )
-        entry.entry_hash = entry.compute_hash(self.key)
-        self.entries.append(entry)
-        with open(self.path, "a", encoding="utf-8") as fh:
-            fh.write(json.dumps(asdict(entry), ensure_ascii=False) + "\n")
-        self._write_anchor()
-        return entry
+        with self._lock:
+            self._sincronizar()
+            prev = self.entries[-1].entry_hash if self.entries else self.GENESIS
+            entry = AuditEntry(
+                index=len(self.entries),
+                timestamp=datetime.now(tz=timezone.utc).isoformat(),
+                actor=actor,
+                action=action,
+                detail=detail,
+                prev_hash=prev,
+                algo=self.algo,
+            )
+            entry.entry_hash = entry.compute_hash(self.key)
+            self.entries.append(entry)
+            with open(self.path, "a", encoding="utf-8") as fh:
+                fh.write(json.dumps(asdict(entry), ensure_ascii=False) + "\n")
+            self._write_anchor()
+            return entry
 
     # --- Ancla externa --------------------------------------------------------
     def _anchor_payload(self) -> dict[str, Any]:

@@ -1,0 +1,37 @@
+{
+  "resultados": {
+    "verify_api_key (SHA-256 + SQLite)": {
+      "n": 2000,
+      "p50_us": 51.47,
+      "p95_us": 55.11,
+      "p99_us": 68.77,
+      "media_us": 52.46,
+      "ops_por_segundo": 19062.3
+    },
+    "token JWT: verificar (HMAC-SHA256)": {
+      "n": 20000,
+      "p50_us": 24.11,
+      "p95_us": 24.71,
+      "p99_us": 27.31,
+      "media_us": 24.27,
+      "ops_por_segundo": 41198.6
+    },
+    "limitador: cubo de fichas": {
+      "n": 20000,
+      "p50_us": 2.41,
+      "p95_us": 2.48,
+      "p99_us": 2.55,
+      "media_us": 2.42,
+      "ops_por_segundo": 412801.8
+    },
+    "verify_password (scrypt n=2^15)": {
+      "n": 30,
+      "p50_us": 113208.47,
+      "p95_us": 115771.32,
+      "p99_us": 116347.18,
+      "media_us": 113602.07,
+      "ops_por_segundo": 8.8
+    }
+  },
+  "ratio_password_sobre_api_key": 2165.5
+}
