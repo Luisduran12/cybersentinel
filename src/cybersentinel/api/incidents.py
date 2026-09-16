@@ -229,6 +229,16 @@ class IncidentStore:
     def _connect(self) -> sqlite3.Connection:
         con = sqlite3.connect(self.path, timeout=30)
         con.row_factory = sqlite3.Row
+        # Modo WAL: varios procesos pueden leer mientras uno escribe. Sin él,
+        # SQLite serializa con un candado global de base de datos y dos réplicas
+        # sobre el mismo archivo se bloquean entre sí en cuanto hay tráfico.
+        # `busy_timeout` es lo que convierte una colisión en una espera corta en
+        # lugar de en un «database is locked» que sube hasta el cliente.
+        con.execute("PRAGMA journal_mode=WAL")
+        con.execute("PRAGMA busy_timeout=10000")
+        # `synchronous=NORMAL` es lo recomendado con WAL: la durabilidad real de
+        # lo aceptado la da el registro anticipado, no esta base.
+        con.execute("PRAGMA synchronous=NORMAL")
         return con
 
     def _reader(self) -> sqlite3.Connection:

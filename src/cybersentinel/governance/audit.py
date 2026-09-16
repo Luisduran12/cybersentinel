@@ -24,12 +24,15 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import logging
 import os
 import threading
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 #: Variable de entorno de la que se lee la clave de firma.
 AUDIT_KEY_ENV = "CYBERSENTINEL_AUDIT_KEY"
@@ -44,6 +47,55 @@ def _candado_de(path: Path) -> threading.Lock:
     clave = str(path.resolve())
     with _CANDADOS_LOCK:
         return _CANDADOS.setdefault(clave, threading.Lock())
+
+
+class _CandadoDeArchivo:
+    """
+    Exclusión entre **procesos** sobre el archivo de auditoría.
+
+    El candado de hilo resuelve varias instancias dentro de un proceso. No
+    resuelve varios procesos —dos trabajadores de uvicorn, un despliegue con
+    réplicas, la CLI escribiendo mientras corre el servicio—, y ahí el fallo es
+    el mismo: dos cadenas entrelazadas y la verificación por los suelos.
+
+    Se usa `flock` sobre un archivo aparte (`<registro>.lock`) en vez de sobre
+    el propio registro: bloquear el archivo que se está abriendo en modo
+    «añadir» obliga a coordinar el descriptor con la escritura, y un `.lock`
+    separado hace evidente qué es cada cosa.
+
+    Donde `fcntl` no existe (Windows) se degrada a solo candado de hilo y se
+    avisa, en lugar de fallar: es preferible funcionar con una garantía menos
+    y decirlo, a no arrancar.
+    """
+
+    def __init__(self, path: Path) -> None:
+        self.path = path.with_suffix(path.suffix + ".lock")
+        self._fh = None
+
+    def __enter__(self):
+        try:
+            import fcntl
+        except ImportError:  # pragma: no cover - solo fuera de POSIX
+            logger.warning(
+                "Sin `fcntl`: la auditoría no está protegida entre procesos. "
+                "Usa un único escritor.")
+            return self
+        self._fh = open(self.path, "a+")
+        fcntl.flock(self._fh.fileno(), fcntl.LOCK_EX)
+        return self
+
+    def __exit__(self, *exc) -> None:
+        if self._fh is None:
+            return
+        try:
+            import fcntl
+
+            fcntl.flock(self._fh.fileno(), fcntl.LOCK_UN)
+        except ImportError:  # pragma: no cover
+            pass
+        finally:
+            self._fh.close()
+            self._fh = None
 
 
 @dataclass
@@ -161,7 +213,11 @@ class AuditLog:
 
     def record(self, actor: str, action: str, detail: dict[str, Any]) -> AuditEntry:
         """Añade una entrada firmada a la cadena y actualiza el ancla."""
-        with self._lock:
+        with self._lock, _CandadoDeArchivo(self.path):
+            # Releer va **dentro** del candado de archivo: si otro proceso
+            # escribió mientras esperábamos, hay que verlo antes de calcular
+            # `prev_hash`. Fuera del candado, la relectura podría quedarse
+            # obsoleta justo entre comprobar y escribir.
             self._sincronizar()
             prev = self.entries[-1].entry_hash if self.entries else self.GENESIS
             entry = AuditEntry(

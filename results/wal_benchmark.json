@@ -1,0 +1,33 @@
+{
+  "lotes": 150,
+  "por_lote": 500,
+  "resultados": {
+    "always": {
+      "eventos": 75000,
+      "p50_ms_por_lote": 23.908,
+      "p95_ms_por_lote": 25.11,
+      "us_por_evento": 47.68,
+      "eventos_por_segundo": 20973,
+      "fsyncs": 150,
+      "bytes_en_disco": 21888894
+    },
+    "interval": {
+      "eventos": 75000,
+      "p50_ms_por_lote": 4.865,
+      "p95_ms_por_lote": 5.774,
+      "us_por_evento": 9.97,
+      "eventos_por_segundo": 100304,
+      "fsyncs": 3,
+      "bytes_en_disco": 21888894
+    },
+    "never": {
+      "eventos": 75000,
+      "p50_ms_por_lote": 4.863,
+      "p95_ms_por_lote": 5.788,
+      "us_por_evento": 10.99,
+      "eventos_por_segundo": 90970,
+      "fsyncs": 0,
+      "bytes_en_disco": 21888894
+    }
+  }
+}

@@ -81,6 +81,7 @@ def entorno(tmp_path_factory):
 
     svc = IngestService(
         rules_dir=RULES, db_path=directorio / "events.db",
+        wal_dir=directorio / "wal",
         audit_path=directorio / "audit.jsonl", queue_maxsize=2000, batch_size=200,
         enable_rag=False, enable_llm=False,
     )
@@ -135,7 +136,9 @@ def test_ready_sin_credencial_no_revela_el_interior(entorno):
     """Fuga de información: el estado de componentes es reconocimiento útil."""
     cliente = entorno["cliente"]
     anonimo = cliente.get("/api/v1/ready").json()
-    assert set(anonimo) == {"ready"}
+    # `draining` se incluye a propósito: es la diferencia entre «se está
+    # apagando ordenadamente» y «se ha roto», y el balanceador la necesita.
+    assert set(anonimo) == {"ready", "draining"}
 
     detalle = cliente.get("/api/v1/ready", headers=_bearer(cliente, "ana")).json()
     assert "components" in detalle and "security" in detalle
@@ -473,6 +476,7 @@ def test_limite_de_eventos_en_la_api(tmp_path):
                                   "anonymous": LimitPolicy(1, 2, 0, 0)}),
     ))
     svc = IngestService(rules_dir=RULES, db_path=directorio / "e.db",
+                        wal_dir=directorio / "wal",
                         audit_path=None, queue_maxsize=500, batch_size=100,
                         enable_rag=False, enable_llm=False)
     with TestClient(create_app(svc, gate=puerta),
@@ -552,9 +556,15 @@ def app_tls(tmp_path_factory):
     ))
     svc = IngestService(rules_dir=RULES, db_path=directorio / "e.db",
                         incidents_path=directorio / "i.db", audit_path=None,
-                        queue_maxsize=500, batch_size=100,
+                        wal_dir=directorio / "wal", queue_maxsize=500, batch_size=100,
                         enable_rag=False, enable_llm=False)
-    return {"app": create_app(svc, gate=puerta), "key": clave.token, "svc": svc}
+    app = create_app(svc, gate=puerta)
+    # El ciclo de vida se abre **una sola vez**: cada `with TestClient(...)`
+    # lo ejecuta entero, y salir de él para el servicio y cierra el registro.
+    # Los clientes de cada prueba se crean sin `with` sobre esta app ya viva,
+    # que es lo que permite variar el esquema y el origen sin reiniciar nada.
+    with TestClient(app, base_url="https://testserver") as _vivo:
+        yield {"app": app, "key": clave.token, "svc": svc, "vivo": _vivo}
 
 
 def _cliente(app_tls, *, esquema="http", origen=("203.0.113.9", 4444), **kwargs):
@@ -567,27 +577,26 @@ def test_texto_en_claro_desde_fuera_se_rechaza(app_tls):
     Ataque: escuchar la red. Comprobar una contraseña que acaba de viajar
     legible no la hace menos legible; lo único útil es no seguir.
     """
-    with _cliente(app_tls) as c:
-        r = c.post("/api/v1/events", json={"events": [_evento()]},
-                   headers={"X-API-Key": app_tls["key"]})
+    r = _cliente(app_tls).post("/api/v1/events", json={"events": [_evento()]},
+                               headers={"X-API-Key": app_tls["key"]})
     assert r.status_code == 403
     assert r.json()["error"] == "tls_requerido"
     assert "viajarían en claro" in r.json()["reason"]
 
 
 def test_con_tls_la_misma_peticion_pasa(app_tls):
-    with _cliente(app_tls, esquema="https") as c:
-        r = c.post("/api/v1/events", json={"events": [_evento()]},
-                   headers={"X-API-Key": app_tls["key"]})
-    assert r.status_code == 202
+    r = _cliente(app_tls, esquema="https").post(
+        "/api/v1/events", json={"events": [_evento()]},
+        headers={"X-API-Key": app_tls["key"]})
+    assert r.status_code == 202, r.text
 
 
 def test_el_bucle_local_puede_usar_texto_en_claro(app_tls):
     """Desarrollo en la propia máquina: no hay red que escuchar."""
-    with _cliente(app_tls, origen=("127.0.0.1", 5555)) as c:
-        r = c.post("/api/v1/events", json={"events": [_evento()]},
-                   headers={"X-API-Key": app_tls["key"]})
-    assert r.status_code == 202
+    r = _cliente(app_tls, origen=("127.0.0.1", 5555)).post(
+        "/api/v1/events", json={"events": [_evento()]},
+        headers={"X-API-Key": app_tls["key"]})
+    assert r.status_code == 202, r.text
 
 
 def test_la_sonda_de_salud_responde_aunque_no_haya_tls(app_tls):
@@ -595,8 +604,7 @@ def test_la_sonda_de_salud_responde_aunque_no_haya_tls(app_tls):
     Devolver 403 en `/health` haría que el orquestador reiniciase el proceso
     por un problema de red. No lleva credenciales ni revela nada.
     """
-    with _cliente(app_tls) as c:
-        assert c.get("/api/v1/health").status_code == 200
+    assert _cliente(app_tls).get("/api/v1/health").status_code == 200
 
 
 def test_x_forwarded_proto_no_se_cree_sin_proxy_declarado(app_tls):
@@ -605,21 +613,19 @@ def test_x_forwarded_proto_no_se_cree_sin_proxy_declarado(app_tls):
     cualquiera se declara seguro escribiendo una línea y la comprobación no
     sirve de nada.
     """
-    with _cliente(app_tls) as c:
-        r = c.post("/api/v1/events", json={"events": [_evento()]},
-                   headers={"X-API-Key": app_tls["key"],
-                            "X-Forwarded-Proto": "https"})
+    r = _cliente(app_tls).post("/api/v1/events", json={"events": [_evento()]},
+                               headers={"X-API-Key": app_tls["key"],
+                                        "X-Forwarded-Proto": "https"})
     assert r.status_code == 403
 
 
 def test_con_proxy_declarado_si_se_admite_x_forwarded_proto(app_tls, monkeypatch):
     politica = TransportPolicy(allow_plaintext=False, trust_forwarded=True)
     monkeypatch.setattr(app_tls["app"].state, "transport", politica, raising=False)
-    with _cliente(app_tls) as c:
-        r = c.post("/api/v1/events", json={"events": [_evento()]},
-                   headers={"X-API-Key": app_tls["key"],
-                            "X-Forwarded-Proto": "https"})
-    assert r.status_code == 202
+    r = _cliente(app_tls).post("/api/v1/events", json={"events": [_evento()]},
+                               headers={"X-API-Key": app_tls["key"],
+                                        "X-Forwarded-Proto": "https"})
+    assert r.status_code == 202, r.text
 
 
 def test_la_escotilla_queda_declarada(app_tls, monkeypatch):
@@ -629,9 +635,9 @@ def test_la_escotilla_queda_declarada(app_tls, monkeypatch):
     """
     politica = TransportPolicy(allow_plaintext=True, trust_forwarded=False)
     monkeypatch.setattr(app_tls["app"].state, "transport", politica, raising=False)
-    with _cliente(app_tls) as c:
-        assert c.post("/api/v1/events", json={"events": [_evento()]},
-                      headers={"X-API-Key": app_tls["key"]}).status_code == 202
+    assert _cliente(app_tls).post(
+        "/api/v1/events", json={"events": [_evento()]},
+        headers={"X-API-Key": app_tls["key"]}).status_code == 202
     assert "ALLOW_PLAINTEXT" in politica.status()["plaintext_allowed_from"]
     assert politica.status()["warning"]
 
@@ -641,10 +647,8 @@ def test_hsts_solo_sobre_una_conexion_ya_segura(app_tls):
     Anunciar HSTS por HTTP no protege de nada —quien lee la respuesta puede
     quitarlo— y puede dejar inaccesible un laboratorio sin certificado.
     """
-    with _cliente(app_tls, esquema="https") as c:
-        segura = c.get("/api/v1/health")
-    with _cliente(app_tls, origen=("127.0.0.1", 5555)) as c:
-        clara = c.get("/api/v1/health")
+    segura = _cliente(app_tls, esquema="https").get("/api/v1/health")
+    clara = _cliente(app_tls, origen=("127.0.0.1", 5555)).get("/api/v1/health")
     assert "max-age=31536000" in segura.headers["Strict-Transport-Security"]
     assert "Strict-Transport-Security" not in clara.headers
 

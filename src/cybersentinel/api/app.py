@@ -20,6 +20,7 @@ Endpoints:
     PATCH /api/v1/incidents/{id}  estado, propietario, cierre  · incidents:write
     POST /api/v1/incidents/{id}/notes     anotar               · incidents:write
     POST /api/v1/incidents/{id}/decision  veredicto HITL       · incidents:write
+    POST /api/v1/drain            retirada ordenada            · identity:admin
     GET  /soc/                    panel del analista           · público (estático)
 
 Diseño: la ingestión es **asíncrona**. La API valida, normaliza y encola, y
@@ -41,6 +42,7 @@ from __future__ import annotations
 
 import logging
 import os
+import threading
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -64,12 +66,13 @@ from .models import (
     TokenResponse,
 )
 from .incidents import Filtro, IncidentError, IncidentStore
-from .queue import IngestQueue, QueueFull
+from .queue import IngestQueue
 from .security import (
     AuthError, Permission, Principal, Role, SecurityConfig, SecurityGate,
     TransportPolicy, charge_events, limit_anonymous, requires, role_matrix,
 )
 from .store import ResultStore
+from .wal import WriteAheadLog
 from .worker import IngestWorker, QueuedEvent
 
 logger = logging.getLogger(__name__)
@@ -87,6 +90,7 @@ RULES_DIR = os.environ.get("CYBERSENTINEL_RULES", str(ROOT / "config" / "rules")
 AUDIT_PATH = os.environ.get("CYBERSENTINEL_AUDIT", str(ROOT / "data" / "runtime" / "audit.jsonl"))
 IDENTITY_DB = os.environ.get(
     "CYBERSENTINEL_IDENTITY_DB", str(ROOT / "data" / "runtime" / "identities.db"))
+WAL_DIR = os.environ.get("CYBERSENTINEL_WAL", str(ROOT / "data" / "runtime" / "wal"))
 FEEDBACK_STORE = os.environ.get(
     "CYBERSENTINEL_FEEDBACK", str(ROOT / "data" / "feedback" / "decisions.jsonl"))
 
@@ -113,6 +117,7 @@ class IngestService:
         batch_size: int = BATCH_SIZE,
         incidents_path: str | Path | None = None,
         feedback_store: str | Path | None = None,
+        wal_dir: str | Path | None = None,
         **pipeline_kwargs: Any,
     ) -> None:
         self.normalizer = Normalizer()
@@ -121,6 +126,10 @@ class IngestService:
             rules_dir=rules_dir, audit_path=audit_path, **pipeline_kwargs
         )
         self.queue = IngestQueue(maxsize=queue_maxsize)
+        # Nada se acepta hasta que está escrito aquí. Ver `wal.py`.
+        self.wal = WriteAheadLog(wal_dir or WAL_DIR)
+        self._ingest_lock = threading.Lock()
+        self.draining = False
         self.store = ResultStore(db_path)
         self.incidents = IncidentStore(
             incidents_path or Path(db_path).with_name("incidents.db"))
@@ -131,47 +140,124 @@ class IngestService:
         self.worker = IngestWorker(
             pipeline=self.pipeline, cola=self.queue, store=self.store,
             incidents=self.incidents, metrics=self.metrics, batch_size=batch_size,
+            wal=self.wal,
         )
 
     def start(self) -> None:
+        """Recupera lo que quedó del arranque anterior y arranca el worker."""
+        # Arrancar después de parar es legítimo. Sin este reinicio explícito, el
+        # servicio quedaba en retirada para siempre y con el registro cerrado.
+        self.draining = False
+        self.wal.reopen()
+        recuperados = self.recover()
+        if recuperados:
+            logger.warning(
+                "Recuperados %d eventos aceptados y no procesados del arranque "
+                "anterior. No se perdió nada; se reprocesarán.", recuperados)
         self.worker.start()
 
+    def recover(self) -> int:
+        """
+        Reencola lo aceptado y no procesado que dejó el proceso anterior.
+
+        Se normaliza de nuevo desde el registro crudo en vez de guardar el
+        evento ya normalizado: así la recuperación recorre exactamente el mismo
+        camino que la ingestión, y no puede divergir cuando un parser cambie.
+        """
+        recuperados = 0
+        for entrada in self.wal.replay():
+            try:
+                evento = self.normalizer.normalize_record(entrada.record)
+            except Exception as exc:
+                # Un registro que ya no normaliza —porque el parser cambió— no
+                # puede bloquear la recuperación del resto.
+                logger.error("No se pudo recuperar el registro %d: %s",
+                             entrada.seq, exc)
+                continue
+            if not self.queue.reserve(1):
+                logger.error(
+                    "El buffer se llenó durante la recuperación en la secuencia "
+                    "%d: el resto sigue en el registro y se recuperará en el "
+                    "siguiente arranque.", entrada.seq)
+                break
+            self.queue.put_reserved(QueuedEvent(
+                event=evento, received_at=time.perf_counter(),
+                source=entrada.source, seq=entrada.seq))
+            recuperados += 1
+        return recuperados
+
     def stop(self) -> None:
+        """
+        Apagado ordenado: dejar de aceptar, drenar, bajar a disco.
+
+        El orden importa. Marcar `draining` primero hace que `/ready` devuelva
+        503 y que el balanceador deje de enviar tráfico **antes** de que la cola
+        empiece a vaciarse; al revés, los eventos que llegasen durante el
+        drenado se quedarían sin worker que los procese.
+        """
+        self.draining = True
         self.worker.stop()
+        self.wal.release()
 
     def ingest(self, eventos: list[RawEvent]) -> IngestResponse:
         """Valida, normaliza y encola. No analiza: de eso se encarga el worker."""
         inicio = time.perf_counter()
         self.metrics.record_received(len(eventos))
 
-        aceptados = 0
         rechazados = 0
         errores: list[dict[str, Any]] = []
         anotaciones: list[str] = []
+        validos: list[tuple[dict[str, Any], Any]] = []
 
+        # 1. Validar y normalizar. Se hace fuera del candado: es lo caro, y no
+        #    toca estado compartido.
         for indice, crudo in enumerate(eventos):
             try:
                 registro, anot = crudo.to_record()
                 evento = self.normalizer.normalize_record(registro)
-                self.queue.put(QueuedEvent(
-                    event=evento, received_at=time.perf_counter(),
-                    source=evento.source,
-                ))
-                aceptados += 1
-                anotaciones.extend(anot)
-                anotaciones.extend(evento.tags)
-            except QueueFull as exc:
-                # Contrapresión: se informa, no se descarta en silencio.
-                self.metrics.record_backpressure(len(eventos) - indice)
-                rechazados += len(eventos) - indice
-                errores.append({"index": indice, "error": "buffer lleno",
-                                "detail": str(exc)})
-                break
             except Exception as exc:
                 rechazados += 1
                 motivo = f"{type(exc).__name__}: {exc}"
                 self.metrics.record_validation_error(motivo)
-                errores.append({"index": indice, "error": "normalización", "detail": motivo[:200]})
+                errores.append({"index": indice, "error": "normalización",
+                                "detail": motivo[:200]})
+                continue
+            validos.append((registro, evento))
+            anotaciones.extend(anot)
+            anotaciones.extend(evento.tags)
+
+        aceptados = 0
+        if validos:
+            # 2. Reservar, registrar y encolar bajo un solo candado, para que el
+            #    orden de secuencia del registro coincida con el de la cola. Si
+            #    no coincidieran, el punto de control del worker podría saltarse
+            #    eventos aún sin procesar y un fallo los perdería.
+            with self._ingest_lock:
+                if not self.queue.reserve(len(validos)):
+                    self.metrics.record_backpressure(len(validos))
+                    rechazados += len(validos)
+                    errores.append({
+                        "index": len(eventos) - len(validos), "error": "buffer lleno",
+                        "detail": f"buffer lleno ({self.queue.maxsize} eventos); "
+                                  "reintenta más tarde"})
+                else:
+                    try:
+                        seqs = self.wal.append([(r, e.source) for r, e in validos])
+                    except Exception as exc:
+                        # No se pudo registrar: no se acepta. Un 503 honesto es
+                        # mejor que un 202 que miente.
+                        self.queue.release(len(validos))
+                        rechazados += len(validos)
+                        errores.append({"index": 0, "error": "registro no disponible",
+                                        "detail": f"{type(exc).__name__}: {exc}"[:200]})
+                        logger.exception("Fallo al escribir el registro anticipado")
+                    else:
+                        ahora = time.perf_counter()
+                        for (_, evento), seq in zip(validos, seqs):
+                            self.queue.put_reserved(QueuedEvent(
+                                event=evento, received_at=ahora,
+                                source=evento.source, seq=seq))
+                        aceptados = len(validos)
 
         ms = (time.perf_counter() - inicio) * 1000.0
         if aceptados:
@@ -294,9 +380,13 @@ def create_app(svc: IngestService | None = None,
         if not principal.token_id:
             return {"revoked": False,
                     "reason": "las claves de API se revocan desde /identities, no aquí"}
-        request.app.state.gate.revoke_token(principal.token_id)
+        request.app.state.gate.revoke_token(
+            principal.token_id,
+            expires_at=int(principal.claims.get("exp", 0)),
+            subject=principal.display)
         return {"revoked": True, "token_id": principal.token_id,
-                "note": "la lista de revocación vive en memoria: un reinicio la vacía"}
+                "note": "la revocación se guarda en el almacén de identidades: "
+                        "vale en todas las réplicas y sobrevive al reinicio"}
 
     @app.get("/api/v1/auth/roles", summary="Matriz de roles y permisos")
     async def roles(_: Principal = Depends(requires())) -> dict[str, Any]:
@@ -394,7 +484,7 @@ def create_app(svc: IngestService | None = None,
         """
         s = _svc(request)
         saturada = s.queue.utilization >= 0.95
-        listo = s.worker.is_running and not saturada
+        listo = s.worker.is_running and not saturada and not s.draining
         codigo = status.HTTP_200_OK if listo else status.HTTP_503_SERVICE_UNAVAILABLE
 
         puerta = request.app.state.gate
@@ -403,13 +493,21 @@ def create_app(svc: IngestService | None = None,
         except AuthError:
             principal = None
         if principal is None or not principal.can(Permission.METRICS_READ):
-            return JSONResponse({"ready": listo}, status_code=codigo)
+            # Sin credencial, el balanceador necesita saber si mandar tráfico y
+            # nada más. `draining` se incluye porque es la diferencia entre «se
+            # está apagando ordenadamente» y «se ha roto», y confundirlas hace
+            # que el orquestador reinicie un proceso que estaba terminando bien.
+            return JSONResponse({"ready": listo, "draining": s.draining},
+                                status_code=codigo)
 
         return JSONResponse({
             "ready": listo,
             "worker_running": s.worker.is_running,
             "queue_size": s.queue.size,
             "queue_utilization": round(s.queue.utilization, 4),
+            "queue_reserved": s.queue.reserved,
+            "draining": s.draining,
+            "wal": s.wal.stats(),
             "baseline_ready": s.worker.baseline_ready,
             "baseline_note": (
                 "el detector aprende la línea base del primer lote recibido; "
@@ -437,7 +535,41 @@ def create_app(svc: IngestService | None = None,
         datos["store"] = s.store.summary()
         datos["alert_threshold"] = ALERT_THRESHOLD
         datos["rate_limit"] = request.app.state.gate.limiter.stats()
+        datos["wal"] = s.wal.stats()
+        datos["incidents"] = s.incidents.stats()
         return datos
+
+    @app.post("/api/v1/drain", summary="Dejar de aceptar tráfico y vaciar la cola")
+    async def drain(request: Request,
+                    principal: Principal = Depends(requires(Permission.IDENTITY_ADMIN)),
+                    ) -> dict[str, Any]:
+        """
+        Marca el proceso como «en retirada» sin matarlo.
+
+        Es la mitad que falta de un apagado ordenado. Si se manda `SIGTERM` sin
+        más, el proceso deja de escuchar de golpe y el balanceador sigue
+        enviándole tráfico durante los segundos que tarda en enterarse: esas
+        peticiones se pierden. Con esto, el orden correcto es:
+
+            1. `POST /api/v1/drain`  → `/ready` pasa a 503
+            2. esperar a que el balanceador lo saque de rotación
+            3. `SIGTERM` → se vacía la cola y se cierra el registro
+
+        No se puede deshacer desde la API a propósito: un proceso que vuelve a
+        aceptar tráfico después de anunciar que se retiraba es exactamente el
+        que el balanceador ya no vigila.
+        """
+        servicio = _svc(request)
+        servicio.draining = True
+        request.app.state.gate._record(
+            actor=principal.id, action="service_draining",
+            detail={"queue_size": servicio.queue.size,
+                    "wal_pending": servicio.wal.pending()})
+        logger.warning("Drenado solicitado por %s: /ready devolverá 503", principal.id)
+        return {"draining": True, "queue_size": servicio.queue.size,
+                "wal_pending": servicio.wal.pending(),
+                "next": "espera a que el balanceador lo saque de rotación y "
+                        "manda SIGTERM"}
 
     # --- Incidentes: lo que el panel SOC consume --------------------------
     @app.get("/api/v1/incidents/stats", summary="Cifras de cabecera del panel")

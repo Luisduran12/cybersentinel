@@ -232,6 +232,7 @@ La suite cubre tres cosas distintas:
 | `tests/test_mitre_attack.py` | Que la matriz oficial se integra sin romper la interfaz, y que el sistema sigue funcionando sin ella. |
 | `tests/test_api_security.py` | Que los ataques contra la frontera fallan: `alg:none`, token manipulado, clave revocada, enumeración de usuarios, fuerza bruta, cliente desbocado. Cada prueba nombra el ataque que representa. |
 | `tests/test_soc_panel.py` | Que el incidente sobrevive en disco con la evidencia que lo justifica, que el ciclo de vida no acepta transiciones inválidas, que la cronología solo crece y que el rol que solo lee no puede escribir aunque el navegador le enseñe un botón. |
+| `tests/test_high_availability.py` | Que un `kill -9` no pierde lo aceptado, que una línea truncada no se lleva por delante al resto, que dos procesos no comparten registro en silencio y que la cadena de auditoría aguanta tres procesos escribiendo a la vez. |
 
 ## Evaluación con datasets reales
 
@@ -373,6 +374,50 @@ contado en [`docs/SOC-PANEL.md`](docs/SOC-PANEL.md).
 **Lo que falta:** un incidente por evento, no por campaña —una cadena de ocho
 pasos son ocho incidentes—, y no hay SLA ni actualización en vivo.
 
+## Qué sobrevive a un fallo
+
+La pregunta era concreta: **si el proceso muere ahora mismo, ¿qué se pierde?**
+Antes, todo lo que estuviera en la cola en memoria: el emisor tenía un `202` en
+su registro y el sistema no tenía el evento. Eso es peor que perderlo a secas,
+porque nadie sabe que falta.
+
+Ahora el orden es **registro en disco → cola → respuesta**. Verificado con
+`kill -9` sobre un uvicorn real:
+
+```
+{"accepted": 3000, "rejected": 0, "queued": 2500}
+$ kill -9 5578
+processed_events: 0          ← nada llegó a procesarse
+$ # al arrancar de nuevo:
+Recuperados 3000 eventos aceptados y no procesados del arranque anterior.
+processed_events: 3000
+```
+
+Y cuesta lo que se puede pagar (`scripts/benchmark_wal.py`):
+
+| política | µs/evento | eventos/s |
+|---|---:|---:|
+| `always` (sobrevive a un corte de corriente) | 47,45 | 21 076 |
+| `interval` (defecto, ventana de 200 ms) | 9,87 | 101 280 |
+| `never` | 9,82 | 101 860 |
+
+El pipeline completo mide 528 ev/s: ni la política más cara es el cuello de
+botella. **Una trampa que solo se vio midiendo:** la primera versión daba
+`always` y `never` iguales, imposible si `always` garantizase algo. En macOS
+`fsync()` no vacía la caché del disco; hace falta `F_FULLFSYNC`. Un `fsync` que
+no cuesta nada es un `fsync` que no hace nada.
+
+También: retirada ordenada (`POST /drain` → `/ready` 503 → `SIGTERM`), y estado
+compartido entre réplicas —identidades, revocación de tokens, eventos,
+incidentes y una cadena de auditoría que aguanta varios escritores—. Cada
+réplica tiene su **propio** registro: dos procesos sobre el mismo no se pisarían
+los datos en silencio, el segundo directamente no arranca.
+
+**Lo que esto no es:** alta disponibilidad de verdad. No hay conmutación
+automática —lo que una réplica muerta tenía aceptado espera a que vuelva—, y
+SQLite coordina procesos de un host, no de varias máquinas. La frontera está
+dicha con precisión en [`docs/HIGH-AVAILABILITY.md`](docs/HIGH-AVAILABILITY.md).
+
 ## Rendimiento y falsos positivos medidos
 
 ```bash
@@ -424,6 +469,7 @@ cybersentinel/
 │   │   ├── sequence_model.py   # Markov / línea base / interfaz para LSTM
 │   │   └── evaluation.py       # precisión@k, matriz de confusión, F1
 │   ├── api/                 # ingesta en tiempo real (cola, worker, SQLite)
+│   │   ├── wal.py              # registro anticipado: un 202 significa "en disco"
 │   │   ├── incidents.py        # incidente persistente: ciclo de vida y cronología
 │   │   ├── panel/              # panel SOC (HTML/CSS/JS, sin build ni dependencias)
 │   │   └── security/           # autenticación, RBAC y límite de caudal

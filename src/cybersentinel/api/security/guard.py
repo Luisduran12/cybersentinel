@@ -86,7 +86,9 @@ class SecurityGate:
         self.limiter = config.rate_limiter or RateLimiter()
         self.audit = config.audit_log
         self._failures: dict[str, _FailureCounter] = {}
-        self._revoked_jti: set[str] = set()
+        # Las revocaciones ya no viven aquí: están en el almacén, para que
+        # cerrar sesión valga en todas las réplicas y sobreviva a un reinicio.
+        self.store.purge_revoked_tokens()
 
         if self.store.is_empty():
             logger.warning(
@@ -150,7 +152,7 @@ class SecurityGate:
                 claims = self.signer.verify(bearer)
             except TokenError as exc:
                 raise AuthError(f"token inválido: {exc}") from exc
-            if claims.get("jti") in self._revoked_jti:
+            if self.store.is_token_revoked(claims.get("jti", "")):
                 raise AuthError("token revocado")
             rol = Role(claims["role"]) if claims["role"] in Role._value2member_map_ else None
             if rol is None:
@@ -162,16 +164,19 @@ class SecurityGate:
             )
         raise AuthError("falta credencial: usa Authorization: Bearer o X-API-Key")
 
-    def revoke_token(self, jti: str) -> None:
+    def revoke_token(self, jti: str, expires_at: int = 0, subject: str = "") -> None:
         """
-        Invalida un token concreto antes de que caduque.
+        Invalida un token concreto antes de que caduque, en el almacén.
 
-        La lista vive en memoria: al reiniciar, un token revocado vuelve a
-        valer hasta su `exp`. Con la vida por defecto de una hora el riesgo
-        está acotado, pero es una de las cosas que hay que mover a estado
-        compartido cuando haya réplicas.
+        Persistido y compartido: sobrevive al reinicio y vale para todas las
+        réplicas que compartan la base de identidades. Sin `expires_at` se
+        asume la vida máxima configurada, para que la entrada se pueda limpiar
+        algún día en lugar de quedarse ahí para siempre.
         """
-        self._revoked_jti.add(jti)
+        if not jti:
+            return
+        caduca = expires_at or int(time.time() + self.signer.ttl_s)
+        self.store.revoke_token(jti, caduca, subject)
 
     # --- Emisión de tokens ------------------------------------------------
     def issue_token(self, username: str, password: str, request: Request) -> dict[str, Any]:
@@ -208,7 +213,6 @@ class SecurityGate:
             "identities": self.store.summary(),
             "rate_limit": self.limiter.stats(),
             "roles": role_matrix(),
-            "revoked_tokens_in_memory": len(self._revoked_jti),
         }
 
 

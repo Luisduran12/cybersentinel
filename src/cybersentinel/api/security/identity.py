@@ -86,6 +86,13 @@ CREATE TABLE IF NOT EXISTS api_keys (
     uses        INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_keys_role ON api_keys(role);
+CREATE TABLE IF NOT EXISTS revoked_tokens (
+    jti        TEXT PRIMARY KEY,
+    revoked_at TEXT NOT NULL,
+    expires_at INTEGER NOT NULL,  -- epoch del `exp` del token
+    subject    TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_revoked_exp ON revoked_tokens(expires_at);
 """
 
 
@@ -167,6 +174,16 @@ class IdentityStore:
     def _connect(self) -> sqlite3.Connection:
         con = sqlite3.connect(self.path, timeout=30)
         con.row_factory = sqlite3.Row
+        # Modo WAL: varios procesos pueden leer mientras uno escribe. Sin él,
+        # SQLite serializa con un candado global de base de datos y dos réplicas
+        # sobre el mismo archivo se bloquean entre sí en cuanto hay tráfico.
+        # `busy_timeout` es lo que convierte una colisión en una espera corta en
+        # lugar de en un «database is locked» que sube hasta el cliente.
+        con.execute("PRAGMA journal_mode=WAL")
+        con.execute("PRAGMA busy_timeout=10000")
+        # `synchronous=NORMAL` es lo recomendado con WAL: la durabilidad real de
+        # lo aceptado la da el registro anticipado, no esta base.
+        con.execute("PRAGMA synchronous=NORMAL")
         return con
 
     def _reader(self) -> sqlite3.Connection:
@@ -427,6 +444,46 @@ class IdentityStore:
         with closing(self._connect()) as con:
             return [dict(f) for f in con.execute(consulta).fetchall()]
 
+    # --- Revocación de tokens ---------------------------------------------
+    def revoke_token(self, jti: str, expires_at: int, subject: str = "") -> None:
+        """
+        Marca un token como revocado, **en disco**.
+
+        La lista vivía en memoria del proceso. Con una sola instancia el efecto
+        era el correcto; en cuanto hay dos, cerrar sesión en una dejaba el token
+        perfectamente válido en la otra, y un balanceador lo encaminaría allí
+        tarde o temprano. Una revocación que depende de a qué réplica caiga la
+        petición no es una revocación.
+
+        Se guarda el `exp` del token para poder limpiar: sin él, la tabla
+        crecería para siempre con entradas que ya no significan nada.
+        """
+        with self._lock, closing(self._connect()) as con:
+            con.execute(
+                "INSERT OR REPLACE INTO revoked_tokens (jti, revoked_at, expires_at, subject) "
+                "VALUES (?,?,?,?)", (jti, _ahora(), int(expires_at), subject))
+            con.commit()
+
+    def is_token_revoked(self, jti: str) -> bool:
+        if not jti:
+            return False
+        fila = self._reader().execute(
+            "SELECT 1 FROM revoked_tokens WHERE jti = ?", (jti,)).fetchone()
+        return fila is not None
+
+    def purge_revoked_tokens(self, ahora: int | None = None) -> int:
+        """
+        Borra las revocaciones de tokens que ya habrían caducado solos.
+
+        No es cosmética: sin ella la tabla crece sin límite y la consulta por
+        `jti` —que corre en cada petición con token— se va degradando.
+        """
+        limite = int(ahora if ahora is not None else time.time())
+        with self._lock, closing(self._connect()) as con:
+            cur = con.execute("DELETE FROM revoked_tokens WHERE expires_at < ?", (limite,))
+            con.commit()
+        return cur.rowcount
+
     # --- Estado -----------------------------------------------------------
     def summary(self) -> dict[str, Any]:
         with closing(self._connect()) as con:
@@ -435,10 +492,12 @@ class IdentityStore:
                 "SELECT role, COUNT(*) FROM users GROUP BY role").fetchall())
             claves = con.execute(
                 "SELECT COUNT(*) FROM api_keys WHERE revoked_at IS NULL").fetchone()[0]
+            revocados = con.execute("SELECT COUNT(*) FROM revoked_tokens").fetchone()[0]
         return {
             "users": usuarios,
             "users_by_role": por_rol,
             "active_api_keys": claves,
+            "revoked_tokens": revocados,
             "db_path": str(self.path),
         }
 

@@ -21,7 +21,7 @@ Fecha: 2026-09-15 · Commit auditado: `a0d807a` · `src/`: 8 293 líneas en 43 m
 
 | # | CAPACIDAD | ESTADO | EVIDENCIA | QUÉ FALTA | PRIORIDAD |
 |---|---|:--:|---|---|:--:|
-| 1 | **Ingestión tiempo real** | **E** | No hay servidor, cola ni *listener*. 0 ocurrencias de kafka/redis/celery/syslog en `src/` | Receptor (syslog/HTTP/agente), cola, backpressure | **P0** |
+| 1 | **Ingestión tiempo real** | **A** | API FastAPI + cola acotada con contrapresión y reserva + worker por lotes + **registro de escritura anticipada**: un 202 significa que el evento está en disco. Verificado con `kill -9`: 3 000 aceptados, 0 procesados, 3 000 recuperados | Receptor syslog nativo; cola compartida entre réplicas | P2 |
 | 2 | **Windows / Sysmon** | **A** | `parse_sysmon` + `SecurityDatasetsLoader`; detecta T1059/T1053/T1046 sobre `sample_logs.jsonl` (17 hallazgos, 5 cadenas) | Cobertura de más EventIDs (7, 8, 10, 11, 22) | P2 |
 | 3 | **Linux / auditd** | **E** | 0 ocurrencias de `auditd` en `src/` | Parser de auditd/journald y reglas asociadas | **P1** |
 | 4 | **Firewall logs** | **A** | `parse_firewall`; produce las detecciones RDP/C2/exfiltración de la cadena sintética | Formatos de fabricante (ASA, Palo Alto, fortinet) | P2 |
@@ -47,11 +47,11 @@ Fecha: 2026-09-15 · Commit auditado: `a0d807a` · `src/`: 8 293 líneas en 43 m
 | 24 | **Rate limiting** | **A** | Cubo de fichas por cliente en dos ejes (peticiones y eventos), política por rol, cubos acotados por LRU. Verificado contra uvicorn real: 110×202 / 50×429 en una ráfaga de 160. **2,4 µs** por comprobación | Estado compartido entre réplicas (hoy es por proceso) | **P1** |
 | 25 | **Audit log** | **A** | Cadena HMAC-SHA256 + ancla externa. Detecta edición, **truncado** y reescritura completa — con prueba por cada ataque | Anclaje en medio independiente (WORM / sellado de tiempo) | **P1** |
 | 26 | **Métricas / observabilidad** | **B** | `TraceContext`: `run_id`, `event_ref`, estado y latencia por etapa (OK/NO_DATA/DISABLED/UNAVAILABLE/ERROR) | **No exporta**: 0 ocurrencias de prometheus/opentelemetry. Sin dashboards ni alertas operativas | **P1** |
-| 27 | **Escalabilidad** | **E** | Proceso único, en memoria. `analyze --json` sobre 20 000 eventos → **129 MB de JSON y 4,2 GB de RSS**; 700 001 no termina | Procesamiento por lotes/streaming, estado externo, particionado | **P0** |
+| 27 | **Escalabilidad** | **B** | La ruta de servicio ya es acotada: cola con tope, lotes, SQLite en modo WAL y evidencia completa solo para incidentes. Varias réplicas comparten eventos e incidentes. **La ruta de CLI sigue igual**: `analyze --json` sobre 20 000 eventos → 129 MB de JSON y 4,2 GB de RSS | Particionado y cola compartida; arreglar `analyze --json` | **P1** |
 | 28 | **Latencia medida** | **A** | Por etapa en `TraceContext`; benchmark con p95. Throughput medido: **23 270 flujos/s** en puntuación, 528 ev/s en pipeline completo | Objetivos de servicio (SLO) | P2 |
 | 29 | **Falsos positivos medidos** | **A** | **FPR 0.0583** sobre UNSW-NB15 en el punto de operación calibrado; tráfico benigno sintético → 0 incidentes críticos (prueba de regresión) | Medición continua en producción | P2 |
-| 30 | **Alta disponibilidad** | **E** | Sin estado externo, sin réplicas, sin health checks | Estado en base de datos, réplicas, recuperación | **P1** |
-| 31 | **Persistencia** | **B** | SQLite para eventos, **incidentes** y **credenciales**; JSONL para auditoría (cadena HMAC) y decisiones HITL | Decisiones aún en JSONL. SQLite es de un nodo: la alta disponibilidad exige una base compartida (PostgreSQL) | **P1** |
+| 30 | **Alta disponibilidad** | **B** | Recuperación sin pérdida tras `kill -9`; retirada ordenada (`POST /drain` → `/ready` 503 → SIGTERM); identidades, revocación de tokens, eventos e incidentes compartidos entre procesos; cadena de auditoría íntegra con varios escritores (`flock`). 25 pruebas | **Sin conmutación automática ni cola compartida**: cada réplica tiene su propio registro y su propio ingreso. Un solo host | **P1** |
+| 31 | **Persistencia** | **B** | SQLite en **modo WAL** para eventos, incidentes y credenciales —varios procesos a la vez—; JSONL para el registro anticipado, la auditoría (cadena HMAC con `flock`) y las decisiones HITL | Decisiones aún en JSONL. SQLite es de **un host**: varias máquinas exigen una base en red (PostgreSQL) | **P1** |
 | 32 | **Integración SIEM / EDR** | **E** | 0 ocurrencias de splunk/elastic/qradar/sentinel | Salida CEF/LEEF/ECS, webhooks, API de ingesta | **P1** |
 
 > La numeración llega a 32 porque «persistencia» e «integración SIEM/EDR» se
@@ -61,17 +61,18 @@ Fecha: 2026-09-15 · Commit auditado: `a0d807a` · `src/`: 8 293 líneas en 43 m
 
 | Estado | Nº | Capacidades |
 |:--:|--:|---|
-| **A** — funcional | **16** | Sysmon, firewall, normalización, Sigma propio, Isolation Forest, ATT&CK, CTI, RAG, HITL, audit log, latencia, falsos positivos, **autenticación**, **RBAC**, **rate limiting**, **TLS** |
-| **B** — parcial | **9** | Múltiples fuentes, correlación temporal, LLM, respuesta, secretos, observabilidad, persistencia, **gestión de incidentes**, (Sigma público si se cuenta como parcial) |
+| **A** — funcional | **17** | Sysmon, firewall, normalización, Sigma propio, Isolation Forest, ATT&CK, CTI, RAG, HITL, audit log, latencia, falsos positivos, autenticación, RBAC, rate limiting, TLS, **ingestión en tiempo real** |
+| **B** — parcial | **11** | Múltiples fuentes, correlación temporal, LLM, respuesta, secretos, observabilidad, persistencia, gestión de incidentes, **escalabilidad**, **alta disponibilidad**, (Sigma público si se cuenta como parcial) |
 | **C** — mock/hardcode | **2** | `hybrid_score`, umbral `ready_for_training` |
 | **D** — desconectado | **3** | Sigma público (pySigma), Markov/kill-chain, `explanation/explainer.py` |
-| **E** — no implementado | **5** | auditd, Suricata, escalabilidad, HA, SIEM/EDR |
+| **E** — no implementado | **3** | auditd, Suricata, SIEM/EDR |
 
-> Actualizado tras `docs/SECURITY.md` y `docs/SOC-PANEL.md`: autenticación,
-> RBAC, límite de caudal y TLS pasan de **E** a **A**; gestión de incidentes, de
-> **E** a **B**. «Tiempo real» pasó a **B** con la API de ingestión.
-> **Lo que queda en P0/P1 es de escala, no de seguridad**: alta disponibilidad
-> y estado compartido. Hoy todo vive en un proceso con SQLite.
+> Actualizado tras `docs/SECURITY.md`, `docs/SOC-PANEL.md` y
+> `docs/HIGH-AVAILABILITY.md`. **No queda ningún P0.** Lo que sigue en **E** son
+> tres trabajos de cobertura, aislados y paralelizables: dos parsers y un
+> exportador. Lo que sigue en **B** es de escala: un solo host, SQLite y una
+> cola por réplica. La frontera entre «esto aguanta un fallo» y «esto aguanta
+> que se caiga la máquina» está exactamente ahí, y está dicha.
 
 ---
 
@@ -235,9 +236,9 @@ desbloquea.
 
 | # | Trabajo | Por qué aquí |
 |---|---|---|
-| C1 | **Cola durable + workers** (#1, #27) | Requiere B1 (estado externo) para que los workers sean replicables. Resuelve además el problema medido de 4,2 GB de RSS |
-| C2 | **Ingestión en tiempo real** (#1, #6) | Depende de C1 |
-| C3 | **Alta disponibilidad** (#30) | Consecuencia de C1+B1, no un trabajo independiente |
+| C1 | ~~**Cola durable + workers**~~ → **hecha en disco**, no en un broker (#1, #27) | El registro anticipado da durabilidad y recuperación sin añadir Kafka ni Redis. Lo que no da es una cola **compartida**: cada réplica tiene la suya |
+| C2 | ~~**Ingestión en tiempo real**~~ → **hecha** (#1, #6) | — |
+| C3 | ~~**Alta disponibilidad**~~ → **a medias** (#30) | Hay recuperación, retirada ordenada y estado compartido entre procesos. Falta conmutación automática y salir de un solo host |
 
 ### Fase D — Amplitud de cobertura (en paralelo desde la Fase B)
 

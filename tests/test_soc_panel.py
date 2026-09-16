@@ -69,7 +69,7 @@ def soc(tmp_path_factory):
     svc = IngestService(
         rules_dir=RULES, db_path=directorio / "events.db",
         incidents_path=directorio / "incidents.db",
-        feedback_store=directorio / "decisions.jsonl",
+        feedback_store=directorio / "decisions.jsonl", wal_dir=directorio / "wal",
         audit_path=directorio / "audit.jsonl", queue_maxsize=2000, batch_size=200,
         enable_rag=False, enable_llm=False,
     )

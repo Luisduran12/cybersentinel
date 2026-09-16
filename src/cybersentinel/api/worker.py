@@ -19,6 +19,7 @@ import logging
 import threading
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from ..pipeline import ALERT_THRESHOLD, Pipeline
@@ -35,6 +36,9 @@ class QueuedEvent:
     event: Any
     received_at: float
     source: str
+    #: Secuencia en el registro de escritura anticipada. El worker avanza el
+    #: punto de control hasta aquí **después** de persistir el resultado.
+    seq: int = 0
 
 
 class IngestWorker:
@@ -47,6 +51,7 @@ class IngestWorker:
         store: Any,
         metrics: IngestMetrics,
         incidents: Any = None,
+        wal: Any = None,
         batch_size: int = 500,
         poll_timeout: float = 0.5,
         max_retries: int = 2,
@@ -55,6 +60,7 @@ class IngestWorker:
         self.cola = cola
         self.store = store
         self.incidents = incidents
+        self.wal = wal
         self.metrics = metrics
         self.batch_size = batch_size
         self.poll_timeout = poll_timeout
@@ -126,7 +132,13 @@ class IngestWorker:
                     continue
                 # Agotados los reintentos: a la cola de fallidos, nunca al olvido.
                 self.cola.dead_letter(lote, f"{type(exc).__name__}: {exc}")
+                self._persistir_fallidos(lote, f"{type(exc).__name__}: {exc}")
                 self.metrics.record_failed(len(lote))
+                # El punto de control avanza igualmente: los eventos quedan
+                # escritos en la cola de fallidos, en disco. Si no avanzara, el
+                # mismo lote se reprocesaría y volvería a fallar en cada
+                # arranque, y el registro crecería para siempre.
+                self._avanzar_checkpoint(lote)
                 return
 
     def _persistir(self, reporte: Any, lote: list[QueuedEvent]) -> None:
@@ -159,3 +171,41 @@ class IngestWorker:
         ahora = time.perf_counter()
         for q in lote:
             self.metrics.record_processed(1, (ahora - q.received_at) * 1000.0)
+
+        # El punto de control se mueve **después** de persistir, nunca antes.
+        # Al revés, una caída entre ambas cosas daría por procesado lo que no
+        # llegó a guardarse, que es justo la pérdida silenciosa que el registro
+        # existe para impedir.
+        self._avanzar_checkpoint(lote)
+
+    def _avanzar_checkpoint(self, lote: list[QueuedEvent]) -> None:
+        if self.wal is None:
+            return
+        mayor = max((q.seq for q in lote), default=0)
+        if mayor:
+            self.wal.checkpoint(mayor)
+
+    def _persistir_fallidos(self, lote: list[QueuedEvent], motivo: str) -> None:
+        """
+        Escribe en disco lo que el pipeline no pudo procesar.
+
+        La cola de fallidos vivía solo en memoria: contabilizaba la pérdida
+        pero no la conservaba, así que un reinicio la borraba junto con la
+        evidencia de que había ocurrido.
+        """
+        if self.wal is None:
+            return
+        import json
+        from datetime import datetime, timezone
+
+        ruta = Path(self.wal.dir) / "dead-letters.jsonl"
+        try:
+            with open(ruta, "a", encoding="utf-8") as fh:
+                for q in lote:
+                    fh.write(json.dumps({
+                        "at": datetime.now(tz=timezone.utc).isoformat(timespec="seconds"),
+                        "seq": q.seq, "source": q.source, "reason": motivo,
+                        "event": q.event.to_dict() if hasattr(q.event, "to_dict") else str(q.event),
+                    }, ensure_ascii=False, default=str) + "\n")
+        except OSError:
+            logger.exception("No se pudo escribir la cola de fallidos en %s", ruta)

@@ -62,6 +62,7 @@ def servicio(tmp_path_factory):
     svc = IngestService(
         rules_dir=RULES,
         db_path=directorio / "events.db",
+        wal_dir=directorio / "wal",
         audit_path=directorio / "audit.jsonl",
         queue_maxsize=5000,
         batch_size=200,
@@ -242,6 +243,7 @@ def test_api_devuelve_429_cuando_el_buffer_esta_lleno(tmp_path):
         rate_limiter=RateLimiter({r.value: abierto for r in Role} | {"anonymous": abierto}),
     ))
     svc = IngestService(rules_dir=RULES, db_path=tmp_path / "e.db",
+                        wal_dir=tmp_path / "wal",
                         audit_path=None, queue_maxsize=2, batch_size=500,
                         enable_rag=False, enable_llm=False)
     svc.worker.stop()          # nadie drena: el buffer se llena seguro

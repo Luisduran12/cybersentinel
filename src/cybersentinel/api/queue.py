@@ -59,6 +59,7 @@ class IngestQueue:
         self._q: queue.Queue = queue.Queue(maxsize=self.maxsize)
         self._dead: list[Any] = []
         self._lock = threading.Lock()
+        self._reservado = 0
 
     def put(self, item: Any) -> None:
         """Encola sin bloquear. Lanza QueueFull si no hay sitio."""
@@ -71,6 +72,39 @@ class IngestQueue:
                 f"buffer lleno ({self.maxsize} eventos); reintenta más tarde"
             ) from None
         with self._lock:
+            self.stats.enqueued += 1
+
+    def reserve(self, n: int) -> bool:
+        """
+        Aparta sitio para `n` eventos antes de escribirlos en el registro.
+
+        Existe por un problema concreto de orden: el registro de escritura
+        anticipada tiene que grabarse **antes** de aceptar, y la cola puede
+        estar llena. Sin reserva solo quedan dos malas opciones: grabar y luego
+        descubrir que no cabe —dejando eventos aceptados que nadie procesará
+        hasta el siguiente reinicio—, o comprobar el hueco y perderlo en la
+        milésima siguiente frente a otra petición.
+
+        Con la reserva, la contrapresión se decide antes de escribir y el hueco
+        ya no se lo puede quitar nadie.
+        """
+        with self._lock:
+            if self._q.qsize() + self._reservado + n > self.maxsize:
+                self.stats.rejected_backpressure += n
+                return False
+            self._reservado += n
+            return True
+
+    def release(self, n: int) -> None:
+        """Devuelve una reserva que no se llegó a usar (falló el registro)."""
+        with self._lock:
+            self._reservado = max(0, self._reservado - n)
+
+    def put_reserved(self, item: Any) -> None:
+        """Encola consumiendo una reserva. No puede fallar por falta de sitio."""
+        self._q.put_nowait(item)
+        with self._lock:
+            self._reservado = max(0, self._reservado - 1)
             self.stats.enqueued += 1
 
     def drain(self, max_items: int, timeout: float = 0.5) -> list[Any]:
@@ -118,5 +152,13 @@ class IngestQueue:
             return list(self._dead)
 
     @property
+    def reserved(self) -> int:
+        with self._lock:
+            return self._reservado
+
+    @property
     def utilization(self) -> float:
-        return self.size / self.maxsize if self.maxsize else 0.0
+        if not self.maxsize:
+            return 0.0
+        # La reserva cuenta: es sitio comprometido, aunque todavía esté vacío.
+        return (self.size + self.reserved) / self.maxsize
