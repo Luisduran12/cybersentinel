@@ -1,0 +1,532 @@
+{
+  "100_eps": {
+    "per_event_trace_ms": {
+      "normalization": {
+        "mean": 0.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "max": 0.0,
+        "samples": 1000
+      },
+      "sigma": {
+        "mean": 0.0018,
+        "p50": 0.0015,
+        "p95": 0.004,
+        "p99": 0.0047,
+        "max": 0.0059,
+        "samples": 1000
+      },
+      "ml": {
+        "mean": 0.0022,
+        "p50": 0.0019,
+        "p95": 0.0044,
+        "p99": 0.0048,
+        "max": 0.0067,
+        "samples": 1000
+      },
+      "temporal": {
+        "mean": 0.0011,
+        "p50": 0.0011,
+        "p95": 0.0015,
+        "p99": 0.0017,
+        "max": 0.0022,
+        "samples": 1000
+      },
+      "cti": {
+        "mean": 0.0039,
+        "p50": 0.0036,
+        "p95": 0.0067,
+        "p99": 0.0076,
+        "max": 0.0113,
+        "samples": 1000
+      },
+      "total": {
+        "mean": 0.009,
+        "p50": 0.0081,
+        "p95": 0.0165,
+        "p99": 0.018,
+        "max": 0.0261,
+        "samples": 1000
+      }
+    },
+    "batch_phases_ms_per_event": {
+      "sigma_batch": {
+        "mean": 0.0213,
+        "p50": 0.0214,
+        "p95": 0.0225,
+        "p99": 0.023,
+        "max": 0.0238,
+        "samples": 100
+      },
+      "temporal_batch": {
+        "mean": 0.0005,
+        "p50": 0.0005,
+        "p95": 0.0006,
+        "p99": 0.0007,
+        "max": 0.0013,
+        "samples": 100
+      },
+      "ml_batch": {
+        "mean": 5.0223,
+        "p50": 5.0144,
+        "p95": 5.1646,
+        "p99": 5.1899,
+        "max": 5.2148,
+        "samples": 100
+      },
+      "per_event_loop": {
+        "mean": 0.0645,
+        "p50": 0.0619,
+        "p95": 0.0847,
+        "p99": 0.0973,
+        "max": 0.1223,
+        "samples": 100
+      },
+      "total": {
+        "mean": 5.1086,
+        "p50": 5.0978,
+        "p95": 5.2509,
+        "p99": 5.2768,
+        "max": 5.3592,
+        "samples": 100
+      }
+    },
+    "attribution": {
+      "service_mean_ms": 5.1125,
+      "attributed_ms": 5.1086,
+      "unattributed_ms": 0.0039,
+      "coverage": 0.9992,
+      "share_by_phase": {
+        "ml_batch": 0.9831,
+        "per_event_loop": 0.0126,
+        "sigma_batch": 0.0042,
+        "temporal_batch": 0.0001
+      }
+    }
+  },
+  "500_eps": {
+    "per_event_trace_ms": {
+      "normalization": {
+        "mean": 0.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "max": 0.0,
+        "samples": 5000
+      },
+      "sigma": {
+        "mean": 0.0015,
+        "p50": 0.0014,
+        "p95": 0.0018,
+        "p99": 0.0042,
+        "max": 0.0244,
+        "samples": 5000
+      },
+      "ml": {
+        "mean": 0.0019,
+        "p50": 0.0018,
+        "p95": 0.0022,
+        "p99": 0.0045,
+        "max": 0.1151,
+        "samples": 5000
+      },
+      "temporal": {
+        "mean": 0.001,
+        "p50": 0.001,
+        "p95": 0.0012,
+        "p99": 0.0014,
+        "max": 0.0045,
+        "samples": 5000
+      },
+      "cti": {
+        "mean": 0.0062,
+        "p50": 0.0034,
+        "p95": 0.0052,
+        "p99": 0.1192,
+        "max": 0.3802,
+        "samples": 5000
+      },
+      "total": {
+        "mean": 0.0107,
+        "p50": 0.0076,
+        "p95": 0.0112,
+        "p99": 0.1232,
+        "max": 0.3844,
+        "samples": 5000
+      }
+    },
+    "batch_phases_ms_per_event": {
+      "sigma_batch": {
+        "mean": 0.0175,
+        "p50": 0.017,
+        "p95": 0.0224,
+        "p99": 0.0252,
+        "max": 0.0303,
+        "samples": 100
+      },
+      "temporal_batch": {
+        "mean": 0.0005,
+        "p50": 0.0001,
+        "p95": 0.0001,
+        "p99": 0.0107,
+        "max": 0.0126,
+        "samples": 100
+      },
+      "ml_batch": {
+        "mean": 1.0654,
+        "p50": 1.0667,
+        "p95": 1.0836,
+        "p99": 1.0889,
+        "max": 1.091,
+        "samples": 100
+      },
+      "per_event_loop": {
+        "mean": 0.0725,
+        "p50": 0.0592,
+        "p95": 0.0647,
+        "p99": 0.0792,
+        "max": 1.3172,
+        "samples": 100
+      },
+      "total": {
+        "mean": 1.1559,
+        "p50": 1.1445,
+        "p95": 1.1653,
+        "p99": 1.1837,
+        "max": 2.3865,
+        "samples": 100
+      }
+    },
+    "attribution": {
+      "service_mean_ms": 1.1582,
+      "attributed_ms": 1.1559,
+      "unattributed_ms": 0.0023,
+      "coverage": 0.998,
+      "share_by_phase": {
+        "ml_batch": 0.9217,
+        "per_event_loop": 0.0627,
+        "sigma_batch": 0.0151,
+        "temporal_batch": 0.0004
+      }
+    }
+  },
+  "1000_eps": {
+    "per_event_trace_ms": {
+      "normalization": {
+        "mean": 0.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "max": 0.0,
+        "samples": 10000
+      },
+      "sigma": {
+        "mean": 0.0015,
+        "p50": 0.0014,
+        "p95": 0.0017,
+        "p99": 0.0039,
+        "max": 0.0985,
+        "samples": 10000
+      },
+      "ml": {
+        "mean": 0.0025,
+        "p50": 0.0018,
+        "p95": 0.0022,
+        "p99": 0.0082,
+        "max": 0.1464,
+        "samples": 10000
+      },
+      "temporal": {
+        "mean": 0.0011,
+        "p50": 0.001,
+        "p95": 0.0012,
+        "p99": 0.0014,
+        "max": 0.072,
+        "samples": 10000
+      },
+      "cti": {
+        "mean": 0.0052,
+        "p50": 0.0033,
+        "p95": 0.0042,
+        "p99": 0.0135,
+        "max": 0.6674,
+        "samples": 10000
+      },
+      "total": {
+        "mean": 0.0102,
+        "p50": 0.0075,
+        "p95": 0.0097,
+        "p99": 0.0793,
+        "max": 0.6716,
+        "samples": 10000
+      }
+    },
+    "batch_phases_ms_per_event": {
+      "sigma_batch": {
+        "mean": 0.0169,
+        "p50": 0.0164,
+        "p95": 0.0193,
+        "p99": 0.0231,
+        "max": 0.0234,
+        "samples": 100
+      },
+      "temporal_batch": {
+        "mean": 0.0004,
+        "p50": 0.0001,
+        "p95": 0.0001,
+        "p99": 0.0096,
+        "max": 0.0097,
+        "samples": 100
+      },
+      "ml_batch": {
+        "mean": 0.5683,
+        "p50": 0.5678,
+        "p95": 0.5795,
+        "p99": 0.5977,
+        "max": 0.6036,
+        "samples": 100
+      },
+      "per_event_loop": {
+        "mean": 0.0735,
+        "p50": 0.0585,
+        "p95": 0.0664,
+        "p99": 0.7051,
+        "max": 0.7214,
+        "samples": 100
+      },
+      "total": {
+        "mean": 0.6591,
+        "p50": 0.6465,
+        "p95": 0.6669,
+        "p99": 1.2941,
+        "max": 1.3414,
+        "samples": 100
+      }
+    },
+    "attribution": {
+      "service_mean_ms": 0.6612,
+      "attributed_ms": 0.6591,
+      "unattributed_ms": 0.0021,
+      "coverage": 0.9969,
+      "share_by_phase": {
+        "ml_batch": 0.8623,
+        "per_event_loop": 0.1115,
+        "sigma_batch": 0.0256,
+        "temporal_batch": 0.0007
+      }
+    }
+  },
+  "5000_eps": {
+    "per_event_trace_ms": {
+      "normalization": {
+        "mean": 0.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "max": 0.0,
+        "samples": 50000
+      },
+      "sigma": {
+        "mean": 0.0014,
+        "p50": 0.0014,
+        "p95": 0.0017,
+        "p99": 0.002,
+        "max": 0.0692,
+        "samples": 50000
+      },
+      "ml": {
+        "mean": 0.0054,
+        "p50": 0.0018,
+        "p95": 0.0021,
+        "p99": 0.0051,
+        "max": 76.3794,
+        "samples": 50000
+      },
+      "temporal": {
+        "mean": 0.0011,
+        "p50": 0.001,
+        "p95": 0.0012,
+        "p99": 0.0015,
+        "max": 0.0636,
+        "samples": 50000
+      },
+      "cti": {
+        "mean": 0.0039,
+        "p50": 0.0033,
+        "p95": 0.004,
+        "p99": 0.0075,
+        "max": 1.3005,
+        "samples": 50000
+      },
+      "total": {
+        "mean": 0.0117,
+        "p50": 0.0075,
+        "p95": 0.009,
+        "p99": 0.0179,
+        "max": 76.3982,
+        "samples": 50000
+      }
+    },
+    "batch_phases_ms_per_event": {
+      "sigma_batch": {
+        "mean": 0.0167,
+        "p50": 0.0162,
+        "p95": 0.0182,
+        "p99": 0.0192,
+        "max": 0.0283,
+        "samples": 100
+      },
+      "temporal_batch": {
+        "mean": 0.0004,
+        "p50": 0.0,
+        "p95": 0.0019,
+        "p99": 0.002,
+        "max": 0.002,
+        "samples": 100
+      },
+      "ml_batch": {
+        "mean": 0.1763,
+        "p50": 0.1723,
+        "p95": 0.1759,
+        "p99": 0.3142,
+        "max": 0.3251,
+        "samples": 100
+      },
+      "per_event_loop": {
+        "mean": 0.0824,
+        "p50": 0.0606,
+        "p95": 0.2108,
+        "p99": 0.2158,
+        "max": 0.218,
+        "samples": 100
+      },
+      "total": {
+        "mean": 0.2758,
+        "p50": 0.2496,
+        "p95": 0.4012,
+        "p99": 0.4063,
+        "max": 0.416,
+        "samples": 100
+      }
+    },
+    "attribution": {
+      "service_mean_ms": 0.2779,
+      "attributed_ms": 0.2758,
+      "unattributed_ms": 0.0021,
+      "coverage": 0.9923,
+      "share_by_phase": {
+        "ml_batch": 0.6392,
+        "per_event_loop": 0.2987,
+        "sigma_batch": 0.0606,
+        "temporal_batch": 0.0015
+      }
+    }
+  },
+  "10000_eps": {
+    "per_event_trace_ms": {
+      "normalization": {
+        "mean": 0.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "max": 0.0,
+        "samples": 100000
+      },
+      "sigma": {
+        "mean": 0.0014,
+        "p50": 0.0014,
+        "p95": 0.0016,
+        "p99": 0.0019,
+        "max": 0.076,
+        "samples": 100000
+      },
+      "ml": {
+        "mean": 0.0062,
+        "p50": 0.0018,
+        "p95": 0.0021,
+        "p99": 0.0037,
+        "max": 82.3781,
+        "samples": 100000
+      },
+      "temporal": {
+        "mean": 0.0011,
+        "p50": 0.001,
+        "p95": 0.0012,
+        "p99": 0.0014,
+        "max": 0.8641,
+        "samples": 100000
+      },
+      "cti": {
+        "mean": 0.0071,
+        "p50": 0.0033,
+        "p95": 0.0039,
+        "p99": 0.0072,
+        "max": 78.9907,
+        "samples": 100000
+      },
+      "total": {
+        "mean": 0.0157,
+        "p50": 0.0075,
+        "p95": 0.0086,
+        "p99": 0.0176,
+        "max": 82.3956,
+        "samples": 100000
+      }
+    },
+    "batch_phases_ms_per_event": {
+      "sigma_batch": {
+        "mean": 0.0163,
+        "p50": 0.016,
+        "p95": 0.0179,
+        "p99": 0.0181,
+        "max": 0.0183,
+        "samples": 200
+      },
+      "temporal_batch": {
+        "mean": 0.0004,
+        "p50": 0.0,
+        "p95": 0.0019,
+        "p99": 0.0019,
+        "max": 0.002,
+        "samples": 200
+      },
+      "ml_batch": {
+        "mean": 0.1751,
+        "p50": 0.1724,
+        "p95": 0.1765,
+        "p99": 0.3227,
+        "max": 0.336,
+        "samples": 200
+      },
+      "per_event_loop": {
+        "mean": 0.0837,
+        "p50": 0.06,
+        "p95": 0.2163,
+        "p99": 0.2363,
+        "max": 0.2424,
+        "samples": 200
+      },
+      "total": {
+        "mean": 0.2755,
+        "p50": 0.249,
+        "p95": 0.4054,
+        "p99": 0.4262,
+        "max": 0.4323,
+        "samples": 200
+      }
+    },
+    "attribution": {
+      "service_mean_ms": 0.2776,
+      "attributed_ms": 0.2755,
+      "unattributed_ms": 0.0021,
+      "coverage": 0.9925,
+      "share_by_phase": {
+        "ml_batch": 0.6356,
+        "per_event_loop": 0.3036,
+        "sigma_batch": 0.0593,
+        "temporal_batch": 0.0016
+      }
+    }
+  }
+}

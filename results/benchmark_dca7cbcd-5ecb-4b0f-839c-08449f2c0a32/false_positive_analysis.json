@@ -1,0 +1,10 @@
+{
+  "threshold": 50.0,
+  "by_scenario": {},
+  "by_cause": {},
+  "examples": [],
+  "total_false_positives": 0,
+  "benign_events": 2130,
+  "false_positive_rate": 0.0,
+  "interpretation": "La causa indica qué señal cruzó el umbral, no un veredicto sobre quién tiene la culpa: una regla demasiado amplia y un umbral demasiado bajo producen el mismo síntoma y se distinguen mirando el escenario."
+}

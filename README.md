@@ -271,6 +271,44 @@ Las instrucciones de descarga de cada dataset, las trampas de formato de cada un
 y el flujo de laboratorio con **Atomic Red Team** están en
 [`docs/DATASETS.md`](docs/DATASETS.md).
 
+## Ingesta y collectors
+
+Cuatro collectors traducen telemetría real —Sysmon (JSON y XML), Linux
+(journald/syslog/auditd), firewall genérico y Suricata EVE— a `SecurityEvent`.
+Ese es todo el contrato: añadir una fuente **no** obliga a tocar Sigma, el
+modelo, Markov ni la correlación, y hay una prueba que lo verifica inspeccionando
+los imports. Formatos soportados y **limitaciones conocidas de cada collector**
+en [`docs/COLLECTORS.md`](docs/COLLECTORS.md).
+
+## Rendimiento y falsos positivos medidos
+
+```bash
+python scripts/benchmark_enterprise.py --seconds 10 --benign 2000
+```
+
+Cinco intensidades de carga (100 → 10.000 ev/s) y las siete configuraciones de
+ablación sobre el mismo conjunto etiquetado. Todo sale de la ejecución; lo que no
+se puede medir dice `NOT EVALUABLE`. Los artefactos quedan en
+`results/benchmark_<run_id>/`.
+
+De la ejecución de referencia:
+
+| | |
+|---|---|
+| Caudal sostenido | **~3.400 ev/s** en un proceso, CPU al 99 % |
+| Objetivos cumplidos | 100, 500 y 1.000 ev/s; 5.000 y 10.000 saturan |
+| Coste del cómputo | el Isolation Forest consume el **64–98 %** |
+| Falsos positivos | **0** sobre 2.130 benignos, incluidos 130 casos difíciles |
+| Aporte de ML y correlación | **ninguna decisión cambia**: A, D, E y G son idénticas |
+
+Ese último punto es el hallazgo importante y no es cómodo: la puntuación híbrida
+concede como máximo 20 puntos al modelo y 30 a la correlación frente a los 50 de
+una regla, de modo que **sin Sigma ninguna configuración puede emitir una alerta**,
+por buena que sea la señal. Es la misma causa que deja UNSW-NB15 con ROC-AUC
+0,9462 y cero hallazgos. El análisis completo, con la tabla de ablación, el
+desglose de latencia y las limitaciones, está en
+[`docs/BENCHMARK.md`](docs/BENCHMARK.md).
+
 ## Ética y alcance
 
 - Todo el trabajo es sobre **tu propio laboratorio o datasets públicos**. Nunca contra sistemas de terceros sin autorización escrita.

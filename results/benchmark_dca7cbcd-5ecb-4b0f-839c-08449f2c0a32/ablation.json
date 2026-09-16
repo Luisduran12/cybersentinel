@@ -1,0 +1,540 @@
+{
+  "A_solo_sigma": {
+    "config": {
+      "enable_ml": false,
+      "enable_temporal": false
+    },
+    "TP": 47,
+    "FP": 0,
+    "TN": 2130,
+    "FN": 15,
+    "precision": 1.0,
+    "recall": 0.7581,
+    "f1": 0.8624,
+    "fpr": 0.0,
+    "detections": 47,
+    "score_distribution": {
+      "max_observed": 50.0,
+      "mean": 1.072,
+      "above_threshold": 47,
+      "above_half_threshold": 47,
+      "structurally_blind": false
+    },
+    "by_scenario": {
+      "benigno_ordinario": {
+        "total": 2000,
+        "detected": 0
+      },
+      "benigno_dificil_administracion": {
+        "total": 60,
+        "detected": 0
+      },
+      "benigno_dificil_transferencia_grande": {
+        "total": 40,
+        "detected": 0
+      },
+      "benigno_dificil_fallo_aislado": {
+        "total": 30,
+        "detected": 0
+      },
+      "ataque_fuerza_bruta_T1110": {
+        "total": 8,
+        "detected": 1
+      },
+      "ataque_powershell_T1059": {
+        "total": 12,
+        "detected": 12
+      },
+      "ataque_persistencia_T1053": {
+        "total": 10,
+        "detected": 10
+      },
+      "ataque_descubrimiento_T1046": {
+        "total": 8,
+        "detected": 8
+      },
+      "ataque_c2_T1071": {
+        "total": 12,
+        "detected": 4
+      },
+      "ataque_exfiltracion_T1048": {
+        "total": 6,
+        "detected": 6
+      },
+      "ataque_lateral_T1021": {
+        "total": 6,
+        "detected": 6
+      }
+    },
+    "incident_level": {
+      "detected": 7,
+      "total": 7,
+      "missed_scenarios": []
+    }
+  },
+  "B_solo_ml": {
+    "config": {
+      "enable_ml": true,
+      "enable_temporal": false,
+      "sin_sigma": true
+    },
+    "TP": 0,
+    "FP": 0,
+    "TN": 2130,
+    "FN": 62,
+    "precision": "NOT EVALUABLE",
+    "recall": 0.0,
+    "f1": "NOT EVALUABLE",
+    "fpr": 0.0,
+    "detections": 0,
+    "score_distribution": {
+      "max_observed": 8.96,
+      "mean": 0.633,
+      "above_threshold": 0,
+      "above_half_threshold": 0,
+      "structurally_blind": true
+    },
+    "by_scenario": {
+      "benigno_ordinario": {
+        "total": 2000,
+        "detected": 0
+      },
+      "benigno_dificil_administracion": {
+        "total": 60,
+        "detected": 0
+      },
+      "benigno_dificil_transferencia_grande": {
+        "total": 40,
+        "detected": 0
+      },
+      "benigno_dificil_fallo_aislado": {
+        "total": 30,
+        "detected": 0
+      },
+      "ataque_fuerza_bruta_T1110": {
+        "total": 8,
+        "detected": 0
+      },
+      "ataque_powershell_T1059": {
+        "total": 12,
+        "detected": 0
+      },
+      "ataque_persistencia_T1053": {
+        "total": 10,
+        "detected": 0
+      },
+      "ataque_descubrimiento_T1046": {
+        "total": 8,
+        "detected": 0
+      },
+      "ataque_c2_T1071": {
+        "total": 12,
+        "detected": 0
+      },
+      "ataque_exfiltracion_T1048": {
+        "total": 6,
+        "detected": 0
+      },
+      "ataque_lateral_T1021": {
+        "total": 6,
+        "detected": 0
+      }
+    },
+    "incident_level": {
+      "detected": 0,
+      "total": 7,
+      "missed_scenarios": [
+        "ataque_c2_T1071",
+        "ataque_descubrimiento_T1046",
+        "ataque_exfiltracion_T1048",
+        "ataque_fuerza_bruta_T1110",
+        "ataque_lateral_T1021",
+        "ataque_persistencia_T1053",
+        "ataque_powershell_T1059"
+      ]
+    }
+  },
+  "C_solo_temporal": {
+    "config": {
+      "enable_ml": false,
+      "enable_temporal": true,
+      "sin_sigma": true
+    },
+    "TP": 0,
+    "FP": 0,
+    "TN": 2130,
+    "FN": 62,
+    "precision": "NOT EVALUABLE",
+    "recall": 0.0,
+    "f1": "NOT EVALUABLE",
+    "fpr": 0.0,
+    "detections": 0,
+    "score_distribution": {
+      "max_observed": 0.0,
+      "mean": 0.0,
+      "above_threshold": 0,
+      "above_half_threshold": 0,
+      "structurally_blind": true
+    },
+    "by_scenario": {
+      "benigno_ordinario": {
+        "total": 2000,
+        "detected": 0
+      },
+      "benigno_dificil_administracion": {
+        "total": 60,
+        "detected": 0
+      },
+      "benigno_dificil_transferencia_grande": {
+        "total": 40,
+        "detected": 0
+      },
+      "benigno_dificil_fallo_aislado": {
+        "total": 30,
+        "detected": 0
+      },
+      "ataque_fuerza_bruta_T1110": {
+        "total": 8,
+        "detected": 0
+      },
+      "ataque_powershell_T1059": {
+        "total": 12,
+        "detected": 0
+      },
+      "ataque_persistencia_T1053": {
+        "total": 10,
+        "detected": 0
+      },
+      "ataque_descubrimiento_T1046": {
+        "total": 8,
+        "detected": 0
+      },
+      "ataque_c2_T1071": {
+        "total": 12,
+        "detected": 0
+      },
+      "ataque_exfiltracion_T1048": {
+        "total": 6,
+        "detected": 0
+      },
+      "ataque_lateral_T1021": {
+        "total": 6,
+        "detected": 0
+      }
+    },
+    "incident_level": {
+      "detected": 0,
+      "total": 7,
+      "missed_scenarios": [
+        "ataque_c2_T1071",
+        "ataque_descubrimiento_T1046",
+        "ataque_exfiltracion_T1048",
+        "ataque_fuerza_bruta_T1110",
+        "ataque_lateral_T1021",
+        "ataque_persistencia_T1053",
+        "ataque_powershell_T1059"
+      ]
+    }
+  },
+  "D_sigma_ml": {
+    "config": {
+      "enable_ml": true,
+      "enable_temporal": false
+    },
+    "TP": 47,
+    "FP": 0,
+    "TN": 2130,
+    "FN": 15,
+    "precision": 1.0,
+    "recall": 0.7581,
+    "f1": 0.8624,
+    "fpr": 0.0,
+    "detections": 47,
+    "score_distribution": {
+      "max_observed": 56.54,
+      "mean": 1.705,
+      "above_threshold": 47,
+      "above_half_threshold": 47,
+      "structurally_blind": false
+    },
+    "by_scenario": {
+      "benigno_ordinario": {
+        "total": 2000,
+        "detected": 0
+      },
+      "benigno_dificil_administracion": {
+        "total": 60,
+        "detected": 0
+      },
+      "benigno_dificil_transferencia_grande": {
+        "total": 40,
+        "detected": 0
+      },
+      "benigno_dificil_fallo_aislado": {
+        "total": 30,
+        "detected": 0
+      },
+      "ataque_fuerza_bruta_T1110": {
+        "total": 8,
+        "detected": 1
+      },
+      "ataque_powershell_T1059": {
+        "total": 12,
+        "detected": 12
+      },
+      "ataque_persistencia_T1053": {
+        "total": 10,
+        "detected": 10
+      },
+      "ataque_descubrimiento_T1046": {
+        "total": 8,
+        "detected": 8
+      },
+      "ataque_c2_T1071": {
+        "total": 12,
+        "detected": 4
+      },
+      "ataque_exfiltracion_T1048": {
+        "total": 6,
+        "detected": 6
+      },
+      "ataque_lateral_T1021": {
+        "total": 6,
+        "detected": 6
+      }
+    },
+    "incident_level": {
+      "detected": 7,
+      "total": 7,
+      "missed_scenarios": []
+    }
+  },
+  "E_sigma_temporal": {
+    "config": {
+      "enable_ml": false,
+      "enable_temporal": true
+    },
+    "TP": 47,
+    "FP": 0,
+    "TN": 2130,
+    "FN": 15,
+    "precision": 1.0,
+    "recall": 0.7581,
+    "f1": 0.8624,
+    "fpr": 0.0,
+    "detections": 47,
+    "score_distribution": {
+      "max_observed": 80.0,
+      "mean": 1.168,
+      "above_threshold": 47,
+      "above_half_threshold": 47,
+      "structurally_blind": false
+    },
+    "by_scenario": {
+      "benigno_ordinario": {
+        "total": 2000,
+        "detected": 0
+      },
+      "benigno_dificil_administracion": {
+        "total": 60,
+        "detected": 0
+      },
+      "benigno_dificil_transferencia_grande": {
+        "total": 40,
+        "detected": 0
+      },
+      "benigno_dificil_fallo_aislado": {
+        "total": 30,
+        "detected": 0
+      },
+      "ataque_fuerza_bruta_T1110": {
+        "total": 8,
+        "detected": 1
+      },
+      "ataque_powershell_T1059": {
+        "total": 12,
+        "detected": 12
+      },
+      "ataque_persistencia_T1053": {
+        "total": 10,
+        "detected": 10
+      },
+      "ataque_descubrimiento_T1046": {
+        "total": 8,
+        "detected": 8
+      },
+      "ataque_c2_T1071": {
+        "total": 12,
+        "detected": 4
+      },
+      "ataque_exfiltracion_T1048": {
+        "total": 6,
+        "detected": 6
+      },
+      "ataque_lateral_T1021": {
+        "total": 6,
+        "detected": 6
+      }
+    },
+    "incident_level": {
+      "detected": 7,
+      "total": 7,
+      "missed_scenarios": []
+    }
+  },
+  "F_ml_temporal": {
+    "config": {
+      "enable_ml": true,
+      "enable_temporal": true,
+      "sin_sigma": true
+    },
+    "TP": 0,
+    "FP": 0,
+    "TN": 2130,
+    "FN": 62,
+    "precision": "NOT EVALUABLE",
+    "recall": 0.0,
+    "f1": "NOT EVALUABLE",
+    "fpr": 0.0,
+    "detections": 0,
+    "score_distribution": {
+      "max_observed": 8.96,
+      "mean": 0.633,
+      "above_threshold": 0,
+      "above_half_threshold": 0,
+      "structurally_blind": true
+    },
+    "by_scenario": {
+      "benigno_ordinario": {
+        "total": 2000,
+        "detected": 0
+      },
+      "benigno_dificil_administracion": {
+        "total": 60,
+        "detected": 0
+      },
+      "benigno_dificil_transferencia_grande": {
+        "total": 40,
+        "detected": 0
+      },
+      "benigno_dificil_fallo_aislado": {
+        "total": 30,
+        "detected": 0
+      },
+      "ataque_fuerza_bruta_T1110": {
+        "total": 8,
+        "detected": 0
+      },
+      "ataque_powershell_T1059": {
+        "total": 12,
+        "detected": 0
+      },
+      "ataque_persistencia_T1053": {
+        "total": 10,
+        "detected": 0
+      },
+      "ataque_descubrimiento_T1046": {
+        "total": 8,
+        "detected": 0
+      },
+      "ataque_c2_T1071": {
+        "total": 12,
+        "detected": 0
+      },
+      "ataque_exfiltracion_T1048": {
+        "total": 6,
+        "detected": 0
+      },
+      "ataque_lateral_T1021": {
+        "total": 6,
+        "detected": 0
+      }
+    },
+    "incident_level": {
+      "detected": 0,
+      "total": 7,
+      "missed_scenarios": [
+        "ataque_c2_T1071",
+        "ataque_descubrimiento_T1046",
+        "ataque_exfiltracion_T1048",
+        "ataque_fuerza_bruta_T1110",
+        "ataque_lateral_T1021",
+        "ataque_persistencia_T1053",
+        "ataque_powershell_T1059"
+      ]
+    }
+  },
+  "G_completo": {
+    "config": {
+      "enable_ml": true,
+      "enable_temporal": true
+    },
+    "TP": 47,
+    "FP": 0,
+    "TN": 2130,
+    "FN": 15,
+    "precision": 1.0,
+    "recall": 0.7581,
+    "f1": 0.8624,
+    "fpr": 0.0,
+    "detections": 47,
+    "score_distribution": {
+      "max_observed": 86.46,
+      "mean": 1.801,
+      "above_threshold": 47,
+      "above_half_threshold": 47,
+      "structurally_blind": false
+    },
+    "by_scenario": {
+      "benigno_ordinario": {
+        "total": 2000,
+        "detected": 0
+      },
+      "benigno_dificil_administracion": {
+        "total": 60,
+        "detected": 0
+      },
+      "benigno_dificil_transferencia_grande": {
+        "total": 40,
+        "detected": 0
+      },
+      "benigno_dificil_fallo_aislado": {
+        "total": 30,
+        "detected": 0
+      },
+      "ataque_fuerza_bruta_T1110": {
+        "total": 8,
+        "detected": 1
+      },
+      "ataque_powershell_T1059": {
+        "total": 12,
+        "detected": 12
+      },
+      "ataque_persistencia_T1053": {
+        "total": 10,
+        "detected": 10
+      },
+      "ataque_descubrimiento_T1046": {
+        "total": 8,
+        "detected": 8
+      },
+      "ataque_c2_T1071": {
+        "total": 12,
+        "detected": 4
+      },
+      "ataque_exfiltracion_T1048": {
+        "total": 6,
+        "detected": 6
+      },
+      "ataque_lateral_T1021": {
+        "total": 6,
+        "detected": 6
+      }
+    },
+    "incident_level": {
+      "detected": 7,
+      "total": 7,
+      "missed_scenarios": []
+    }
+  }
+}

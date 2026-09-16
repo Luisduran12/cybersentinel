@@ -1,0 +1,52 @@
+{
+  "run_id": "dca7cbcd-5ecb-4b0f-839c-08449f2c0a32",
+  "timestamp": "2026-09-16T00:11:52+00:00",
+  "seed": 42,
+  "dataset": {
+    "type": "sintetico con verdad-terreno por diseño",
+    "total_events": 2192,
+    "malicious": 62,
+    "benign": 2130,
+    "scenarios": {
+      "benigno_ordinario": 2000,
+      "benigno_dificil_administracion": 60,
+      "benigno_dificil_transferencia_grande": 40,
+      "benigno_dificil_fallo_aislado": 30,
+      "ataque_fuerza_bruta_T1110": 8,
+      "ataque_powershell_T1059": 12,
+      "ataque_persistencia_T1053": 10,
+      "ataque_descubrimiento_T1046": 8,
+      "ataque_c2_T1071": 12,
+      "ataque_exfiltracion_T1048": 6,
+      "ataque_lateral_T1021": 6
+    }
+  },
+  "config": {
+    "alert_threshold": 50.0,
+    "seconds_per_scenario": 10,
+    "load_scenarios_eps": [
+      100,
+      500,
+      1000,
+      5000,
+      10000
+    ],
+    "ablation_configs": [
+      "A_solo_sigma",
+      "B_solo_ml",
+      "C_solo_temporal",
+      "D_sigma_ml",
+      "E_sigma_temporal",
+      "F_ml_temporal",
+      "G_completo"
+    ],
+    "rag_enabled": false,
+    "llm_enabled": false,
+    "note": "RAG y LLM desactivados en el banco: producen texto, no decisiones de detección, y su coste dominaría la latencia sin afectar a TP/FP"
+  },
+  "versions": {
+    "python": "3.11.15",
+    "cybersentinel": "0.1.0"
+  },
+  "total_runtime_s": 85.87
+}

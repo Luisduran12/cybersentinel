@@ -93,6 +93,13 @@ class PipelineReport:
     component_status: dict[str, str] = field(default_factory=dict)
     #: Secuencias de ataque detectadas por la correlación temporal.
     correlated_incidents: list[dict[str, Any]] = field(default_factory=list)
+    #: Coste en milisegundos de las fases que se ejecutan **por lote**, no por
+    #: evento: Sigma con agregación, correlación y ajuste/puntuación del modelo
+    #: necesitan ver la serie entera. La traza por evento no puede medirlas —solo
+    #: ve la consulta al resultado ya calculado— así que sin esto un desglose de
+    #: latencia atribuye una fracción mínima del tiempo real y el resto
+    #: desaparece. Se mide donde ocurre.
+    batch_timings_ms: dict[str, float] = field(default_factory=dict)
 
     @property
     def findings(self) -> list[IncidentResult]:
@@ -110,6 +117,7 @@ class PipelineReport:
                 if self.anomaly_threshold_used is not None else None
             ),
             "component_status": self.component_status,
+            "batch_timings_ms": {k: round(v, 4) for k, v in self.batch_timings_ms.items()},
             "correlated_incidents": self.correlated_incidents,
             "incidents": [r.to_dict() for r in self.results],
         }
@@ -296,21 +304,27 @@ class Pipeline:
         return event.host or event.user or event.src_ip or "desconocida"
 
     def run_events(self, events: list[SecurityEvent]) -> PipelineReport:
+        import time as _time
+
         results: list[IncidentResult] = []
         findings_count = 0
+        tiempos_lote: dict[str, float] = {}
 
         # --- Reglas sobre la serie completa ---------------------------------
         # `evaluate` incluye las reglas con agregación temporal (fuerza bruta,
         # balizas C2), que `evaluate_event` no puede resolver por definición:
         # necesitan ver varios eventos a la vez.
+        _t = _time.perf_counter()
         todos_los_hits = self.rules_engine.evaluate(events)
         hits_por_evento: dict[str, list[RuleHit]] = {}
         for hit in todos_los_hits:
             hits_por_evento.setdefault(hit.event.fingerprint(), []).append(hit)
+        tiempos_lote["sigma_batch"] = (_time.perf_counter() - _t) * 1000.0
 
         # --- Correlación temporal sobre todos los hits -----------------------
         incidentes_correlados: list[dict[str, Any]] = []
         secuencias_por_evento: dict[str, list[str]] = {}
+        _t = _time.perf_counter()
         if self.enable_temporal and self.temporal_correlator:
             self.temporal_correlator.clear()
             self.temporal_correlator.observe_batch(todos_los_hits)
@@ -325,8 +339,11 @@ class Pipeline:
                         hit.event.fingerprint(), []
                     ).append(etiqueta)
 
+        tiempos_lote["temporal_batch"] = (_time.perf_counter() - _t) * 1000.0
+
         # --- Detector de anomalías -------------------------------------------
         puntuaciones: dict[str, float] = {}
+        _t = _time.perf_counter()
         if self.enable_ml and self.anomaly_detector:
             from .ml.base import Dataset
 
@@ -336,7 +353,10 @@ class Pipeline:
                 for resultado in self.anomaly_detector.score(events):
                     puntuaciones[resultado.event.fingerprint()] = resultado.anomaly_score
 
+        tiempos_lote["ml_batch"] = (_time.perf_counter() - _t) * 1000.0
+
         # --- Por evento -------------------------------------------------------
+        _t = _time.perf_counter()
         for ev in events:
             ref = ev.fingerprint()
             trace = TraceContext(event_id=ev.event_id, run_id=self.run_id, event_ref=ref)
@@ -513,6 +533,9 @@ class Pipeline:
                         },
                     )
 
+        tiempos_lote["per_event_loop"] = (_time.perf_counter() - _t) * 1000.0
+        tiempos_lote["total"] = sum(tiempos_lote.values())
+
         return PipelineReport(
             total_events=len(events),
             total_findings=findings_count,
@@ -521,6 +544,7 @@ class Pipeline:
             run_id=self.run_id,
             component_status=dict(self.component_status),
             correlated_incidents=incidentes_correlados,
+            batch_timings_ms=tiempos_lote,
         )
 
     def run_file(self, jsonl_path: str | Path) -> PipelineReport:
