@@ -1,0 +1,33 @@
+title: Network Configuration Discovery via ipconfig/route (CyberSentinel Adaptation)
+id: 2cd4cd68-9c54-4988-b423-56066b53c451
+status: test
+description: >-
+  Detects ipconfig /all or route print, used to enumerate the local network
+  configuration and routing table as part of internal reconnaissance.
+
+  ADAPTATION NOTES:
+  - Field 'CommandLine' maps to SecurityEvent.command_line via FIELD_MAP.
+  - Logsource category 'process_creation' maps to event.category='process'.
+references:
+  - https://attack.mitre.org/techniques/T1016/
+author: CyberSentinel (native)
+date: 2026-09-17
+logsource:
+  product: cybersentinel
+  category: process_creation
+detection:
+  ipconfig:
+    CommandLine|contains|all:
+      - 'ipconfig'
+      - '/all'
+  route:
+    CommandLine|contains|all:
+      - 'route'
+      - 'print'
+  condition: ipconfig or route
+falsepositives:
+  - Routine network troubleshooting.
+level: low
+tags:
+  - attack.discovery
+  - attack.t1016

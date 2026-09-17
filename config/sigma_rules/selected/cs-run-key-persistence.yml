@@ -1,0 +1,35 @@
+title: Persistence via Registry Run Key (CyberSentinel Adaptation)
+id: d6645eac-e7d7-4f97-94e9-36eec5dbfde7
+status: test
+description: >-
+  Detects a `reg add` command targeting a Run/RunOnce autostart registry key,
+  a widespread persistence technique that survives reboot without needing a
+  scheduled task or service.
+
+  ADAPTATION NOTES:
+  - Field 'CommandLine' maps to SecurityEvent.command_line via FIELD_MAP.
+  - Logsource category 'process_creation' maps to event.category='process'.
+  - No native registry-event telemetry in SecurityEvent (no RegistryKey
+    field, unlike Sysmon EventID 13); detected via the reg.exe invocation
+    instead, as documented in docs/SIGMA-COMPATIBILITY-MATRIX.md.
+references:
+  - https://attack.mitre.org/techniques/T1547/001/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_reg_add_run_keys.yml
+author: CyberSentinel adaptation (original SigmaHQ community)
+date: 2026-09-17
+logsource:
+  product: cybersentinel
+  category: process_creation
+detection:
+  selection:
+    CommandLine|contains|all:
+      - 'reg '
+      - 'add'
+      - '\run'
+  condition: selection
+falsepositives:
+  - Legitimate software installers registering an autostart entry.
+level: medium
+tags:
+  - attack.persistence
+  - attack.t1547.001

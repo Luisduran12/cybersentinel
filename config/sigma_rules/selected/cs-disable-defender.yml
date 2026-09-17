@@ -1,0 +1,30 @@
+title: Windows Defender Real-Time Protection Disabled (CyberSentinel Adaptation)
+id: c7b193ad-0267-4180-9429-fcafb61efc10
+status: test
+description: >-
+  Detects PowerShell disabling Windows Defender real-time monitoring via
+  Set-MpPreference, a common defense-evasion step before dropping malware.
+
+  ADAPTATION NOTES:
+  - Field 'CommandLine' maps to SecurityEvent.command_line via FIELD_MAP.
+  - Logsource category 'process_creation' maps to event.category='process'.
+references:
+  - https://attack.mitre.org/techniques/T1562/001/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_defender_disable.yml
+author: CyberSentinel adaptation (original SigmaHQ community)
+date: 2026-09-17
+logsource:
+  product: cybersentinel
+  category: process_creation
+detection:
+  selection:
+    CommandLine|contains|all:
+      - 'set-mppreference'
+      - 'disablerealtimemonitoring'
+  condition: selection
+falsepositives:
+  - Authorized endpoint-management scripts on isolated test machines.
+level: high
+tags:
+  - attack.defense-evasion
+  - attack.t1562.001

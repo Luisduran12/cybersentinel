@@ -1,0 +1,31 @@
+title: PsExec-Style Remote Execution (CyberSentinel Native)
+id: 49a8ee05-c5db-4585-940b-11ca6f036183
+status: test
+description: >-
+  Detects invocation of psexec.exe/psexec64.exe (or PAExec, a common
+  reimplementation), used for lateral movement by remotely executing a
+  command via a temporary Windows service.
+
+  ADAPTATION NOTES:
+  - Field 'Image' maps to SecurityEvent.process_name (basename only).
+  - Logsource category 'process_creation' maps to event.category='process'.
+references:
+  - https://attack.mitre.org/techniques/T1569/002/
+author: CyberSentinel (native)
+date: 2026-09-17
+logsource:
+  product: cybersentinel
+  category: process_creation
+detection:
+  selection:
+    Image|endswith:
+      - 'psexec.exe'
+      - 'psexec64.exe'
+      - 'paexec.exe'
+  condition: selection
+falsepositives:
+  - Authorized sysadmin use of PsExec for legitimate remote administration.
+level: medium
+tags:
+  - attack.execution
+  - attack.t1569.002

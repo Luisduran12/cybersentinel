@@ -519,10 +519,14 @@ level: high
 # 8. from_sigma_directory() carga las 15 reglas sin error
 # ────────────────────────────────────────────────────────────────────────────
 
-def test_sigma_directory_loads_all_15_rules():
+def test_sigma_directory_loads_all_38_rules():
+    """
+    Fase 4-A añadió 23 reglas (15 → 38); ver config/sigma_rules/manifest.yaml
+    y tests/test_sigma_expansion.py para la cobertura ATT&CK detallada.
+    """
     engine = RulesEngine.from_sigma_directory(SIGMA_RULES_DIR)
-    assert len(engine.rules) == 15, (
-        f"Se esperaban 15 reglas Sigma, se cargaron {len(engine.rules)}"
+    assert len(engine.rules) == 38, (
+        f"Se esperaban 38 reglas Sigma, se cargaron {len(engine.rules)}"
     )
 
 

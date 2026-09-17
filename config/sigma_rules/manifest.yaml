@@ -1,5 +1,10 @@
 # CyberSentinel Sigma Rules — Manifest
 # Fase 1 Parte 2 | pySigma 1.5.0 | Generado: 2026-09-14
+# Fase 4-A (2026-09-17): +23 reglas, y —el cambio que de verdad importa—
+# from_sigma_directory() se conectó por fin a Pipeline (CLI y API real).
+# Hasta entonces estas reglas solo las cargaba scripts/evaluate_sigma_phase1.py
+# para un reporte offline: no detectaban nada en producción. Ver
+# docs/AGENT-CAPABILITIES.md para el detalle de la conexión.
 #
 # Criterios de selección (todos deben cumplirse):
 #   1. YAML válido y parseable por pySigma 1.5.0
@@ -7,7 +12,8 @@
 #   3. tags: attack.tXXXX identificable
 #   4. status: test (adaptaciones) o stable (original SigmaHQ)
 #   5. Sólo campos disponibles en SecurityEvent (ver SIGMA-COMPATIBILITY-MATRIX.md)
-#   6. Una regla por táctica principal (8 tácticas cubiertas de 14 posibles)
+#   6. Una regla por táctica principal (10 tácticas cubiertas de 14 posibles
+#      tras Fase 4-A; eran 8 antes)
 #
 # Cuando una adaptación existe, se documenta explícitamente:
 #   - adapted_from: referencia a la regla SigmaHQ original
@@ -15,12 +21,12 @@
 #   - NOT_IDENTICAL: esta regla NO es idéntica a la canónica SigmaHQ
 
 meta:
-  generated_by: CyberSentinel FASE-1-PARTE-2
+  generated_by: CyberSentinel FASE-1-PARTE-2 + FASE-4-A
   pysigma_version: "1.5.0"
   schema_version: "1.0"
-  total_rules: 15
-  tactics_covered: 8
-  techniques_covered: 13
+  total_rules: 38
+  tactics_covered: 10
+  techniques_covered: 41
   directory: config/sigma_rules/selected/
 
 rules:
@@ -349,24 +355,79 @@ rules:
       Nueva regla CyberSentinel. El filtro NOT filter_private_src excluye
       RFC1918. IPv6 NOT COVERED (SecurityEvent.src_ip es solo IPv4).
 
+# ── Fase 4-A: +23 reglas (2026-09-17) ───────────────────────────────────────
+# Prioridad: técnicas nuevas, no duplicar las 15 ya cubiertas. Todas
+# verificadas contra eventos sintéticos reales (ver tests/test_sigma_expansion.py),
+# no solo parseadas.
+
+  - id: 393098d4-0b74-4c26-bf35-3b5728c2322b
+    file: cs-dns-tunneling.yml
+    title: "Possible DNS Tunneling via Long Subdomain (CyberSentinel Native)"
+    status: test
+    type: dns_query
+    fields_used:
+      - {name: QueryName, maps_to: "raw['QueryName']", modifier: re, available: true}
+    mitre_technique: T1071.004
+    mitre_tactic: command-and-control
+    level: high
+    adapted_from: null
+    adaptation_notes: >-
+      Cierra el hueco de red señalado en el prompt (DNS tunneling). Heurística
+      estructural de un solo evento; SigmaHQ mide volumen/frecuencia de
+      consultas, que el motor stateless no puede expresar.
+
+  - {id: 34ca0d82-d93f-4ea4-86e4-804b4c0885c3, file: cs-bitsadmin-download.yml, mitre_technique: T1197, mitre_tactic: defense-evasion, adapted_from: "SigmaHQ proc_creation_win_bitsadmin_download"}
+  - {id: 30e11d63-e414-4a87-8fe1-3756c113d069, file: cs-hh-exec.yml, mitre_technique: T1218.001, mitre_tactic: defense-evasion, adapted_from: "SigmaHQ proc_creation_win_hh_execution"}
+  - {id: 56225ee2-d758-4de2-9481-613181894e86, file: cs-msiexec-remote.yml, mitre_technique: T1218.007, mitre_tactic: defense-evasion, adapted_from: "SigmaHQ proc_creation_win_msiexec_remote_download"}
+  - {id: 4aeccdba-b649-4387-a919-1c9510db4fd2, file: cs-regasm-regsvcs.yml, mitre_technique: T1218.009, mitre_tactic: defense-evasion, adapted_from: "SigmaHQ proc_creation_win_regasm_regsvcs"}
+  - {id: 7fe8c3fe-e714-4973-aae9-d22876e93009, file: cs-lsass-dump.yml, mitre_technique: T1003.001, mitre_tactic: credential-access, adapted_from: "SigmaHQ proc_creation_win_lsass_dump_comsvcs"}
+  - {id: 8b377479-b81f-47aa-81c2-11bfe2466293, file: cs-tasklist-discovery.yml, mitre_technique: T1057, mitre_tactic: discovery, adapted_from: null}
+  - {id: e77d3a9b-b729-4a8b-9e46-a377a751f78e, file: cs-systeminfo-discovery.yml, mitre_technique: T1082, mitre_tactic: discovery, adapted_from: null}
+  - {id: 2cd4cd68-9c54-4988-b423-56066b53c451, file: cs-netconfig-discovery.yml, mitre_technique: T1016, mitre_tactic: discovery, adapted_from: null}
+  - {id: d038c316-b2c3-4c6d-90f4-92816b200899, file: cs-netstat-discovery.yml, mitre_technique: T1049, mitre_tactic: discovery, adapted_from: null}
+  - {id: 5a5009f3-6437-4f39-bfb5-01f78415a547, file: cs-nltest-domain-trust.yml, mitre_technique: T1482, mitre_tactic: discovery, adapted_from: "SigmaHQ proc_creation_win_nltest_trust_query"}
+  - {id: 0ca75daf-45f7-4e56-bf94-468a89962a36, file: cs-inhibit-system-recovery.yml, mitre_technique: T1490, mitre_tactic: impact, adapted_from: "SigmaHQ proc_creation_win_susp_vssadmin_delete_shadows", note: "cierra la tactica impact, antes not_covered"}
+  - {id: af073061-9810-4e70-a8e6-6ee16cc0f188, file: cs-service-stop-security.yml, mitre_technique: T1489, mitre_tactic: impact, adapted_from: null}
+  - {id: c7b193ad-0267-4180-9429-fcafb61efc10, file: cs-disable-defender.yml, mitre_technique: T1562.001, mitre_tactic: defense-evasion, adapted_from: "SigmaHQ proc_creation_win_defender_disable"}
+  - {id: d6645eac-e7d7-4f97-94e9-36eec5dbfde7, file: cs-run-key-persistence.yml, mitre_technique: T1547.001, mitre_tactic: persistence, adapted_from: "SigmaHQ proc_creation_win_reg_add_run_keys"}
+  - {id: c1cd109d-d2db-485f-9746-c4ff808c3f75, file: cs-create-local-account.yml, mitre_technique: T1136.001, mitre_tactic: persistence, adapted_from: "SigmaHQ proc_creation_win_net_user_add"}
+  - {id: bb406241-9ebc-41aa-8d7f-2db95e34f27f, file: cs-clear-eventlogs.yml, mitre_technique: T1070.001, mitre_tactic: defense-evasion, adapted_from: "SigmaHQ proc_creation_win_wevtutil_clear_logs"}
+  - {id: 49a8ee05-c5db-4585-940b-11ca6f036183, file: cs-psexec-service.yml, mitre_technique: T1569.002, mitre_tactic: execution, adapted_from: null}
+  - {id: 6514cf18-7008-4095-ac08-7cc13f4cca59, file: cs-anonymization-proxy-port.yml, mitre_technique: T1090, mitre_tactic: command-and-control, adapted_from: null}
+  - {id: 99636297-b604-4dd1-8b23-587550ea272a, file: cs-linux-cron-persistence.yml, mitre_technique: T1053.003, mitre_tactic: persistence, adapted_from: null, note: "Linux; complementa cs-schtasks-create (Windows)"}
+  - {id: 71d8c2b2-c2a5-4eb1-8416-2e02d1ce28e4, file: cs-linux-clear-logs.yml, mitre_technique: T1070.002, mitre_tactic: defense-evasion, adapted_from: null, note: "Linux; complementa cs-clear-eventlogs (Windows)"}
+  - {id: e16329af-f7ed-4454-b176-c863afa66d6d, file: cs-linux-ssh-key-persistence.yml, mitre_technique: T1098.004, mitre_tactic: persistence, adapted_from: null}
+  - {id: 692420b9-f0de-41d9-9ed8-c8ef80b26092, file: cs-sudoers-modification.yml, mitre_technique: T1548.003, mitre_tactic: privilege-escalation, adapted_from: null, note: "cierra la tactica privilege-escalation, antes not_covered"}
+
 # ── Resumen de cobertura ────────────────────────────────────────────────────
 coverage:
   tactics:
     - name: execution
-      techniques: [T1059.001, T1047]
-      rules: [cs-ps-encoded-cmd, cs-wmic-process]
+      techniques: [T1059.001, T1047, T1218.007, T1569.002]
+      rules: [cs-ps-encoded-cmd, cs-wmic-process, cs-msiexec-remote, cs-psexec-service]
     - name: discovery
-      techniques: [T1033, T1087, T1046]
-      rules: [cs-whoami-exec, cs-net-recon, cs-portscan-tool]
+      techniques: [T1033, T1087, T1069, T1046, T1057, T1082, T1016, T1049, T1482]
+      rules: [cs-whoami-exec, cs-net-recon, cs-portscan-tool, cs-tasklist-discovery,
+              cs-systeminfo-discovery, cs-netconfig-discovery, cs-netstat-discovery,
+              cs-nltest-domain-trust]
     - name: persistence
-      techniques: [T1053.005]
-      rules: [cs-schtasks-create]
+      techniques: [T1053.005, T1547.001, T1136.001, T1053.003, T1098.004]
+      rules: [cs-schtasks-create, cs-run-key-persistence, cs-create-local-account,
+              cs-linux-cron-persistence, cs-linux-ssh-key-persistence]
+    - name: privilege-escalation
+      techniques: [T1548.003]
+      rules: [cs-sudoers-modification]
+      note: "Nueva en Fase 4-A. Antes not_covered."
     - name: defense-evasion
-      techniques: [T1218.005, T1218.010, T1218.011]
-      rules: [cs-mshta-exec, cs-regsvr32-exec, cs-rundll32-exec]
+      techniques: [T1218.005, T1218.010, T1218.011, T1218.001, T1218.009,
+                   T1562.001, T1070.001, T1070.002, T1197]
+      rules: [cs-mshta-exec, cs-regsvr32-exec, cs-rundll32-exec, cs-hh-exec,
+              cs-regasm-regsvcs, cs-disable-defender, cs-clear-eventlogs,
+              cs-linux-clear-logs, cs-bitsadmin-download]
     - name: command-and-control
-      techniques: [T1105, T1071]
-      rules: [cs-certutil-download, cs-c2-port-connect]
+      techniques: [T1105, T1071, T1071.004, T1090]
+      rules: [cs-certutil-download, cs-c2-port-connect, cs-dns-tunneling,
+              cs-anonymization-proxy-port]
     - name: exfiltration
       techniques: [T1048]
       rules: [cs-large-outbound]
@@ -374,20 +435,43 @@ coverage:
       techniques: [T1021.001]
       rules: [cs-rdp-lateral]
     - name: credential-access
-      techniques: [T1110, T1110.003]
-      rules: [cs-auth-failure, cs-auth-failure-external]
+      techniques: [T1110, T1110.003, T1003.001]
+      rules: [cs-auth-failure, cs-auth-failure-external, cs-lsass-dump]
+    - name: impact
+      techniques: [T1490, T1489]
+      rules: [cs-inhibit-system-recovery, cs-service-stop-security]
+      note: "Nueva en Fase 4-A. Antes not_covered."
 
   not_covered_tactics:
     - initial-access
-    - privilege-escalation
     - collection
-    - impact
     - resource-development
   reason: >-
     Las tácticas no cubiertas requieren telemetría ausente en SecurityEvent:
-    phishing (Initial Access → file metadata, email headers),
-    token manipulation (Privilege Escalation → access token fields),
+    phishing (Initial Access → file metadata, email headers, archivo adjunto),
     clipboard/screen capture (Collection → OS API calls),
-    disk wipe / encryption (Impact → file system events),
-    resource-development (no telemetría interna disponible).
-    Ver docs/SIGMA-EXCLUSIONS.md para detalles.
+    resource-development (infraestructura del adversario, no visible desde
+    dentro de la red monitoreada). Ver docs/SIGMA-EXCLUSIONS.md para detalles.
+    privilege-escalation e impact se cerraron en Fase 4-A.
+
+  metricas_fase4a:
+    reglas_antes: 15
+    reglas_despues: 38
+    reglas_propias_mas_sigma: 45              # 7 config/rules + 38 pySigma
+    tecnicas_distintas_antes: 13
+    tecnicas_distintas_despues: 41
+    tactics_antes: 8
+    tactics_despues: 10
+    cobertura_matriz_222_antes: "7/222 (3.2%)"   # solo config/rules, en producción real
+    cobertura_matriz_222_despues: "41/222 (18.5%)"  # convención de navigator.py: cuenta IDs tal cual (incluye sub-técnicas)
+    cobertura_tecnicas_base_despues: "29/222 (13.1%)"  # misma cifra contando solo técnica base, sin sub-técnica
+    nota_honesta: >-
+      El objetivo del prompt (30%+) no se alcanza contando solo técnicas base
+      (13.1%) ni con la convención del proyecto que cuenta sub-técnicas por
+      separado (18.5%). El techo real depende del campo disponible en
+      SecurityEvent, no del número de reglas: la mayoría de técnicas restantes
+      (cloud, contenedores, móvil, ICS, criptografía, hardware) no producen
+      ningún dato que los 4 collectors actuales puedan capturar. Ver
+      docs/AGENT-CAPABILITIES.md, seccion Bloque A, para el detalle y la
+      recomendación de qué requeriría un collector nuevo (no solo una regla).
+    evidencia: [docs/navigator_phase4a_before.json, docs/navigator_phase4a_after.json]

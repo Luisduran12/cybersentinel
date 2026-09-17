@@ -266,6 +266,7 @@ def test_campo_faltante_normaliza_a_none(nombre):
         "linux": {"MESSAGE": "algo ocurrió"},
         "firewall": {"src_ip": "10.0.0.1"},
         "suricata": {"event_type": "alert", "alert": {"signature": "x"}},
+        "wazuh": {"rule": {"description": "algo"}},
     }
     resultado = get_collector(nombre).collect(minimos[nombre])
     assert resultado.ok, resultado.errors
@@ -289,6 +290,7 @@ def test_timestamp_invalido_usa_hora_de_ingesta_y_lo_marca(nombre):
         "linux": {"MESSAGE": "x", "__REALTIME_TIMESTAMP": "no es una fecha"},
         "firewall": {"src_ip": "10.0.0.1", "timestamp": "no es una fecha"},
         "suricata": {"event_type": "flow", "timestamp": "no es una fecha"},
+        "wazuh": {"rule": {"description": "x"}, "timestamp": "no es una fecha"},
     }
     antes = datetime.now(tz=timezone.utc) - timedelta(seconds=5)
     resultado = get_collector(nombre).collect(entradas[nombre])
@@ -342,6 +344,10 @@ def test_evento_duplicado_se_procesa_de_forma_idempotente(nombre):
         "suricata": {"timestamp": "2025-03-10T10:00:00Z", "event_type": "alert",
                      "src_ip": "1.1.1.1", "dest_ip": "2.2.2.2",
                      "alert": {"signature": "test", "severity": 3}},
+        "wazuh": {"timestamp": "2025-03-10T10:00:00Z",
+                 "rule": {"id": "5710", "level": 10, "description": "sshd: brute force"},
+                 "agent": {"id": "001", "name": "SRV-APP"},
+                 "data": {"srcip": "10.0.0.5", "srcuser": "ana"}},
     }
     collector = get_collector(nombre)
     primero = collector.collect(entradas[nombre]).event
@@ -456,6 +462,11 @@ def test_encoding_invalido_cae_a_latin1_en_vez_de_perder_el_dato(nombre):
             b'{"timestamp": "2025-03-10T10:00:00Z", "event_type": "alert", '
             b'"host": "sensor-\xf1", "alert": {"signature": "x", "severity": 3}}',
             "host", "sensor-ñ",
+        ),
+        "wazuh": (
+            b'{"timestamp": "2025-03-10T10:00:00Z", "rule": {"description": "x"}, '
+            b'"agent": {"id": "001", "name": "srv-\xf1"}}',
+            "host", "srv-ñ",
         ),
     }
     crudo, campo, esperado = entradas[nombre]

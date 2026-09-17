@@ -1,0 +1,34 @@
+title: Msiexec Installing Package from Remote URL (CyberSentinel Adaptation)
+id: 56225ee2-d758-4de2-9481-613181894e86
+status: test
+description: >-
+  Detects msiexec.exe invoked with a remote HTTP(S) URL as the package
+  source, a common LOLBin technique to fetch and execute a payload while
+  appearing as a routine software installation.
+
+  ADAPTATION NOTES:
+  - Field 'CommandLine' maps to SecurityEvent.command_line via FIELD_MAP.
+  - Logsource category 'process_creation' maps to event.category='process'.
+references:
+  - https://attack.mitre.org/techniques/T1218/007/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_msiexec_remote_download.yml
+author: CyberSentinel adaptation (original SigmaHQ community)
+date: 2026-09-17
+logsource:
+  product: cybersentinel
+  category: process_creation
+detection:
+  selection:
+    CommandLine|contains: 'msiexec'
+  remote:
+    CommandLine|contains:
+      - 'http://'
+      - 'https://'
+  condition: selection and remote
+falsepositives:
+  - Legitimate enterprise software deployment from an internal HTTPS repository.
+level: high
+tags:
+  - attack.defense-evasion
+  - attack.execution
+  - attack.t1218.007

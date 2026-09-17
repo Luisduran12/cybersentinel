@@ -29,9 +29,18 @@ from typing import Any
 
 import numpy as np
 
-from .config import ROOT, Settings
+from .analytics.deviation import DeviationDetector
+from .analytics.profiler import EntityProfiler
+from .analytics.risk_score import PROACTIVE_ALERT_THRESHOLD, RiskScoreTracker
+from .config import DEFAULT_MARKOV_MODEL_PATH, ROOT, Settings
 from .correlation import mitre
+from .correlation.correlator import Correlator, Finding
+from .correlation.sequence_model import CanonicalBaseline, MarkovChainModel, SequenceModel
+from .cti.abuseipdb import AbuseIPDBFeed
+from .cti.cache import CTICache
+from .cti.enricher import LiveCTIEnricher
 from .cti.enrichment import CTIEnricher
+from .cti.otx import OTXFeed
 from .cti.stix_ingestor import StixIngestor
 from .detection.anomaly import AnomalyDetector
 from .detection.hybrid import DetectionEvidence, RetrievedContext
@@ -39,14 +48,14 @@ from .detection.rules_engine import RuleHit, RulesEngine
 from .detection.temporal import TemporalCorrelator
 from .governance.audit import AuditLog
 from .governance.dataset_manager import DatasetManager
-from .governance.policy import GovernancePolicy
+from .governance.policy import Decision, GovernancePolicy
 from .ingestion import Normalizer
 from .llm.explainer import LLMExplainer
 from .llm.providers import build_chat_model
 from .observability import StageStatus, TraceContext, new_run_id
 from .rag.embeddings import LocalLSAEmbeddings
 from .rag.vector_store import RAGStore
-from .response import ResponsePlanner
+from .response import ActionType, ResponseAction, ResponseExecutor, ResponsePlanner, ResponseStore
 from .schema import SecurityEvent
 
 logger = logging.getLogger(__name__)
@@ -62,6 +71,18 @@ DEFAULT_SEQUENCES = ROOT / "config" / "sequences.yaml"
 #: configuración "solo Sigma" del estudio de ablación no podía detectar nada por
 #: construcción. Una regla que casa es una detección.
 ALERT_THRESHOLD = 50.0
+
+#: Traduce el vocabulario de `ResponsePlanner` (governance/policy.py) al de
+#: `ActionType` (response/executor.py). "enrich_context" no tiene ejecutor
+#: real definido a propósito: es puramente informativo, no dispara nada.
+RESPONSE_ACTION_MAP: dict[str, "ActionType"] = {
+    "notify_analyst": ActionType.SEND_WEBHOOK_ALERT,
+    "snapshot_evidence": ActionType.CREATE_TICKET,
+    "block_ip": ActionType.BLOCK_IP,
+    "isolate_host": ActionType.ISOLATE_HOST,
+    "disable_account": ActionType.DISABLE_ACCOUNT,
+    "reset_password": ActionType.RESET_PASSWORD,
+}
 
 
 @dataclass
@@ -93,6 +114,14 @@ class PipelineReport:
     component_status: dict[str, str] = field(default_factory=dict)
     #: Secuencias de ataque detectadas por la correlación temporal.
     correlated_incidents: list[dict[str, Any]] = field(default_factory=list)
+    #: Predicciones de kill-chain (Fase 4-D): un incidente correlacionado por
+    #: entidad/ventana, con la fase siguiente más probable ya reponderada por
+    #: contexto (tipo de entidad, severidad, velocidad, CTI).
+    kill_chain_predictions: list[dict[str, Any]] = field(default_factory=list)
+    #: Alertas proactivas (Fase 4-D, tarea D3): entidades cuyo risk score
+    #: acumulado cruzó el umbral en este lote, antes de que exista un
+    #: incidente que las dispare.
+    proactive_alerts: list[dict[str, Any]] = field(default_factory=list)
     #: Coste en milisegundos de las fases que se ejecutan **por lote**, no por
     #: evento: Sigma con agregación, correlación y ajuste/puntuación del modelo
     #: necesitan ver la serie entera. La traza por evento no puede medirlas —solo
@@ -119,6 +148,8 @@ class PipelineReport:
             "component_status": self.component_status,
             "batch_timings_ms": {k: round(v, 4) for k, v in self.batch_timings_ms.items()},
             "correlated_incidents": self.correlated_incidents,
+            "kill_chain_predictions": self.kill_chain_predictions,
+            "proactive_alerts": self.proactive_alerts,
             "incidents": [r.to_dict() for r in self.results],
         }
 
@@ -129,6 +160,7 @@ class Pipeline:
     def __init__(
         self,
         rules_dir: str | Path,
+        sigma_rules_dir: str | Path | None = None,
         settings: Settings | None = None,
         # Banderas de ablación
         enable_ml: bool = True,
@@ -136,11 +168,32 @@ class Pipeline:
         enable_cti: bool = True,
         enable_rag: bool = True,
         enable_llm: bool = True,
+        enable_behavior: bool = True,
+        #: Apagado por defecto a propósito: implica llamadas de red reales a
+        #: servicios externos (AbuseIPDB, OTX) y consumo de cuota gratuita.
+        #: A diferencia de enable_ml/enable_temporal (cómputo local), esto no
+        #: debe activarse por accidente en una prueba o en un batch offline.
+        enable_live_cti: bool = False,
+        #: Correlación de hallazgos en incidentes + predicción de kill-chain
+        #: (Fase 4-D). Cómputo local puro: seguro por defecto, a diferencia
+        #: de enable_live_cti.
+        enable_kill_chain_prediction: bool = True,
         anomaly_threshold: float | None = None,
         # Fuentes de datos (todas con valor por defecto en el repositorio)
         cti_dir: str | Path | None = None,
         knowledge_dir: str | Path | None = None,
         sequences_path: str | Path | None = None,
+        baseline_path: str | Path | None = None,
+        live_cti_cache_path: str | Path | None = None,
+        live_cti_feeds: list[Any] | None = None,
+        markov_model_path: str | Path | None = DEFAULT_MARKOV_MODEL_PATH,
+        risk_score_path: str | Path | None = None,
+        #: Ejecución real de respuesta Nivel 1 (Fase 4-E). Seguro por
+        #: defecto: DRY_RUN=true global y cada integración es NOT_CONFIGURED
+        #: sin credenciales, igual que enable_live_cti.
+        enable_response_execution: bool = True,
+        response_store_path: str | Path | None = None,
+        response_executor: Any | None = None,
         # Gobernanza y auditoría
         policy: GovernancePolicy | None = None,
         audit_path: str | Path | None = None,
@@ -166,13 +219,31 @@ class Pipeline:
         self.enable_cti = enable_cti
         self.enable_rag = enable_rag
         self.enable_llm = enable_llm
+        self.enable_behavior = enable_behavior
+        self.enable_live_cti = enable_live_cti
         self.anomaly_threshold = anomaly_threshold or self.settings.detection.anomaly_threshold
 
         self.component_status: dict[str, str] = {}
 
         self.normalizer = Normalizer()
         self.rules_engine = RulesEngine.from_directory(rules_dir)
-        self.component_status["sigma"] = f"OK ({len(self.rules_engine.rules)} reglas)"
+        self._sigma_rules_loaded = 0
+        if sigma_rules_dir is not None:
+            sigma_dir = Path(sigma_rules_dir)
+            if sigma_dir.is_dir():
+                sigma_rules = RulesEngine.from_sigma_directory(sigma_dir).rules
+                self.rules_engine.rules += sigma_rules
+                self._sigma_rules_loaded = len(sigma_rules)
+            else:
+                logger.warning(
+                    "sigma_rules_dir=%s no existe; se ignoran las reglas Sigma públicas.",
+                    sigma_dir,
+                )
+        self.component_status["sigma"] = (
+            f"OK ({len(self.rules_engine.rules)} reglas: "
+            f"{len(self.rules_engine.rules) - self._sigma_rules_loaded} propias + "
+            f"{self._sigma_rules_loaded} pySigma)"
+        )
 
         self.anomaly_detector = AnomalyDetector() if enable_ml else None
         self.component_status["ml"] = "OK" if enable_ml else "DISABLED"
@@ -182,6 +253,31 @@ class Pipeline:
         self.cti_enricher = self._build_cti(cti_dir) if enable_cti else None
         self.rag_store = self._build_rag(knowledge_dir, embeddings) if enable_rag else None
         self.llm_explainer = self._build_llm(chat_model) if enable_llm else None
+
+        self.baseline_path = Path(baseline_path) if baseline_path else None
+        self.profiler = EntityProfiler(path=self.baseline_path) if enable_behavior else None
+        self.deviation_detector = DeviationDetector() if enable_behavior else None
+        self.component_status["behavior"] = (
+            "OK (perfiles vacíos: aprende desde el primer evento)" if enable_behavior
+            else "DISABLED"
+        )
+
+        self.live_cti_enricher = (
+            self._build_live_cti(live_cti_cache_path, live_cti_feeds)
+            if enable_live_cti else None
+        )
+        if not enable_live_cti:
+            self.component_status["live_cti"] = "DISABLED"
+
+        self.enable_kill_chain_prediction = enable_kill_chain_prediction
+        self.correlator = (
+            self._build_correlator(markov_model_path) if enable_kill_chain_prediction else None
+        )
+        if not enable_kill_chain_prediction:
+            self.component_status["kill_chain_prediction"] = "DISABLED"
+
+        self.risk_tracker = RiskScoreTracker(path=risk_score_path)
+        self.component_status["risk_score"] = "OK"
 
         for nombre, activo in (
             ("temporal", enable_temporal), ("cti", enable_cti),
@@ -195,6 +291,25 @@ class Pipeline:
         self.planner = ResponsePlanner(self.policy)
         self.audit = AuditLog(audit_path) if audit_path else None
         self.component_status["audit"] = "OK" if self.audit else "DISABLED"
+
+        self.enable_response_execution = enable_response_execution
+        if response_executor is not None:
+            self.response_executor = response_executor
+        elif enable_response_execution:
+            ruta_store: str | Path = (
+                response_store_path if response_store_path
+                else Path(audit_path).with_name("response_actions.db") if audit_path
+                else ":memory:"
+            )
+            self.response_executor = ResponseExecutor(
+                store=ResponseStore(ruta_store), audit=self.audit,
+            )
+        else:
+            self.response_executor = None
+        self.component_status["response_execution"] = (
+            f"OK (dry_run={self.response_executor.global_dry_run})"
+            if self.response_executor else "DISABLED"
+        )
 
         # Sumidero de decisiones humanas (HITL).
         self.dataset_manager = DatasetManager()
@@ -231,6 +346,52 @@ class Pipeline:
             )
         self.stix_ingestor = ingestor
         return CTIEnricher(ingestor)
+
+    def _build_live_cti(self, cache_path: str | Path | None,
+                        feeds: list[Any] | None) -> LiveCTIEnricher:
+        """
+        Feeds CTI en vivo (AbuseIPDB, OTX). Sin API key configurada
+        (`CYBERSENTINEL_ABUSEIPDB_KEY`/`CYBERSENTINEL_OTX_KEY`), los clientes
+        se construyen igual —son reales, no mocks— pero cada consulta
+        devuelve `NOT_CONFIGURED` en vez de simular un resultado limpio.
+        """
+        feeds = feeds if feeds is not None else [AbuseIPDBFeed(), OTXFeed()]
+        cache = CTICache(path=cache_path)
+        configurados = [f.name for f in feeds if f.configured]
+        if configurados:
+            self.component_status["live_cti"] = f"OK (feeds activos: {', '.join(configurados)})"
+        else:
+            self.component_status["live_cti"] = (
+                "NOT_CONFIGURED (sin API key: CYBERSENTINEL_ABUSEIPDB_KEY / "
+                "CYBERSENTINEL_OTX_KEY). Clientes reales, sin key configurada."
+            )
+        return LiveCTIEnricher(feeds=feeds, cache=cache)
+
+    def _build_correlator(self, markov_model_path: str | Path | None) -> Correlator:
+        """
+        Correlación de hallazgos + predicción de kill-chain (Fase 4-D).
+
+        Con un modelo de Markov entrenado disponible (`cybersentinel
+        train-prediction`), la predicción es probabilística y medible; sin
+        él, `Correlator` ya cae por su cuenta a `CanonicalBaseline` (la
+        heurística del orden canónico), que es honesta sobre no tener una
+        probabilidad real detrás.
+        """
+        sequence_model: SequenceModel | None = None
+        if markov_model_path:
+            ruta = Path(markov_model_path)
+            if ruta.exists():
+                try:
+                    sequence_model = MarkovChainModel.load(ruta)
+                except (OSError, ValueError, KeyError) as exc:
+                    logger.warning(
+                        "No se pudo cargar el modelo de Markov en %s (%s); "
+                        "se usa CanonicalBaseline.", ruta, exc,
+                    )
+        self.component_status["kill_chain_prediction"] = (
+            f"OK ({sequence_model.name if sequence_model else 'canonical-baseline'})"
+        )
+        return Correlator(sequence_model=sequence_model)
 
     def _build_rag(self, knowledge_dir: str | Path | None, embeddings: Any | None) -> RAGStore:
         """
@@ -303,6 +464,42 @@ class Pipeline:
     def _entity_of(event: SecurityEvent) -> str:
         return event.host or event.user or event.src_ip or "desconocida"
 
+    def _dispatch_response_actions(self, evidence: DetectionEvidence, event: SecurityEvent,
+                                   recomendaciones: list[Any]) -> None:
+        """
+        Traduce las recomendaciones ya clasificadas (ALLOWED/REQUIRES_APPROVAL/
+        PROHIBITED) en `ResponseAction`s reales. PROHIBITED nunca llega
+        aquí como acción — ni se genera, ni se audita como intento: la
+        política ya la descartó en `ResponsePlanner`.
+        """
+        objetivo = {
+            "host": event.host, "user": event.user,
+            "ip": event.dst_ip or event.src_ip, "entity": evidence.entity,
+        }
+        for rec in recomendaciones:
+            if rec.verdict.decision == Decision.PROHIBITED:
+                continue
+            tipo = RESPONSE_ACTION_MAP.get(rec.verdict.action.action_type)
+            if tipo is None:
+                continue
+            accion = ResponseAction(
+                incident_id=evidence.event_id, action_type=tipo, target=objetivo,
+                justification=rec.verdict.action.reason or rec.verdict.explanation,
+                requested_by="pipeline",
+            )
+            self.response_executor.request_action(accion)
+
+            # Nivel 1 complementario: si se recomienda bloquear una IP, se
+            # registra ya mismo en la lista local de bloqueo (rápido, local,
+            # reversible) mientras la regla de firewall en sí espera
+            # aprobación humana (Nivel 2, más arriba).
+            if rec.verdict.action.action_type == "block_ip" and objetivo["ip"]:
+                self.response_executor.request_action(ResponseAction(
+                    incident_id=evidence.event_id, action_type=ActionType.BLOCK_IOC_LOCAL,
+                    target=objetivo, justification=rec.verdict.action.reason,
+                    requested_by="pipeline",
+                ))
+
     def run_events(self, events: list[SecurityEvent]) -> PipelineReport:
         import time as _time
 
@@ -343,6 +540,7 @@ class Pipeline:
 
         # --- Detector de anomalías -------------------------------------------
         puntuaciones: dict[str, float] = {}
+        resultados_anomalia: list[Any] = []
         _t = _time.perf_counter()
         if self.enable_ml and self.anomaly_detector:
             from .ml.base import Dataset
@@ -350,12 +548,18 @@ class Pipeline:
             if not self.anomaly_detector.is_fitted:
                 self.anomaly_detector.fit(Dataset(X=np.array([]), events=events))
             if self.anomaly_detector.is_fitted:
-                for resultado in self.anomaly_detector.score(events):
+                resultados_anomalia = list(self.anomaly_detector.score(events))
+                for resultado in resultados_anomalia:
                     puntuaciones[resultado.event.fingerprint()] = resultado.anomaly_score
 
         tiempos_lote["ml_batch"] = (_time.perf_counter() - _t) * 1000.0
 
         # --- Por evento -------------------------------------------------------
+        # Entidades con contexto CTI de campaña conocida (Fase 4-D): alimenta
+        # tanto el reponderado de la predicción de kill-chain como, en el
+        # futuro, cualquier otra etapa que quiera saber "¿esto ya se sabe
+        # asociado a un actor?" sin tener que releer cti_hits/live_cti_hits.
+        apt_flagged_entities: set[str] = set()
         _t = _time.perf_counter()
         for ev in events:
             ref = ev.fingerprint()
@@ -423,6 +627,46 @@ class Pipeline:
                     detail=f"{len(cti_hits)} coincidencia(s)" if cti_hits else "CTI_MATCH=NONE",
                 )
 
+            # 5.5 Behavioral analytics (Fase 4-B): se evalúa contra el
+            # baseline TAL COMO ESTABA antes de este evento; el propio evento
+            # se aprende después (más abajo), no antes de compararse consigo
+            # mismo.
+            desviaciones: list[Any] = []
+            if not self.enable_behavior or not self.deviation_detector:
+                trace.skipped("behavior")
+            else:
+                trace.start("behavior")
+                desviaciones = self.deviation_detector.evaluate(ev, self.profiler)
+                trace.end(
+                    "behavior",
+                    StageStatus.OK if desviaciones else StageStatus.NO_DATA,
+                    detail=f"{len(desviaciones)} desviación(es)" if desviaciones
+                    else "sin desviaciones frente al baseline",
+                )
+
+            # 5.6 CTI en vivo (Fase 4-C): solo se consulta si el evento ya
+            # trae alguna señal propia. Consultar AbuseIPDB/OTX por cada
+            # evento —la inmensa mayoría benignos— agotaría la cuota
+            # gratuita (1.000/día) en minutos y no es lo que pide el prompt:
+            # "cuando CyberSentinel detecta un evento sospechoso".
+            live_cti_hits: list[Any] = []
+            hay_senal_previa = bool(rule_hits) or anomaly_score >= 0.5 or bool(desviaciones)
+            if not self.enable_live_cti or not self.live_cti_enricher:
+                trace.skipped("live_cti")
+            elif not hay_senal_previa:
+                trace.end("live_cti", StageStatus.NO_DATA,
+                         detail="sin señal previa; no se consulta para ahorrar cuota")
+            else:
+                trace.start("live_cti")
+                live_cti_hits = self.live_cti_enricher.enrich_event(ev).results
+                consultados = [r for r in live_cti_hits if r.status != "NOT_CONFIGURED"]
+                trace.end(
+                    "live_cti",
+                    StageStatus.OK if consultados else StageStatus.UNAVAILABLE,
+                    detail=(f"{len(consultados)} consulta(s) real(es)" if consultados
+                           else "feeds sin API key configurada"),
+                )
+
             evidence = DetectionEvidence(
                 event_id=ev.event_id,
                 run_id=self.run_id,
@@ -434,7 +678,32 @@ class Pipeline:
                 mitre_context=tecnicas,
                 mitre_tactics=tacticas,
                 cti_hits=cti_hits,
+                behavioral_deviations=desviaciones,
+                live_cti_hits=live_cti_hits,
             )
+
+            if self.enable_behavior and self.profiler:
+                self.profiler.observe(ev)
+
+            # 5.7 Risk score persistente por entidad (Fase 4-D, tarea D2) y
+            # marca de contexto CTI (alimenta el reponderado de kill-chain
+            # más abajo). Solo se registra si hubo alguna señal: un evento
+            # sin nada detectado no es "una detección" que deba mover el
+            # risk score de nadie.
+            entidad = evidence.entity
+            cti_confirmado = any(
+                {"nation-state", "c2"} & set(h.indicator.labels) for h in cti_hits
+            ) or any(
+                getattr(h, "malicious", False) and (getattr(h, "score", 0) or 0) >= 75
+                for h in live_cti_hits
+            )
+            if cti_confirmado and entidad:
+                apt_flagged_entities.add(entidad)
+            if entidad and evidence.hybrid_score > 0:
+                self.risk_tracker.record_detection(
+                    entidad, evidence.hybrid_score, when=ev.timestamp,
+                    cti_confirmed=cti_confirmado, reason=evidence.detection_status,
+                )
 
             # 6. RAG
             rag_docs: list[Any] = []
@@ -506,6 +775,15 @@ class Pipeline:
             # 8. Gobernanza: contramedidas propuestas y clasificadas
             recomendaciones = self.planner.plan(evidence)
 
+            # 9. Respuesta (Fase 4-E): solo para hallazgos reales, no para
+            # cada evento benigno que también pasa por el planner. Notificar
+            # o generar comandos en el 100% del tráfico agotaría cuotas
+            # reales (mismo razonamiento que el Bloque C con CTI en vivo) y
+            # ahogaría al analista en ruido.
+            if (self.enable_response_execution and self.response_executor
+                    and evidence.hybrid_score >= ALERT_THRESHOLD):
+                self._dispatch_response_actions(evidence, ev, recomendaciones)
+
             results.append(IncidentResult(
                 evidence=evidence, narrative=narrative, trace=trace,
                 recommendations=recomendaciones,
@@ -534,7 +812,53 @@ class Pipeline:
                     )
 
         tiempos_lote["per_event_loop"] = (_time.perf_counter() - _t) * 1000.0
+
+        # --- Kill-chain: correlación + predicción (Fase 4-D) ------------------
+        kill_chain_predictions: list[dict[str, Any]] = []
+        proactive_alerts: list[dict[str, Any]] = []
+        _t = _time.perf_counter()
+        if self.enable_kill_chain_prediction and self.correlator:
+            # No se pasa self.anomaly_threshold: ese es el umbral de contaminación
+            # del detector ("auto" incluido, puede ser None), un concepto
+            # distinto del umbral 0..1 que build_findings necesita para decidir
+            # qué anomalía es lo bastante severa como para ser un Finding.
+            # Se deja el default de build_findings (0.6).
+            findings = self.correlator.build_findings(todos_los_hits, resultados_anomalia)
+            if findings:
+                incidentes_kc = self.correlator.correlate(
+                    findings, apt_flagged_entities=apt_flagged_entities)
+                kill_chain_predictions = [
+                    inc.to_dict() for inc in incidentes_kc if inc.prediction is not None
+                ]
+        tiempos_lote["kill_chain_batch"] = (_time.perf_counter() - _t) * 1000.0
+
+        # --- Alertas proactivas por risk score (Fase 4-D, tarea D3) ----------
+        # Antes de que exista un incidente: cualquier entidad que este lote
+        # haya tocado y cuyo risk score acumulado cruce el umbral.
+        for entidad in sorted(apt_flagged_entities | {r.evidence.entity for r in results}):
+            if self.risk_tracker.due_proactive_alert(entidad):
+                score = self.risk_tracker.score_for(entidad)
+                alerta = {
+                    "entity": entidad, "risk_score": round(score, 1),
+                    "threshold": PROACTIVE_ALERT_THRESHOLD,
+                    "message": (
+                        f"{entidad} tiene risk score {score:.0f}/100, "
+                        "recomendamos investigación proactiva."
+                    ),
+                }
+                proactive_alerts.append(alerta)
+                logger.warning("Alerta proactiva: %s", alerta["message"])
+                if self.audit:
+                    self.audit.record(actor="pipeline", action="proactive_risk_alert",
+                                      detail=alerta)
+
         tiempos_lote["total"] = sum(tiempos_lote.values())
+
+        # Persistir lo aprendido en este lote. `save()` no hace nada si no
+        # hay baseline_path/risk_score_path configurado (solo en memoria).
+        if self.enable_behavior and self.profiler:
+            self.profiler.save()
+        self.risk_tracker.save()
 
         return PipelineReport(
             total_events=len(events),
@@ -544,6 +868,8 @@ class Pipeline:
             run_id=self.run_id,
             component_status=dict(self.component_status),
             correlated_incidents=incidentes_correlados,
+            kill_chain_predictions=kill_chain_predictions,
+            proactive_alerts=proactive_alerts,
             batch_timings_ms=tiempos_lote,
         )
 

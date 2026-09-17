@@ -1,0 +1,53 @@
+{
+  "descripcion": "Evidencia real de Bloque B: DetectionEvidence de un evento que se desvia del baseline aprendido de 60 eventos normales (host SRV-DB, usuario ana). Generado por Pipeline.run_events real, sin mocks.",
+  "baseline_confidence": 1.0,
+  "detection_evidence": {
+    "run_id": "de4dece0-2fef-4381-b954-35d091ee46ae",
+    "event_id": "anomalo-1",
+    "event_ref": "b4aea85b5e4b4b14",
+    "created_at": "2026-09-17T18:41:51.694+00:00",
+    "detection_status": "ANOMALY_ONLY",
+    "rule_matches": [],
+    "rule_titles": [],
+    "anomaly_score": 0.882,
+    "temporal_context": [],
+    "mitre_context": "not_available",
+    "mitre_tactics": "not_available",
+    "cti_hits": "not_available",
+    "rag_context": "not_available",
+    "explanation": "not_available",
+    "llm_status": "DISABLED",
+    "fallback_used": false,
+    "stage_status": {
+      "sigma": "NO_DATA",
+      "ml": "OK",
+      "temporal": "DISABLED",
+      "cti": "DISABLED",
+      "behavior": "OK",
+      "rag": "DISABLED",
+      "llm": "DISABLED"
+    },
+    "entity": "SRV-DB",
+    "behavioral_deviations": [
+      {
+        "entity": "ana",
+        "entity_type": "user",
+        "kind": "unusual_hour",
+        "score": 70.0,
+        "confidence": 1.0,
+        "explanation": "El usuario 'ana' normalmente está activo en horas {10:00}; este evento ocurrió a las 03:xx.",
+        "mitre_technique": "T1078"
+      },
+      {
+        "entity": "SRV-DB",
+        "entity_type": "host",
+        "kind": "unknown_process",
+        "score": 55.0,
+        "confidence": 1.0,
+        "explanation": "El proceso 'mimikatz.exe' nunca se había visto en el host 'SRV-DB' en las 60 observaciones registradas.",
+        "mitre_technique": null
+      }
+    ],
+    "hybrid_score": 90.28
+  }
+}

@@ -1,0 +1,35 @@
+title: Linux System Log Cleared (CyberSentinel Native)
+id: 71d8c2b2-c2a5-4eb1-8416-2e02d1ce28e4
+status: test
+description: >-
+  Detects journalctl --vacuum, truncation of /var/log files or a wholesale
+  delete under /var/log — the Linux counterpart to cs-clear-eventlogs,
+  typically used to remove evidence of prior activity.
+
+  ADAPTATION NOTES:
+  - Field 'CommandLine' maps to SecurityEvent.command_line via FIELD_MAP.
+  - Logsource category 'process_creation' maps to event.category='process'.
+references:
+  - https://attack.mitre.org/techniques/T1070/002/
+author: CyberSentinel (native)
+date: 2026-09-17
+logsource:
+  product: cybersentinel
+  category: process_creation
+detection:
+  vacuum:
+    CommandLine|contains|all:
+      - 'journalctl'
+      - '--vacuum'
+  truncate:
+    CommandLine|contains:
+      - '> /var/log/'
+      - 'rm -rf /var/log'
+      - 'shred'
+  condition: vacuum or truncate
+falsepositives:
+  - Legitimate log-rotation or disk-space maintenance jobs.
+level: high
+tags:
+  - attack.defense-evasion
+  - attack.t1070.002

@@ -1,0 +1,42 @@
+title: Security Service Stopped via net stop or sc (CyberSentinel Native)
+id: af073061-9810-4e70-a8e6-6ee16cc0f188
+status: test
+description: >-
+  Detects an operator stopping a well-known security service (Windows
+  Defender, common EDR/AV service names) via net stop or sc stop, typically
+  right before dropping or executing a payload the product would flag.
+
+  ADAPTATION NOTES:
+  - Field 'CommandLine' maps to SecurityEvent.command_line via FIELD_MAP.
+  - Logsource category 'process_creation' maps to event.category='process'.
+  - Service-name list is illustrative, not exhaustive: no SecurityEvent field
+    carries the Windows Service Control Manager's own audit event, so this
+    is inferred from the command line invoking it.
+references:
+  - https://attack.mitre.org/techniques/T1489/
+author: CyberSentinel (native)
+date: 2026-09-17
+logsource:
+  product: cybersentinel
+  category: process_creation
+detection:
+  action:
+    CommandLine|contains:
+      - 'net stop'
+      - 'sc stop'
+      - 'sc.exe stop'
+  target:
+    CommandLine|contains:
+      - 'windefend'
+      - 'sense'
+      - 'mbamservice'
+      - 'sophos'
+      - 'mcafee'
+      - 'sepmasterservice'
+  condition: action and target
+falsepositives:
+  - Authorized product migration or uninstallation.
+level: high
+tags:
+  - attack.impact
+  - attack.t1489

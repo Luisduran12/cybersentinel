@@ -1,0 +1,796 @@
+{
+  "name": "CyberSentinel — despues de Fase 4-A",
+  "versions": {
+    "attack": "19",
+    "navigator": "5.1.0",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "41 de 222 técnicas de la matriz empresarial tienen al menos una regla (18.5%). Las técnicas sin color son las que el sistema no detecta hoy.",
+  "filters": {
+    "platforms": [
+      "Windows",
+      "Linux",
+      "macOS",
+      "Network"
+    ]
+  },
+  "sorting": 3,
+  "layout": {
+    "layout": "side",
+    "showName": true,
+    "showID": true
+  },
+  "hideDisabled": false,
+  "gradient": {
+    "colors": [
+      "#ffffff",
+      "#2f7ed8"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "cubierta por al menos una regla",
+      "color": "#2f7ed8"
+    }
+  ],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#dddddd",
+  "selectTechniquesAcrossTactics": true,
+  "techniques": [
+    {
+      "techniqueID": "T1003.001",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "7fe8c3fe-e714-4973-aae9-d22876e93009: LSASS Memory Dump via Procdump or Comsvcs (CyberSentinel Adaptation) (severidad critical)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "LSASS Memory"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1016",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "2cd4cd68-9c54-4988-b423-56066b53c451: Network Configuration Discovery via ipconfig/route (CyberSentinel Adaptation) (severidad low)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "System Network Configuration Discovery"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1021",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "RULE-0005: Conexion RDP entre hosts internos (posible movimiento lateral) (severidad medium)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Remote Services"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1021.001",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "3e6b1a9c-8f5d-4c7b-d2a3-a1c8d5f6ff12: Internal RDP Connection - Possible Lateral Movement (CyberSentinel Native) (severidad medium)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Remote Desktop Protocol"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1033",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "7a912c1e-e8f4-4d23-8c3b-f1a2e5d9bb12: Whoami.exe Execution (CyberSentinel Adaptation) (severidad medium)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "System Owner/User Discovery"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1046",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "RULE-0004: Escaneo de servicios de red (severidad medium)\n7d2f5c8b-1e9a-4a3c-e7b6-b4e1f9a3aa23: Network Port Scan Tool Execution (CyberSentinel Native) (severidad medium)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Network Service Discovery"
+        },
+        {
+          "name": "reglas",
+          "value": "2"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1047",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "2d7f4a1c-9e3b-4c8a-d5f6-b9c3e7a1a167: WMIC Remote Process Execution (CyberSentinel Adaptation) (severidad high)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Windows Management Instrumentation"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1048",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "RULE-0007: Exfiltracion por gran volumen de datos (severidad critical)\n6f3d8b5e-2c7a-4e1b-b9a4-e8b5a2f3dd90: Large Outbound Data Transfer - Possible Exfiltration (CyberSentinel Native) (severidad critical)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Exfiltration Over Alternative Protocol"
+        },
+        {
+          "name": "reglas",
+          "value": "2"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1049",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "d038c316-b2c3-4c6d-90f4-92816b200899: Network Connections Discovery via netstat (CyberSentinel Adaptation) (severidad low)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "System Network Connections Discovery"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1053",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "RULE-0003: Creacion de tarea programada (posible persistencia) (severidad medium)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Scheduled Task/Job"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1053.003",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "99636297-b604-4dd1-8b23-587550ea272a: Linux Persistence via Cron (CyberSentinel Native) (severidad medium)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Cron"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1053.005",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "1e5f7d2b-3a8c-4b6e-a9d1-c2f4e7b8dd34: Schtasks.exe Scheduled Task Creation (CyberSentinel Adaptation) (severidad medium)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Scheduled Task"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1057",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "8b377479-b81f-47aa-81c2-11bfe2466293: Process Discovery via Tasklist (CyberSentinel Adaptation) (severidad low)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Process Discovery"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1059",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "RULE-0002: PowerShell ofuscado o codificado (severidad high)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Command and Scripting Interpreter"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1059.001",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "3d6d4b49-5f2e-4e29-9e37-a1b7f3e5aa01: PowerShell Encoded Command (CyberSentinel Adaptation) (severidad high)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "PowerShell"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1069",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "b4c8f3a7-2d1e-4f9a-9c6b-e3d7a8f1cc23: Net.exe Domain and User Reconnaissance (CyberSentinel Adaptation) (severidad medium)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Permission Groups Discovery"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1070.001",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "bb406241-9ebc-41aa-8d7f-2db95e34f27f: Windows Event Log Cleared (CyberSentinel Adaptation) (severidad high)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Indicator Removal"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1070.002",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "71d8c2b2-c2a5-4eb1-8416-2e02d1ce28e4: Linux System Log Cleared (CyberSentinel Native) (severidad high)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Indicator Removal"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1071",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "RULE-0006: Posible baliza C2 (conexiones repetidas a puerto de herramientas ofensivas) (severidad high)\n0b9a4c7e-5d3f-4b8a-c6e1-f9d4c7b2ee01: Connection to Known C2 Framework Ports (CyberSentinel Native) (severidad high)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Application Layer Protocol"
+        },
+        {
+          "name": "reglas",
+          "value": "2"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1071.004",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "393098d4-0b74-4c26-bf35-3b5728c2322b: Possible DNS Tunneling via Long Subdomain (CyberSentinel Native) (severidad high)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "DNS"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1082",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "e77d3a9b-b729-4a8b-9e46-a377a751f78e: System Information Discovery via systeminfo.exe (CyberSentinel Adaptation) (severidad low)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "System Information Discovery"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1090",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "6514cf18-7008-4095-ac08-7cc13f4cca59: Connection to Common Anonymization Proxy Port (CyberSentinel Native) (severidad medium)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Proxy"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1098.004",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "e16329af-f7ed-4454-b176-c863afa66d6d: Linux SSH Authorized Key Added (CyberSentinel Native) (severidad medium)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "SSH Authorized Keys"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1105",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "9c3a1f8e-7b5d-4e2a-b6c3-d1f9a3e7ee45: Certutil Download via URL Cache (CyberSentinel Adaptation) (severidad high)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Ingress Tool Transfer"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1110",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "RULE-0001: Fuerza bruta de autenticacion (severidad high)\n1c8e3a6d-5b7f-4d9e-a4c2-c7b5e2d8bb34: Authentication Failure - Single Event (CyberSentinel Native) (severidad low)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Brute Force"
+        },
+        {
+          "name": "reglas",
+          "value": "2"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1110.003",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "5b7d1f4c-9a2e-4b6d-b3a8-d2f6a1c9cc45: Authentication Failure from External (Non-RFC1918) Source (CyberSentinel Native) (severidad medium)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Password Spraying"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1136.001",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "c1cd109d-d2db-485f-9746-c4ff808c3f75: Local Account Creation via net user (CyberSentinel Adaptation) (severidad medium)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Local Account"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1197",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "34ca0d82-d93f-4ea4-86e4-804b4c0885c3: BITSAdmin Download or Job Persistence (CyberSentinel Adaptation) (severidad medium)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "BITS Jobs"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1218.001",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "30e11d63-e414-4a87-8fe1-3756c113d069: Compiled HTML Help Execution via hh.exe (CyberSentinel Adaptation) (severidad high)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Compiled HTML File"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1218.005",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "5f8b2c9e-1d6a-4f3b-c7e2-a4b8d1f2ff56: Mshta.exe Execution - Defense Evasion (CyberSentinel Adaptation) (severidad high)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Mshta"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1218.007",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "56225ee2-d758-4de2-9481-613181894e86: Msiexec Installing Package from Remote URL (CyberSentinel Adaptation) (severidad high)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Msiexec"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1218.009",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "4aeccdba-b649-4387-a919-1c9510db4fd2: Regasm/Regsvcs Execution (CyberSentinel Adaptation) (severidad high)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Regsvcs/Regasm"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1218.010",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "8e1b5d3a-4f7c-4a9e-b2d3-c6a1f8e5bb78: Regsvr32.exe Silent Execution (CyberSentinel Adaptation) (severidad high)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Regsvr32"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1218.011",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "4a6c9f2d-8b1e-4d7a-a3b5-d7f2c9b4cc89: Rundll32.exe Execution with JavaScript/VBS (CyberSentinel Adaptation) (severidad high)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Rundll32"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1482",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "5a5009f3-6437-4f39-bfb5-01f78415a547: Domain Trust Discovery via Nltest (CyberSentinel Adaptation) (severidad medium)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Domain Trust Discovery"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1489",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "af073061-9810-4e70-a8e6-6ee16cc0f188: Security Service Stopped via net stop or sc (CyberSentinel Native) (severidad high)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Service Stop"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1490",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "0ca75daf-45f7-4e56-bf94-468a89962a36: Inhibit System Recovery (Shadow Copy / Backup Deletion) (CyberSentinel Adaptation) (severidad critical)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Inhibit System Recovery"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1547.001",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "d6645eac-e7d7-4f97-94e9-36eec5dbfde7: Persistence via Registry Run Key (CyberSentinel Adaptation) (severidad medium)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Registry Run Keys / Startup Folder"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1548.003",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "692420b9-f0de-41d9-9ed8-c8ef80b26092: Linux Sudoers File Modification (CyberSentinel Native) (severidad high)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Sudo and Sudo Caching"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1562.001",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "c7b193ad-0267-4180-9429-fcafb61efc10: Windows Defender Real-Time Protection Disabled (CyberSentinel Adaptation) (severidad high)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "T1562.001"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1569.002",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "49a8ee05-c5db-4585-940b-11ca6f036183: PsExec-Style Remote Execution (CyberSentinel Native) (severidad medium)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Service Execution"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    }
+  ],
+  "metadata": [
+    {
+      "name": "generado por",
+      "value": "CyberSentinel"
+    },
+    {
+      "name": "fecha",
+      "value": "2026-09-17T18:22:40+00:00"
+    },
+    {
+      "name": "matriz",
+      "value": "MITRE ATT&CK v19.2 (222 técnicas, 475 subtécnicas, 15 tácticas)"
+    }
+  ]
+}

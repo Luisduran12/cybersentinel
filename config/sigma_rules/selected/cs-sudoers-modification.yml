@@ -1,0 +1,31 @@
+title: Linux Sudoers File Modification (CyberSentinel Native)
+id: 692420b9-f0de-41d9-9ed8-c8ef80b26092
+status: test
+description: >-
+  Detects visudo or a direct edit under /etc/sudoers(.d), which can grant an
+  account passwordless or unrestricted root privileges — a privilege
+  escalation and persistence technique. This fills the privilege-escalation
+  tactic gap documented as not_covered in docs/SIGMA-EXCLUSIONS.md.
+
+  ADAPTATION NOTES:
+  - Field 'CommandLine' maps to SecurityEvent.command_line via FIELD_MAP.
+  - Logsource category 'process_creation' maps to event.category='process'.
+references:
+  - https://attack.mitre.org/techniques/T1548/003/
+author: CyberSentinel (native)
+date: 2026-09-17
+logsource:
+  product: cybersentinel
+  category: process_creation
+detection:
+  selection:
+    CommandLine|contains:
+      - 'visudo'
+      - '/etc/sudoers'
+  condition: selection
+falsepositives:
+  - Legitimate sudo-policy administration by an authorized admin.
+level: high
+tags:
+  - attack.privilege-escalation
+  - attack.t1548.003

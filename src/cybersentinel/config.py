@@ -28,7 +28,15 @@ if load_dotenv:
     load_dotenv(ROOT / ".env")
 DEFAULT_CONFIG_PATH = ROOT / "config" / "config.yaml"
 DEFAULT_RULES_DIR = ROOT / "config" / "rules"
+#: Reglas en formato Sigma público (pySigma), curadas y documentadas en
+#: config/sigma_rules/manifest.yaml. Hasta la Fase 4-A solo las cargaba
+#: scripts/evaluate_sigma_phase1.py para un reporte offline: el Pipeline real
+#: nunca las usaba. Se combinan con DEFAULT_RULES_DIR, no lo sustituyen.
+DEFAULT_SIGMA_RULES_DIR = ROOT / "config" / "sigma_rules" / "selected"
 DEFAULT_POLICY_PATH = ROOT / "config" / "governance_policy.yaml"
+#: Cadena de Markov entrenada (Fase 3, `cybersentinel train-prediction`). Si
+#: no existe, el Correlator cae a CanonicalBaseline (su propio default).
+DEFAULT_MARKOV_MODEL_PATH = ROOT / "models" / "markov_tactics.json"
 
 
 @dataclass

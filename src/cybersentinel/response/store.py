@@ -22,23 +22,54 @@ CREATE TABLE IF NOT EXISTS response_actions (
     timestamp_approved TEXT,
     result TEXT,
     dry_run INTEGER NOT NULL,
-    audit_record TEXT
+    audit_record TEXT,
+    command TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_response_actions_incident ON response_actions(incident_id);
 """
 
 
+class _NoCloseConnection:
+    """
+    Envuelve la conexión ':memory:' persistente para que `closing(...)` no la
+    cierre al salir del `with`: una base en memoria vive solo mientras dura
+    la conexión, así que cerrarla tras cada llamada borraría todo lo
+    guardado en la anterior.
+    """
+
+    def __init__(self, con: sqlite3.Connection) -> None:
+        self._con = con
+
+    def __getattr__(self, nombre: str) -> Any:
+        return getattr(self._con, nombre)
+
+    def close(self) -> None:
+        pass  # intencional: la conexión real se queda abierta.
+
+
 class ResponseStore:
     def __init__(self, db_path: str | Path):
-        self.path = Path(db_path)
-        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self._memoria: sqlite3.Connection | None = None
+        if str(db_path) == ":memory:":
+            # Sin ruta real (Pipeline sin audit_path/response_store_path):
+            # una conexión sqlite3 nueva por llamada a ':memory:' crea una
+            # base distinta cada vez y pierde todo lo escrito. Se mantiene
+            # UNA conexión persistente durante la vida del store.
+            self._memoria = sqlite3.connect(":memory:", check_same_thread=False)
+            self._memoria.row_factory = sqlite3.Row
+            self.path = Path(":memory:")
+        else:
+            self.path = Path(db_path)
+            self.path.parent.mkdir(parents=True, exist_ok=True)
         self._lock = threading.Lock()
         with closing(self._connect()) as con:
             con.executescript(SCHEMA)
             con.commit()
 
     def _connect(self) -> sqlite3.Connection:
+        if self._memoria is not None:
+            return _NoCloseConnection(self._memoria)
         con = sqlite3.connect(self.path, timeout=30)
         con.row_factory = sqlite3.Row
         con.execute("PRAGMA journal_mode=WAL")
@@ -53,8 +84,8 @@ class ResponseStore:
                 INSERT INTO response_actions (
                     action_id, incident_id, action_type, target, justification,
                     status, requested_by, timestamp_requested, approved_by,
-                    timestamp_approved, result, dry_run, audit_record
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    timestamp_approved, result, dry_run, audit_record, command
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     action.action_id,
@@ -69,7 +100,8 @@ class ResponseStore:
                     action.timestamp_approved,
                     json.dumps(action.result) if action.result else None,
                     1 if action.dry_run else 0,
-                    action.audit_record
+                    action.audit_record,
+                    action.command,
                 )
             )
             con.commit()
@@ -126,5 +158,6 @@ class ResponseStore:
             timestamp_approved=row["timestamp_approved"],
             result=json.loads(row["result"]) if row["result"] else None,
             dry_run=bool(row["dry_run"]),
-            audit_record=row["audit_record"]
+            audit_record=row["audit_record"],
+            command=row["command"] if "command" in row.keys() else None,
         )

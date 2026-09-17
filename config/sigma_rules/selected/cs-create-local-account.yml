@@ -1,0 +1,31 @@
+title: Local Account Creation via net user (CyberSentinel Adaptation)
+id: c1cd109d-d2db-485f-9746-c4ff808c3f75
+status: test
+description: >-
+  Detects `net user /add` creating a new local account, often used to
+  establish a persistent foothold or a backdoor account for later access.
+
+  ADAPTATION NOTES:
+  - Field 'CommandLine' maps to SecurityEvent.command_line via FIELD_MAP.
+  - Logsource category 'process_creation' maps to event.category='process'.
+references:
+  - https://attack.mitre.org/techniques/T1136/001/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_net_user_add.yml
+author: CyberSentinel adaptation (original SigmaHQ community)
+date: 2026-09-17
+logsource:
+  product: cybersentinel
+  category: process_creation
+detection:
+  selection:
+    CommandLine|contains|all:
+      - 'net '
+      - 'user'
+      - '/add'
+  condition: selection
+falsepositives:
+  - IT onboarding scripts creating legitimate local accounts.
+level: medium
+tags:
+  - attack.persistence
+  - attack.t1136.001

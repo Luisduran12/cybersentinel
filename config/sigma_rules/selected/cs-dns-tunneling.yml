@@ -1,0 +1,35 @@
+title: Possible DNS Tunneling via Long Subdomain (CyberSentinel Native)
+id: 393098d4-0b74-4c26-bf35-3b5728c2322b
+status: test
+description: >-
+  Detects DNS queries whose subdomain label is unusually long and made up
+  entirely of alphanumeric characters, typical of DNS tunneling tools that
+  encode data or C2 traffic inside the query name (e.g. iodine, dnscat2).
+  Legitimate FQDNs rarely need a single label longer than ~40 characters.
+
+  ADAPTATION NOTES:
+  - Field 'QueryName' is not in FIELD_MAP; falls back to event.raw.get()
+    (Sysmon EventID 22 keeps the original 'QueryName' key in event.raw).
+  - Logsource category 'dns_query' maps to event.category='dns' via
+    LOGSOURCE_CATEGORY_MAP.
+  - No SigmaHQ equivalent: SigmaHQ's DNS tunneling rules key off PTR/TXT
+    record volume over time, which CyberSentinel's stateless engine cannot
+    express; this is a single-event structural heuristic instead.
+references:
+  - https://attack.mitre.org/techniques/T1071/004/
+author: CyberSentinel (native)
+date: 2026-09-17
+logsource:
+  product: cybersentinel
+  category: dns_query
+detection:
+  selection:
+    QueryName|re: '^[a-z0-9]{40,}\..+$'
+  condition: selection
+falsepositives:
+  - CDN or load-balancer subdomains that use long hashed labels.
+  - Auto-generated container/orchestrator hostnames.
+level: high
+tags:
+  - attack.command-and-control
+  - attack.t1071.004

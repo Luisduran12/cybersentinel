@@ -16,17 +16,27 @@ class ActionStatus(str, Enum):
 
 
 class ActionType(str, Enum):
-    # Phase 1: Safe actions (No approval required)
+    # Nivel 1: automáticas, sin aprobación humana. Ejecutan de verdad
+    # (Fase 4-E) — webhook/email reales si hay credenciales, ticket y bloqueo
+    # de IOC locales siempre reales, sin necesitar ninguna credencial externa.
     CREATE_TICKET = "crear_ticket"
     SEND_ALERT = "enviar_alerta"
+    SEND_WEBHOOK_ALERT = "enviar_webhook"
+    SEND_EMAIL_ALERT = "enviar_email"
+    BLOCK_IOC_LOCAL = "bloquear_ioc_local"
     ADD_RECOMMENDATION = "agregar_recomendación"
     MARK_HOST_SUSPICIOUS = "marcar_host_sospechoso"
     GENERATE_CONTAINMENT_PROCEDURE = "generar_procedimiento_contención"
 
-    # Phase 2: Sensitive actions (Approval required)
+    # Nivel 2: sensibles, requieren aprobación humana. Incluso aprobadas,
+    # esto SOLO genera el comando exacto (`ResponseAction.command`) — no
+    # existe integración real con un firewall/EDR/IdP en este proyecto, y
+    # ejecutar contra uno sería una acción contra un sistema externo sin
+    # autorización, prohibido explícitamente.
     BLOCK_IP = "bloquear_ip"
     ISOLATE_HOST = "aislar_host"
     DISABLE_ACCOUNT = "deshabilitar_cuenta"
+    RESET_PASSWORD = "restablecer_contraseña"
     REVOKE_SESSION = "revocar_sesión"
     QUARANTINE_FILE = "poner_en_cuarentena_archivo"
 
@@ -36,6 +46,7 @@ class ActionType(str, Enum):
             ActionType.BLOCK_IP,
             ActionType.ISOLATE_HOST,
             ActionType.DISABLE_ACCOUNT,
+            ActionType.RESET_PASSWORD,
             ActionType.REVOKE_SESSION,
             ActionType.QUARANTINE_FILE,
         }
@@ -51,7 +62,11 @@ class ResponseAction(BaseModel):
     action_type: ActionType
     target: dict[str, Any]
     justification: str
-    
+    #: El comando/payload exacto que se ejecutaría (Nivel 2) o que ya se
+    #: ejecutó (Nivel 1). Se rellena al construir la acción, no al
+    #: ejecutarla: un analista debe poder ver qué se propone ANTES de aprobar.
+    command: Optional[str] = None
+
     status: ActionStatus = ActionStatus.REQUESTED
     
     requested_by: str

@@ -1,0 +1,65 @@
+{
+  "descripcion": "Evidencia real de Bloque D: Pipeline.run_events real (RULE-0001 fuerza bruta + RULE-0002 powershell) produciendo kill_chain_predictions y proactive_alerts.",
+  "kill_chain_predictions": [
+    {
+      "incident_id": "INC-0001",
+      "entity": "SRV-DB",
+      "start": "2025-03-10T10:00:00+00:00",
+      "end": "2025-03-10T10:02:04+00:00",
+      "num_findings": 8,
+      "max_severity": "high",
+      "risk_score": 60,
+      "techniques": [
+        {
+          "id": "T1110",
+          "name": "Brute Force"
+        },
+        {
+          "id": "T1059",
+          "name": "Command and Scripting Interpreter"
+        }
+      ],
+      "tactics": [
+        "credential-access",
+        "execution"
+      ],
+      "prediction": {
+        "current_tactic": "credential-access",
+        "current_tactic_es": "Acceso a credenciales",
+        "stage": "9/15",
+        "predicted_next": [
+          {
+            "tactic": "discovery",
+            "tactic_es": "Descubrimiento",
+            "probability": 0.5208
+          },
+          {
+            "tactic": "collection",
+            "tactic_es": "Recolección",
+            "probability": 0.1896
+          }
+        ],
+        "confidence": 0.521,
+        "confidence_basis": "probabilidad estimada por markov-orden-1",
+        "model": "markov-orden-1",
+        "probability_of_end": 0.0764,
+        "context": {
+          "entity_type": "server",
+          "accumulated_severity": 60.0,
+          "events_per_minute": 3.871,
+          "cti_flagged": false
+        },
+        "rationale": "Se observó la progresión: Acceso a credenciales → Ejecución. La fase más avanzada alcanzada es «Acceso a credenciales» (9/15). Según markov-orden-1, la fase siguiente más probable es: Descubrimiento (52%) o Recolección (19%). Ajustado por contexto (es un servidor): las fases de post-explotación se ponderaron al alza."
+      }
+    }
+  ],
+  "proactive_alerts": [
+    {
+      "entity": "SRV-DB",
+      "risk_score": 100.0,
+      "threshold": 70.0,
+      "message": "SRV-DB tiene risk score 100/100, recomendamos investigación proactiva."
+    }
+  ],
+  "risk_score_SRV-DB": 100.0
+}

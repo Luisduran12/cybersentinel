@@ -487,10 +487,16 @@ def test_original_rules_detect_c2_port():
     assert c2_rule.aggregation is not None, "RULE-0006 debe tener aggregation"
 
 
-def test_sigma_15_rules_still_load():
+def test_sigma_38_rules_still_load():
+    """
+    Guarda de regresión sobre el directorio real, no sobre el reporte
+    congelado de Fase 1 (ese vive en reports/sigma_phase1_summary.json y
+    documenta las 15 reglas de entonces a propósito). Fase 4-A subió esto a
+    38; ver tests/test_sigma_expansion.py para la cobertura ATT&CK.
+    """
     engine = RulesEngine.from_sigma_directory(SIGMA_RULES_DIR)
-    assert len(engine.rules) == 15, (
-        f"Se esperaban 15 reglas Sigma, cargaron {len(engine.rules)}"
+    assert len(engine.rules) == 38, (
+        f"Se esperaban 38 reglas Sigma, cargaron {len(engine.rules)}"
     )
 
 

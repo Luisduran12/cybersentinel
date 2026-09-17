@@ -29,6 +29,7 @@ from ..detection.anomaly import AnomalyResult, severity_from_anomaly
 from ..detection.rules_engine import RuleHit
 from ..schema import SecurityEvent, Severity
 from . import mitre
+from .prediction_context import PredictionContext, infer_entity_type, reweight
 from .sequence_model import CanonicalBaseline, SequenceModel
 
 
@@ -82,6 +83,8 @@ class KillChainPrediction:
     confidence_basis: str = "heuristica"
     #: Probabilidad de que el ataque se detenga aquí (0 si el modelo no la estima).
     probability_of_end: float = 0.0
+    #: Contexto (Fase 4-D) usado para reponderar la salida cruda del modelo.
+    context: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         probabilities = self.probabilities or [None] * len(self.predicted_next)
@@ -101,6 +104,7 @@ class KillChainPrediction:
             "confidence_basis": self.confidence_basis,
             "model": self.model_name,
             "probability_of_end": round(self.probability_of_end, 4),
+            "context": self.context,
             "rationale": self.rationale,
         }
 
@@ -226,12 +230,21 @@ class Correlator:
                 ))
         return findings
 
-    def correlate(self, findings: list[Finding]) -> list[Incident]:
-        """Agrupa por entidad y ventana temporal."""
+    def correlate(self, findings: list[Finding],
+                 apt_flagged_entities: set[str] | None = None) -> list[Incident]:
+        """
+        Agrupa por entidad y ventana temporal.
+
+        `apt_flagged_entities` (Fase 4-D): entidades para las que CTI (STIX o
+        en vivo) ya confirmó contexto de campaña — se lo pasa quien construye
+        los findings, porque `Finding` no lleva ese dato y no hace falta que
+        lo lleve para esto.
+        """
         by_entity: dict[str, list[Finding]] = defaultdict(list)
         for f in findings:
             by_entity[f.entity].append(f)
 
+        apt_flagged_entities = apt_flagged_entities or set()
         incidents: list[Incident] = []
         counter = 1
         for entity, group in by_entity.items():
@@ -240,24 +253,35 @@ class Correlator:
             last_ts = None
             for f in group:
                 if last_ts is not None and (f.event.timestamp - last_ts) > self.window:
-                    incidents.append(self._make_incident(counter, entity, cluster))
+                    incidents.append(self._make_incident(
+                        counter, entity, cluster, entity in apt_flagged_entities))
                     counter += 1
                     cluster = []
                 cluster.append(f)
                 last_ts = f.event.timestamp
             if cluster:
-                incidents.append(self._make_incident(counter, entity, cluster))
+                incidents.append(self._make_incident(
+                    counter, entity, cluster, entity in apt_flagged_entities))
                 counter += 1
 
         incidents.sort(key=lambda i: i.risk_score, reverse=True)
         return incidents
 
-    def _make_incident(self, num: int, entity: str, findings: list[Finding]) -> Incident:
+    def _make_incident(self, num: int, entity: str, findings: list[Finding],
+                       cti_flagged: bool = False) -> Incident:
         inc = Incident(incident_id=f"INC-{num:04d}", entity=entity, findings=list(findings))
-        inc.prediction = self._predict(inc)
+        inc.prediction = self._predict(inc, cti_flagged=cti_flagged)
         return inc
 
-    def _predict(self, incident: Incident, k: int = 2) -> KillChainPrediction | None:
+    def _velocity(self, incident: Incident) -> float:
+        """Eventos por minuto del incidente. Con un único hallazgo, 0.0 (no hay ritmo que medir)."""
+        duracion_min = (incident.end - incident.start).total_seconds() / 60.0
+        if duracion_min <= 0:
+            return 0.0
+        return len(incident.findings) / duracion_min
+
+    def _predict(self, incident: Incident, k: int = 2,
+                cti_flagged: bool = False) -> KillChainPrediction | None:
         """
         Predice la fase siguiente con el modelo de secuencia configurado.
 
@@ -275,7 +299,17 @@ class Correlator:
         current = max(known, key=mitre.tactic_index)
         idx = mitre.tactic_index(current)
 
-        ranked = self.sequence_model.predict_next(tactics, k=k)
+        ranked_crudo = self.sequence_model.predict_next(tactics, k=k)
+
+        # Fase 4-D (tarea D1): el modelo no se toca; se reordena/reescala su
+        # salida con contexto que el modelo de secuencia puro no ve.
+        contexto = PredictionContext(
+            entity_type=infer_entity_type(incident.entity),
+            accumulated_severity=float(incident.risk_score),
+            events_per_minute=self._velocity(incident),
+            cti_flagged=cti_flagged,
+        )
+        ranked = reweight(ranked_crudo, contexto) if ranked_crudo else ranked_crudo
         predicted = [t for t, _ in ranked]
         probabilities = [p for _, p in ranked]
 
@@ -312,6 +346,20 @@ class Correlator:
                     f" El modelo estima además un {p_end:.0%} de probabilidad de que la "
                     "actividad se detenga en esta fase."
                 )
+            factores = []
+            if contexto.entity_type == "server":
+                factores.append("es un servidor")
+            if contexto.accumulated_severity >= 75.0:
+                factores.append(f"severidad acumulada alta ({contexto.accumulated_severity:.0f}/100)")
+            if contexto.events_per_minute >= 5.0:
+                factores.append(f"ritmo alto ({contexto.events_per_minute:.1f} eventos/min)")
+            if contexto.cti_flagged:
+                factores.append("CTI confirma contexto de campaña conocida")
+            if factores:
+                rationale += (
+                    f" Ajustado por contexto ({', '.join(factores)}): las fases de "
+                    "post-explotación se ponderaron al alza."
+                )
         else:
             rationale = (
                 f"Se observó la progresión: {chain_es}. No quedan fases posteriores por "
@@ -329,4 +377,5 @@ class Correlator:
             probabilities=probabilities,
             confidence_basis=basis,
             probability_of_end=p_end,
+            context=contexto.to_dict(),
         )

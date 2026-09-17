@@ -1,0 +1,48 @@
+title: Inhibit System Recovery (Shadow Copy / Backup Deletion) (CyberSentinel Adaptation)
+id: 0ca75daf-45f7-4e56-bf94-468a89962a36
+status: test
+description: >-
+  Detects deletion of Volume Shadow Copies, backup catalogs or disabling of
+  Windows recovery, the classic pre-encryption step of ransomware to prevent
+  victims from restoring files without paying.
+
+  ADAPTATION NOTES:
+  - Field 'CommandLine' maps to SecurityEvent.command_line via FIELD_MAP.
+  - Logsource category 'process_creation' maps to event.category='process'.
+  - This fills the 'impact' tactic gap documented as not_covered in
+    docs/SIGMA-EXCLUSIONS.md: bcdedit/vssadmin/wbadmin produce ordinary
+    process_creation telemetry, which SecurityEvent does carry.
+references:
+  - https://attack.mitre.org/techniques/T1490/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_susp_vssadmin_delete_shadows.yml
+author: CyberSentinel adaptation (original SigmaHQ community)
+date: 2026-09-17
+logsource:
+  product: cybersentinel
+  category: process_creation
+detection:
+  vssadmin:
+    CommandLine|contains|all:
+      - 'vssadmin'
+      - 'delete'
+      - 'shadow'
+  wbadmin:
+    CommandLine|contains|all:
+      - 'wbadmin'
+      - 'delete'
+  bcdedit:
+    CommandLine|contains|all:
+      - 'bcdedit'
+      - 'recoveryenabled'
+      - 'no'
+  wmic_shadowcopy:
+    CommandLine|contains|all:
+      - 'shadowcopy'
+      - 'delete'
+  condition: vssadmin or wbadmin or bcdedit or wmic_shadowcopy
+falsepositives:
+  - Legitimate backup-retention or disk-cleanup maintenance scripts.
+level: critical
+tags:
+  - attack.impact
+  - attack.t1490

@@ -172,10 +172,21 @@ operador que una regla ya seleccionada, sin añadir contexto diferencial:
 | Táctica MITRE | Razón | Cobertura posible en futuro |
 |---|---|---|
 | Initial Access | Requiere email/web delivery metadata | Integrar SMTP parser, proxy logs |
-| Privilege Escalation | Requiere token/integrity fields | Sysmon EventID 4688 completo |
 | Collection | Requiere file/clipboard/screen events | File event logging pipeline |
-| Impact | Requiere disk/encryption events | System-level agent |
 | Resource Development | Sin telemetría interna | Out of scope (OSINT/external) |
+
+**Actualización Fase 4-A (2026-09-17):** Privilege Escalation e Impact se
+cerraron parcialmente, pero **no** por el camino que esta tabla anticipaba.
+No se ganaron los campos de token/integrity ni un agente a nivel de disco que
+faltaban — siguen sin existir. Se cubrieron detectando, en `command_line`, la
+**herramienta que un operador usa** para ejecutar la técnica (`vssadmin
+delete shadows`, `bcdedit /set recoveryenabled no`, `visudo`/`/etc/sudoers`),
+no el efecto de bajo nivel que esa herramienta produce. Es una cobertura real
+pero más frágil: un atacante que edite `/etc/sudoers` con otro editor, o que
+borre shadow copies vía una API en vez de `vssadmin.exe`, no dispara nada.
+Ver `cs-inhibit-system-recovery`, `cs-service-stop-security` (Impact) y
+`cs-sudoers-modification` (Privilege Escalation) en
+`config/sigma_rules/manifest.yaml`.
 
 ---
 

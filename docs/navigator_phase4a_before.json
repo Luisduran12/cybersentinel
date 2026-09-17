@@ -1,0 +1,184 @@
+{
+  "name": "CyberSentinel — antes de Fase 4-A",
+  "versions": {
+    "attack": "19",
+    "navigator": "5.1.0",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "7 de 222 técnicas de la matriz empresarial tienen al menos una regla (3.2%). Las técnicas sin color son las que el sistema no detecta hoy.",
+  "filters": {
+    "platforms": [
+      "Windows",
+      "Linux",
+      "macOS",
+      "Network"
+    ]
+  },
+  "sorting": 3,
+  "layout": {
+    "layout": "side",
+    "showName": true,
+    "showID": true
+  },
+  "hideDisabled": false,
+  "gradient": {
+    "colors": [
+      "#ffffff",
+      "#2f7ed8"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "cubierta por al menos una regla",
+      "color": "#2f7ed8"
+    }
+  ],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#dddddd",
+  "selectTechniquesAcrossTactics": true,
+  "techniques": [
+    {
+      "techniqueID": "T1021",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "RULE-0005: Conexion RDP entre hosts internos (posible movimiento lateral) (severidad medium)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Remote Services"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1046",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "RULE-0004: Escaneo de servicios de red (severidad medium)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Network Service Discovery"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1048",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "RULE-0007: Exfiltracion por gran volumen de datos (severidad critical)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Exfiltration Over Alternative Protocol"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1053",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "RULE-0003: Creacion de tarea programada (posible persistencia) (severidad medium)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Scheduled Task/Job"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1059",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "RULE-0002: PowerShell ofuscado o codificado (severidad high)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Command and Scripting Interpreter"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1071",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "RULE-0006: Posible baliza C2 (conexiones repetidas a puerto de herramientas ofensivas) (severidad high)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Application Layer Protocol"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1110",
+      "score": 1,
+      "color": "#2f7ed8",
+      "comment": "RULE-0001: Fuerza bruta de autenticacion (severidad high)",
+      "enabled": true,
+      "showSubtechniques": false,
+      "metadata": [
+        {
+          "name": "nombre",
+          "value": "Brute Force"
+        },
+        {
+          "name": "reglas",
+          "value": "1"
+        }
+      ]
+    }
+  ],
+  "metadata": [
+    {
+      "name": "generado por",
+      "value": "CyberSentinel"
+    },
+    {
+      "name": "fecha",
+      "value": "2026-09-17T18:22:40+00:00"
+    },
+    {
+      "name": "matriz",
+      "value": "MITRE ATT&CK v19.2 (222 técnicas, 475 subtécnicas, 15 tácticas)"
+    }
+  ]
+}

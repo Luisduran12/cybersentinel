@@ -22,7 +22,9 @@ from rich.panel import Panel
 from rich.table import Table
 from rich import box
 
-from .config import ROOT, Settings, DEFAULT_POLICY_PATH, DEFAULT_RULES_DIR
+from .config import (
+    ROOT, Settings, DEFAULT_POLICY_PATH, DEFAULT_RULES_DIR, DEFAULT_SIGMA_RULES_DIR,
+)
 from .correlation import mitre
 from .detection import RulesEngine
 from .ingestion import Normalizer
@@ -32,6 +34,7 @@ from .governance import GovernancePolicy, AuditLog
 console = Console()
 
 DEFAULT_RULES = DEFAULT_RULES_DIR
+DEFAULT_SIGMA_RULES = DEFAULT_SIGMA_RULES_DIR
 DEFAULT_POLICY = DEFAULT_POLICY_PATH
 
 DECISION_STYLE = {
@@ -98,6 +101,7 @@ def cmd_analyze(args: argparse.Namespace) -> int:
         settings.prediction.model_path = args.model
     pipeline = Pipeline(
         rules_dir=DEFAULT_RULES,
+        sigma_rules_dir=DEFAULT_SIGMA_RULES,
         policy=_load_policy(),
         audit_path=args.audit,
         settings=settings,

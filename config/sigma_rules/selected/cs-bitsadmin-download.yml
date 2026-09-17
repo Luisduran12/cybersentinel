@@ -1,0 +1,38 @@
+title: BITSAdmin Download or Job Persistence (CyberSentinel Adaptation)
+id: 34ca0d82-d93f-4ea4-86e4-804b4c0885c3
+status: test
+description: >-
+  Detects use of bitsadmin.exe to create a BITS transfer job, a LOLBin
+  technique used to download payloads or persist via /Create + /AddFile
+  while evading process-based egress monitoring.
+
+  ADAPTATION NOTES:
+  - Field 'CommandLine' maps to SecurityEvent.command_line via FIELD_MAP.
+  - Logsource category 'process_creation' maps to event.category='process'.
+  - Adapted from SigmaHQ's bitsadmin download rule; Image path check omitted
+    (process_name is basename-only in SecurityEvent).
+references:
+  - https://attack.mitre.org/techniques/T1197/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_bitsadmin_download.yml
+author: CyberSentinel adaptation (original SigmaHQ community)
+date: 2026-09-17
+logsource:
+  product: cybersentinel
+  category: process_creation
+detection:
+  selection:
+    CommandLine|contains: 'bitsadmin'
+  transfer:
+    CommandLine|contains:
+      - '/transfer'
+      - '/create'
+      - '/addfile'
+  condition: selection and transfer
+falsepositives:
+  - Legitimate software update mechanisms using BITS.
+level: medium
+tags:
+  - attack.defense-evasion
+  - attack.persistence
+  - attack.command-and-control
+  - attack.t1197

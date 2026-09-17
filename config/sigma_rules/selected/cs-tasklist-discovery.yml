@@ -1,0 +1,30 @@
+title: Process Discovery via Tasklist (CyberSentinel Adaptation)
+id: 8b377479-b81f-47aa-81c2-11bfe2466293
+status: test
+description: >-
+  Detects execution of tasklist.exe, used by an operator or malware to
+  enumerate running processes (e.g. to check for AV/EDR presence) before
+  choosing a further action.
+
+  ADAPTATION NOTES:
+  - Field 'Image' maps to SecurityEvent.process_name (basename only).
+  - Logsource category 'process_creation' maps to event.category='process'.
+  - Low severity by design: tasklist alone is very common and low-signal;
+    value comes from correlation with what follows it.
+references:
+  - https://attack.mitre.org/techniques/T1057/
+author: CyberSentinel (native)
+date: 2026-09-17
+logsource:
+  product: cybersentinel
+  category: process_creation
+detection:
+  selection:
+    Image|endswith: 'tasklist.exe'
+  condition: selection
+falsepositives:
+  - Routine administration and troubleshooting scripts.
+level: low
+tags:
+  - attack.discovery
+  - attack.t1057

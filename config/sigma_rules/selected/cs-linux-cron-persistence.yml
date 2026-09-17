@@ -1,0 +1,37 @@
+title: Linux Persistence via Cron (CyberSentinel Native)
+id: 99636297-b604-4dd1-8b23-587550ea272a
+status: test
+description: >-
+  Detects interactive crontab editing or a direct write to a system-wide
+  cron path, the Linux counterpart to Windows scheduled-task persistence
+  (already covered by cs-schtasks-create for Windows).
+
+  ADAPTATION NOTES:
+  - Field 'CommandLine' maps to SecurityEvent.command_line via FIELD_MAP;
+    on Linux this carries the syslog/journald message text or the auditd
+    proctitle, not a Windows-style command line, but the same field name
+    is reused (CyberSentinel normalizes both onto command_line).
+  - Logsource category 'process_creation' maps to event.category='process'.
+references:
+  - https://attack.mitre.org/techniques/T1053/003/
+author: CyberSentinel (native)
+date: 2026-09-17
+logsource:
+  product: cybersentinel
+  category: process_creation
+detection:
+  crontab_edit:
+    CommandLine|contains|all:
+      - 'crontab'
+      - '-e'
+  cron_path_write:
+    CommandLine|contains:
+      - '/etc/cron.d/'
+      - '/etc/crontab'
+  condition: crontab_edit or cron_path_write
+falsepositives:
+  - Legitimate administration adding a scheduled maintenance job.
+level: medium
+tags:
+  - attack.persistence
+  - attack.t1053.003

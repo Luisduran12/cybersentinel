@@ -1,0 +1,36 @@
+title: LSASS Memory Dump via Procdump or Comsvcs (CyberSentinel Adaptation)
+id: 7fe8c3fe-e714-4973-aae9-d22876e93009
+status: test
+description: >-
+  Detects command lines that dump the LSASS process memory, either via
+  Sysinternals procdump.exe targeting lsass or via rundll32 invoking
+  comsvcs.dll's MiniDump export — both are common credential-dumping
+  techniques that avoid dropping a dedicated dumping tool.
+
+  ADAPTATION NOTES:
+  - Field 'CommandLine' maps to SecurityEvent.command_line via FIELD_MAP.
+  - Logsource category 'process_creation' maps to event.category='process'.
+references:
+  - https://attack.mitre.org/techniques/T1003/001/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_lsass_dump_comsvcs.yml
+author: CyberSentinel adaptation (original SigmaHQ community)
+date: 2026-09-17
+logsource:
+  product: cybersentinel
+  category: process_creation
+detection:
+  procdump:
+    CommandLine|contains|all:
+      - 'procdump'
+      - 'lsass'
+  comsvcs:
+    CommandLine|contains|all:
+      - 'comsvcs'
+      - 'minidump'
+  condition: procdump or comsvcs
+falsepositives:
+  - Authorized incident-response memory forensics.
+level: critical
+tags:
+  - attack.credential-access
+  - attack.t1003.001

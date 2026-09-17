@@ -1,0 +1,27 @@
+title: Network Connections Discovery via netstat (CyberSentinel Adaptation)
+id: d038c316-b2c3-4c6d-90f4-92816b200899
+status: test
+description: >-
+  Detects execution of netstat.exe, used to enumerate active network
+  connections and listening ports as part of reconnaissance.
+
+  ADAPTATION NOTES:
+  - Field 'Image' maps to SecurityEvent.process_name (basename only).
+  - Logsource category 'process_creation' maps to event.category='process'.
+references:
+  - https://attack.mitre.org/techniques/T1049/
+author: CyberSentinel (native)
+date: 2026-09-17
+logsource:
+  product: cybersentinel
+  category: process_creation
+detection:
+  selection:
+    Image|endswith: 'netstat.exe'
+  condition: selection
+falsepositives:
+  - Routine network troubleshooting.
+level: low
+tags:
+  - attack.discovery
+  - attack.t1049

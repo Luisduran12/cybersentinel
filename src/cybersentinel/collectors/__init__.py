@@ -10,6 +10,7 @@ from .firewall import FirewallCollector  # noqa: F401
 from .linux import LinuxCollector  # noqa: F401
 from .suricata import SuricataCollector  # noqa: F401
 from .sysmon import SysmonCollector  # noqa: F401
+from .wazuh import WazuhCollector  # noqa: F401
 
 #: Collectors disponibles por nombre de fuente.
 COLLECTORS: dict[str, type[Collector]] = {
@@ -17,6 +18,7 @@ COLLECTORS: dict[str, type[Collector]] = {
     LinuxCollector.source_type: LinuxCollector,
     FirewallCollector.source_type: FirewallCollector,
     SuricataCollector.source_type: SuricataCollector,
+    WazuhCollector.source_type: WazuhCollector,
 }
 
 

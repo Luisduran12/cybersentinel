@@ -52,6 +52,13 @@ class DetectionEvidence:
     temporal_context: list[str] = field(default_factory=list)
     mitre_context: list[str] = field(default_factory=list)
     cti_hits: list[ThreatIntelHit] = field(default_factory=list)
+    #: Desviaciones de comportamiento (Fase 4-B) frente al baseline de la
+    #: entidad. A diferencia de rule_matches, no vienen de una firma: son la
+    #: señal de "esto no es lo normal para este usuario/host".
+    behavioral_deviations: list[Any] = field(default_factory=list)
+    #: Resultados de feeds CTI en vivo (Fase 4-C: AbuseIPDB, OTX). Distinto de
+    #: `cti_hits`, que viene del bundle STIX local sin red.
+    live_cti_hits: list[Any] = field(default_factory=list)
 
     # --- Trazabilidad ---
     #: Ejecución a la que pertenece esta evidencia.
@@ -110,8 +117,21 @@ class DetectionEvidence:
             return "RULE_MATCH"
         if self.anomaly_score >= 0.5:
             return "ANOMALY_ONLY"
+        if self.behavioral_deviations:
+            return "BEHAVIORAL_ANOMALY"
         return "NO_DETECTION"
-    
+
+    @property
+    def behavioral_score(self) -> float:
+        """
+        Suma de las desviaciones de comportamiento, cada una ponderada por la
+        confianza de su baseline. Se suma, no se toma el máximo: un evento a
+        deshora Y con un proceso nunca visto es más sospechoso que cualquiera
+        de las dos señales por separado, igual que varios hits de CTI se
+        acumulan en vez de quedarse con el peor.
+        """
+        return sum(d.score * d.confidence for d in self.behavioral_deviations)
+
     @property
     def hybrid_score(self) -> float:
         """
@@ -122,16 +142,26 @@ class DetectionEvidence:
         # 1. Las reglas deterministas aportan fuerte confianza
         if self.rule_matches:
             base += 50.0
-        
+
         # 2. El ML modula el riesgo basado en cuán raro es
         # anomaly_score está en [0, 1]. Si es mayor a 0.5 es anómalo.
         ml_boost = max(0, (self.anomaly_score - 0.5) * 40.0)
         base += ml_boost
-        
+
         # 3. Contexto temporal (ej. secuencias previas) aporta confianza extra
         if self.temporal_context:
             base += 30.0
-            
+
+        # 3.5. Desviaciones de comportamiento (Fase 4-B): ponderadas por la
+        # confianza del baseline, para que una desviación "segura" (baseline
+        # con mucha historia) pese más que una con pocos datos detrás.
+        # Multiplicador 0.6: con baseline plenamente confiable (confidence=1),
+        # una única desviación fuerte (volumen, score=100) ya cruza
+        # ALERT_THRESHOLD (60 > 50) por sí sola, igual que una regla; con poca
+        # confianza, ninguna combinación de desviaciones debería.
+        base += self.behavioral_score * 0.6
+
+
         # 4. Evidencia CTI aporta confianza determinista adicional basada en severidad
         for hit in self.cti_hits:
             labels = set(hit.indicator.labels)
@@ -152,7 +182,15 @@ class DetectionEvidence:
             else:
                 # Fallback por defecto si tiene labels no mapeados pero es un match
                 base += 10.0
-            
+
+        # 5. CTI en vivo (Fase 4-C: AbuseIPDB, OTX). Escala 0..100 propia de
+        # cada feed normalizada a una fracción de 40 puntos: un score de 95
+        # de AbuseIPDB (equivalente a "C2 confirmado por la comunidad") aporta
+        # 38 puntos, comparable en magnitud a un hit de CTI STIX "malicious".
+        for hit in self.live_cti_hits:
+            if getattr(hit, "malicious", False) and getattr(hit, "score", None) is not None:
+                base += (hit.score / 100.0) * 40.0
+
         return min(100.0, base)
 
     @property
@@ -184,11 +222,15 @@ class DetectionEvidence:
             "mitre_context": self.mitre_context or NOT_AVAILABLE,
             "mitre_tactics": self.mitre_tactics or NOT_AVAILABLE,
             "cti_hits": [hit.to_dict() for hit in self.cti_hits] or NOT_AVAILABLE,
+            "live_cti_hits": [hit.to_dict() for hit in self.live_cti_hits] or NOT_AVAILABLE,
             "rag_context": [c.to_dict() for c in self.rag_context] or NOT_AVAILABLE,
             "explanation": self.explanation or NOT_AVAILABLE,
             "llm_status": self.llm_status,
             "fallback_used": self.fallback_used,
             "stage_status": self.stage_status,
             "entity": self.entity or NOT_AVAILABLE,
+            "behavioral_deviations": (
+                [d.to_dict() for d in self.behavioral_deviations] or NOT_AVAILABLE
+            ),
             "hybrid_score": round(self.hybrid_score, 2),
         }

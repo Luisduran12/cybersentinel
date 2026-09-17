@@ -87,6 +87,10 @@ QUEUE_MAXSIZE = int(os.environ.get("CYBERSENTINEL_QUEUE_MAXSIZE", "20000"))
 BATCH_SIZE = int(os.environ.get("CYBERSENTINEL_BATCH_SIZE", "500"))
 DB_PATH = os.environ.get("CYBERSENTINEL_DB", str(ROOT / "data" / "runtime" / "events.db"))
 RULES_DIR = os.environ.get("CYBERSENTINEL_RULES", str(ROOT / "config" / "rules"))
+#: Reglas Sigma públicas (pySigma), documentadas en config/sigma_rules/manifest.yaml.
+#: "" desactiva la carga (útil para pruebas que quieren el motor mínimo).
+SIGMA_RULES_DIR = os.environ.get(
+    "CYBERSENTINEL_SIGMA_RULES", str(ROOT / "config" / "sigma_rules" / "selected"))
 AUDIT_PATH = os.environ.get("CYBERSENTINEL_AUDIT", str(ROOT / "data" / "runtime" / "audit.jsonl"))
 IDENTITY_DB = os.environ.get(
     "CYBERSENTINEL_IDENTITY_DB", str(ROOT / "data" / "runtime" / "identities.db"))
@@ -111,6 +115,8 @@ class IngestService:
     def __init__(
         self,
         rules_dir: str | Path = RULES_DIR,
+        sigma_rules_dir: str | Path | None = SIGMA_RULES_DIR,
+        baseline_path: str | Path | None = None,
         db_path: str | Path = DB_PATH,
         audit_path: str | Path | None = AUDIT_PATH,
         queue_maxsize: int = QUEUE_MAXSIZE,
@@ -122,8 +128,14 @@ class IngestService:
     ) -> None:
         self.normalizer = Normalizer()
         # El MISMO Pipeline que usa la CLI. No hay una versión "de servicio".
+        # baseline_path sigue el mismo patrón que incidents_path: junto a
+        # db_path por defecto, para que cada despliegue (o cada prueba con su
+        # propio tmp_path) tenga sus perfiles aislados sin tener que pasarlo
+        # explícitamente en cada sitio.
         self.pipeline = Pipeline(
-            rules_dir=rules_dir, audit_path=audit_path, **pipeline_kwargs
+            rules_dir=rules_dir, sigma_rules_dir=(sigma_rules_dir or None),
+            baseline_path=(baseline_path or Path(db_path).with_name("baselines.json")),
+            audit_path=audit_path, **pipeline_kwargs
         )
         self.queue = IngestQueue(maxsize=queue_maxsize)
         # Nada se acepta hasta que está escrito aquí. Ver `wal.py`.

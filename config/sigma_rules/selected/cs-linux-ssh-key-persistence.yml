@@ -1,0 +1,28 @@
+title: Linux SSH Authorized Key Added (CyberSentinel Native)
+id: e16329af-f7ed-4454-b176-c863afa66d6d
+status: test
+description: >-
+  Detects a write to an authorized_keys file, a common persistence
+  technique granting passwordless SSH access without creating a new
+  system account.
+
+  ADAPTATION NOTES:
+  - Field 'CommandLine' maps to SecurityEvent.command_line via FIELD_MAP.
+  - Logsource category 'process_creation' maps to event.category='process'.
+references:
+  - https://attack.mitre.org/techniques/T1098/004/
+author: CyberSentinel (native)
+date: 2026-09-17
+logsource:
+  product: cybersentinel
+  category: process_creation
+detection:
+  selection:
+    CommandLine|contains: 'authorized_keys'
+  condition: selection
+falsepositives:
+  - Legitimate provisioning (cloud-init, Ansible, onboarding scripts) adding a key.
+level: medium
+tags:
+  - attack.persistence
+  - attack.t1098.004

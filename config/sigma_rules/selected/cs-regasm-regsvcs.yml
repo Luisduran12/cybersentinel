@@ -1,0 +1,31 @@
+title: Regasm/Regsvcs Execution (CyberSentinel Adaptation)
+id: 4aeccdba-b649-4387-a919-1c9510db4fd2
+status: test
+description: >-
+  Detects execution of regasm.exe or regsvcs.exe, .NET assembly registration
+  utilities abused to proxy execution of malicious code (bypassing
+  application allowlisting) via a specially crafted assembly.
+
+  ADAPTATION NOTES:
+  - Field 'Image' maps to SecurityEvent.process_name (basename only).
+  - Logsource category 'process_creation' maps to event.category='process'.
+references:
+  - https://attack.mitre.org/techniques/T1218/009/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_regasm_regsvcs.yml
+author: CyberSentinel adaptation (original SigmaHQ community)
+date: 2026-09-17
+logsource:
+  product: cybersentinel
+  category: process_creation
+detection:
+  selection:
+    Image|endswith:
+      - 'regasm.exe'
+      - 'regsvcs.exe'
+  condition: selection
+falsepositives:
+  - Legitimate .NET COM assembly registration during software installation.
+level: high
+tags:
+  - attack.defense-evasion
+  - attack.t1218.009

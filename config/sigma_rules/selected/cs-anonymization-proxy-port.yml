@@ -1,0 +1,35 @@
+title: Connection to Common Anonymization Proxy Port (CyberSentinel Native)
+id: 6514cf18-7008-4095-ac08-7cc13f4cca59
+status: test
+description: >-
+  Detects an outbound connection to a destination port commonly used by
+  Tor (9050/9051/9150) or a generic SOCKS proxy (1080), which can indicate
+  an attempt to anonymize C2 traffic or exfiltration.
+
+  ADAPTATION NOTES:
+  - Fields 'dst_port' map directly (CyberSentinel-native field name).
+  - Logsource category 'network_connection' maps to event.category='network'.
+  - Stateless single-connection signal: legitimate Tor Browser/proxy use on
+    a workstation will also match, hence 'falsepositives' below and a
+    medium (not high) level.
+references:
+  - https://attack.mitre.org/techniques/T1090/
+author: CyberSentinel (native)
+date: 2026-09-17
+logsource:
+  product: cybersentinel
+  category: network_connection
+detection:
+  selection:
+    dst_port:
+      - 9050
+      - 9051
+      - 9150
+      - 1080
+  condition: selection
+falsepositives:
+  - Legitimate, policy-approved Tor Browser or corporate SOCKS proxy usage.
+level: medium
+tags:
+  - attack.command-and-control
+  - attack.t1090

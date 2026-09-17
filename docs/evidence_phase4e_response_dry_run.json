@@ -1,0 +1,83 @@
+{
+  "descripcion": "Evidencia real de Bloque E (DRY_RUN=true, el default): beacon C2 real detectado por RULE-0006, ResponsePlanner + ResponseExecutor reales generando acciones Nivel1 (auto-ejecutadas, simuladas por dry_run) y Nivel2 (esperando aprobacion humana, con el comando ya generado).",
+  "dry_run_global": true,
+  "acciones": [
+    {
+      "action_id": "8bc51a2f-2cf7-4cfb-9be2-ec2e80a79bf1",
+      "action_type": "enviar_webhook",
+      "status": "completed",
+      "dry_run": true,
+      "command": null,
+      "result": {
+        "status": "DRY_RUN",
+        "detail": "Webhook no enviado (dry_run).",
+        "would_send": {
+          "text": "[c2-2] Alertar al analista de guardia."
+        },
+        "at": "2026-09-17T19:27:27+00:00"
+      },
+      "requested_by": "pipeline",
+      "approved_by": null,
+      "audit_record": null
+    },
+    {
+      "action_id": "a6f76928-a57f-4e0f-8ca0-c2fc63d35b65",
+      "action_type": "bloquear_ip",
+      "status": "requested",
+      "dry_run": true,
+      "command": "iptables -A INPUT -s 203.0.113.66 -j DROP  # o regla equivalente en el firewall perimetral",
+      "result": null,
+      "requested_by": "pipeline",
+      "approved_by": null,
+      "audit_record": null
+    },
+    {
+      "action_id": "b3bd8af4-f474-4de8-8112-25655b874b05",
+      "action_type": "bloquear_ioc_local",
+      "status": "completed",
+      "dry_run": true,
+      "command": null,
+      "result": {
+        "status": "DRY_RUN",
+        "detail": "IOC no registrado (dry_run).",
+        "would_add": {
+          "type": "ip",
+          "value": "203.0.113.66",
+          "reason": "Cortar canal C2 / exfiltración.",
+          "added_at": "2026-09-17T19:27:27+00:00"
+        },
+        "at": "2026-09-17T19:27:27+00:00"
+      },
+      "requested_by": "pipeline",
+      "approved_by": null,
+      "audit_record": null
+    },
+    {
+      "action_id": "7a163920-9f9f-4d42-85d4-8b0a65b4a803",
+      "action_type": "crear_ticket",
+      "status": "completed",
+      "dry_run": true,
+      "command": null,
+      "result": {
+        "status": "DRY_RUN",
+        "detail": "Ticket no creado (dry_run).",
+        "would_create": {
+          "action_id": "7a163920-9f9f-4d42-85d4-8b0a65b4a803",
+          "incident_id": "c2-2",
+          "summary": "Preservar evidencia forense antes de contener.",
+          "target": {
+            "host": "WKS-01",
+            "user": null,
+            "ip": "203.0.113.66",
+            "entity": "WKS-01"
+          },
+          "priority": "high"
+        },
+        "at": "2026-09-17T19:27:27+00:00"
+      },
+      "requested_by": "pipeline",
+      "approved_by": null,
+      "audit_record": null
+    }
+  ]
+}

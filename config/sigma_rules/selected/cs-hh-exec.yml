@@ -1,0 +1,29 @@
+title: Compiled HTML Help Execution via hh.exe (CyberSentinel Adaptation)
+id: 30e11d63-e414-4a87-8fe1-3756c113d069
+status: test
+description: >-
+  Detects execution of hh.exe (Microsoft HTML Help), which can be abused to
+  execute arbitrary scripts embedded inside a .chm file.
+
+  ADAPTATION NOTES:
+  - Field 'Image' maps to SecurityEvent.process_name (basename only).
+  - Logsource category 'process_creation' maps to event.category='process'.
+references:
+  - https://attack.mitre.org/techniques/T1218/001/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_hh_execution.yml
+author: CyberSentinel adaptation (original SigmaHQ community)
+date: 2026-09-17
+logsource:
+  product: cybersentinel
+  category: process_creation
+detection:
+  selection:
+    Image|endswith: 'hh.exe'
+  condition: selection
+falsepositives:
+  - Legitimate help file viewing (rare in modern Windows).
+level: high
+tags:
+  - attack.defense-evasion
+  - attack.execution
+  - attack.t1218.001
