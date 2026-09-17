@@ -102,7 +102,7 @@ class ResultStore:
                 json.dumps(e.mitre_context, ensure_ascii=False),
                 json.dumps(e.mitre_tactics, ensure_ascii=False),
                 len(e.cti_hits),
-                f"{e.run_id}:{e.event_ref}" if es_incidente else None,
+                e.event_id if es_incidente else None,
                 e.llm_status,
                 int(e.fallback_used),
             ))

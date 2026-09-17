@@ -51,15 +51,17 @@ logger = logging.getLogger(__name__)
 
 #: Estados del ciclo de vida. Cortos y en número mínimo: cada estado que nadie
 #: sabe explicar es un estado en el que los incidentes se quedan atascados.
-ESTADOS = ("new", "triaged", "in_progress", "closed")
+ESTADOS = ("new", "triaged", "confirmed", "false_positive", "uncertain", "resolved")
 
 #: Transiciones permitidas. Lo que no está aquí se rechaza con un error que
 #: dice qué sí se puede hacer.
 TRANSICIONES: dict[str, tuple[str, ...]] = {
-    "new": ("triaged", "in_progress", "closed"),
-    "triaged": ("in_progress", "closed", "new"),
-    "in_progress": ("closed", "triaged"),
-    "closed": ("triaged",),   # reabrir vuelve a triaje, no a «en curso»
+    "new": ("triaged", "confirmed", "false_positive", "uncertain", "resolved"),
+    "triaged": ("confirmed", "false_positive", "uncertain", "resolved", "new"),
+    "confirmed": ("resolved", "triaged"),
+    "false_positive": ("resolved", "triaged"),
+    "uncertain": ("resolved", "triaged"),
+    "resolved": ("triaged",),   # reabrir vuelve a triaje
 }
 
 #: Motivos de cierre. Cerrar sin uno deja un incidente que no enseña nada:
@@ -255,9 +257,8 @@ class IncidentStore:
         Crea un incidente por cada resultado que superó el umbral.
 
         `INSERT OR IGNORE`: reprocesar el mismo lote no duplica incidentes ni
-        pisa el trabajo del analista. La clave es `<run_id>:<event_ref>`, la
-        misma que `ResultStore` usa como `incident_id`, para que ambas tablas
-        se puedan unir sin inventar correspondencias.
+        pisa el trabajo del analista. La clave es `event_id`, la misma que
+        `ResultStore` usa como `incident_id`, para garantizar la idempotencia.
         """
         eventos_por_ref = eventos_por_ref or {}
         ahora = _ahora()
@@ -267,7 +268,7 @@ class IncidentStore:
             e = r.evidence
             if e.hybrid_score < umbral:
                 continue
-            incident_id = f"{e.run_id}:{e.event_ref}"
+            incident_id = e.event_id
             evento = eventos_por_ref.get(e.event_ref)
             crudo = evento.to_dict() if evento is not None and hasattr(evento, "to_dict") else {}
             narrativa, sin_modelo = _narrativa(r, e)
@@ -353,7 +354,7 @@ class IncidentStore:
             # Sin estado antes que cerrado, y dentro de eso lo más grave y
             # reciente primero: el orden por defecto de un panel es una
             # decisión de producto, no un detalle.
-            "ORDER BY CASE state WHEN 'closed' THEN 1 ELSE 0 END, "
+            "ORDER BY CASE state WHEN 'resolved' THEN 1 ELSE 0 END, "
             "CASE severity WHEN 'critical' THEN 0 WHEN 'high' THEN 1 "
             "WHEN 'medium' THEN 2 ELSE 3 END, detected_at DESC "
             "LIMIT ? OFFSET ?", [*parametros, limite, max(0, filtro.offset)],
@@ -415,12 +416,12 @@ class IncidentStore:
             "SELECT resolution, COUNT(*) FROM incidents WHERE resolution IS NOT NULL "
             "GROUP BY resolution").fetchall())
         abiertos = con.execute(
-            "SELECT COUNT(*) FROM incidents WHERE state != 'closed'").fetchone()[0]
+            "SELECT COUNT(*) FROM incidents WHERE state != 'resolved'").fetchone()[0]
         sin_duenno = con.execute(
-            "SELECT COUNT(*) FROM incidents WHERE owner IS NULL AND state != 'closed'"
+            "SELECT COUNT(*) FROM incidents WHERE owner IS NULL AND state != 'resolved'"
         ).fetchone()[0]
         criticos = con.execute(
-            "SELECT COUNT(*) FROM incidents WHERE severity = 'critical' AND state != 'closed'"
+            "SELECT COUNT(*) FROM incidents WHERE severity = 'critical' AND state != 'resolved'"
         ).fetchone()[0]
         tecnicas = con.execute(
             "SELECT techniques FROM incidents WHERE techniques != '[]' LIMIT 2000").fetchall()
@@ -472,13 +473,13 @@ class IncidentStore:
                     raise IncidentError(
                         f"no se puede pasar de {actual['state']!r} a {state!r}; "
                         f"desde {actual['state']!r} solo: {list(permitidos)}")
-                if state == "closed":
+                if state == "resolved":
                     if resolution not in RESOLUCIONES:
                         raise IncidentError(
                             "cerrar exige una resolución válida: "
                             f"{list(RESOLUCIONES)}")
                     cambios += [("resolution", resolution), ("closed_at", ahora)]
-                elif actual["state"] == "closed":
+                elif actual["state"] == "resolved":
                     # Reabrir limpia la resolución: dejarla puesta haría creer
                     # que un incidente abierto ya está concluido.
                     cambios += [("resolution", None), ("closed_at", None)]

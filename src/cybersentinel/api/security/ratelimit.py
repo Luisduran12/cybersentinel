@@ -69,15 +69,14 @@ def _num(nombre: str, defecto: float) -> float:
 #: persona pulsa botones. Darles el mismo límite obliga a elegir entre ahogar
 #: al sensor o dejar barra libre al navegador comprometido de un analista.
 DEFAULT_POLICIES: dict[str, LimitPolicy] = {
-    Role.SENSOR.value: LimitPolicy(
+    Role.COLLECTOR.value: LimitPolicy(
         requests_per_second=_num("CYBERSENTINEL_RL_SENSOR_RPS", 50),
         request_burst=int(_num("CYBERSENTINEL_RL_SENSOR_BURST", 100)),
         events_per_second=_num("CYBERSENTINEL_RL_SENSOR_EPS", 20_000),
         event_burst=int(_num("CYBERSENTINEL_RL_SENSOR_EPS_BURST", 40_000)),
     ),
+    Role.VIEWER.value: LimitPolicy(10, 20, 1_000, 2_000),
     Role.ANALYST.value: LimitPolicy(10, 20, 1_000, 2_000),
-    Role.RESPONDER.value: LimitPolicy(10, 20, 1_000, 2_000),
-    Role.AUDITOR.value: LimitPolicy(10, 20, 1_000, 2_000),
     Role.ADMIN.value: LimitPolicy(20, 40, 1_000, 2_000),
     # Sin autenticar: solo se llega a `/auth/token` y a las sondas de salud.
     # El límite es bajo a propósito —es lo que frena la fuerza bruta sobre

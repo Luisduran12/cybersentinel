@@ -37,6 +37,10 @@ SINONIMOS: dict[str, tuple[str, ...]] = {
                  "orig_bytes", "tx_bytes"),
     "bytes_in": ("bytes_in", "bytes_received", "rcvdbyte", "in", "dbytes",
                  "resp_bytes", "rx_bytes"),
+    "packets_out": ("packets_out", "pkts_out", "sentpkt", "spkts",
+                    "orig_pkts", "tx_packets", "packets_sent"),
+    "packets_in": ("packets_in", "pkts_in", "rcvdpkt", "dpkts",
+                   "resp_pkts", "rx_packets", "packets_received"),
     "host":     ("host", "hostname", "devname", "device", "fw", "serial"),
     "timestamp":("timestamp", "@timestamp", "time", "date", "eventtime", "start"),
     "rule":     ("rule", "policyid", "rule_name", "ruleid", "policy"),
@@ -55,7 +59,7 @@ class FirewallCollector(Collector):
 
     def parse(self, raw: Any) -> CollectorResult:
         if isinstance(raw, (bytes, bytearray)):
-            raw = raw.decode("utf-8", errors="replace")
+            raw = self.decode_bytes(bytes(raw))
 
         if isinstance(raw, dict):
             campos = dict(raw)
@@ -115,7 +119,9 @@ class FirewallCollector(Collector):
         propiedades = {"format": "firewall",
                        "raw_action": accion_cruda,
                        "rule": self._busca(campos, "rule"),
-                       "interface": self._busca(campos, "interface")}
+                       "interface": self._busca(campos, "interface"),
+                       "packets_out": self.to_int(self._busca(campos, "packets_out")),
+                       "packets_in": self.to_int(self._busca(campos, "packets_in"))}
 
         return CollectorResult(event=SecurityEvent(
             event_id=str(self.first(campos, "event_id", "sessionid", "id", default="fw")),

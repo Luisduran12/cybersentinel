@@ -317,7 +317,7 @@ class IdentityStore:
         return [dict(f) for f in filas]
 
     # --- Claves de API ----------------------------------------------------
-    def create_api_key(self, label: str, role: Role | str = Role.SENSOR,
+    def create_api_key(self, label: str, role: Role | str = Role.COLLECTOR,
                        *, created_by: str = "cli", expires_in_days: int | None = 365,
                        ) -> IssuedKey:
         """

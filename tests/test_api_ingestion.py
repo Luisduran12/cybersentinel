@@ -84,7 +84,7 @@ def puerta(tmp_path_factory):
     """
     directorio = tmp_path_factory.mktemp("identidades")
     almacen = IdentityStore(directorio / "identities.db")
-    sensor = almacen.create_api_key("suite-de-pruebas", Role.SENSOR)
+    sensor = almacen.create_api_key("suite-de-pruebas", Role.COLLECTOR)
     almacen.create_user("lectora", "contraseña-de-prueba-larga", Role.ANALYST)
 
     abierto = LimitPolicy(10_000, 20_000, 10_000_000, 20_000_000)
@@ -235,7 +235,7 @@ def test_api_devuelve_429_cuando_el_buffer_esta_lleno(tmp_path):
     mide es el buffer, no la cuota.
     """
     almacen = IdentityStore(tmp_path / "identities.db")
-    clave = almacen.create_api_key("prueba-contrapresion", Role.SENSOR)
+    clave = almacen.create_api_key("prueba-contrapresion", Role.COLLECTOR)
     abierto = LimitPolicy(10_000, 20_000, 10_000_000, 20_000_000)
     puerta = SecurityGate(SecurityConfig(
         identity_db=tmp_path / "identities.db",
@@ -313,8 +313,47 @@ def test_e2e_evento_recorre_todo_y_deja_evidencia_en_disco(servicio, cliente):
     # Los incidentes se marcan solo si superan el umbral.
     incidentes = servicio.store.incidents(limit=10)
     for inc in incidentes:
-        assert inc["incident_id"] == f"{inc['run_id']}:{inc['event_ref']}"
+        assert inc["incident_id"] == inc["event_id"]
         assert inc["score"] >= 50.0
+
+
+def test_evento_duplicado_se_procesa_pero_no_duplica_el_incidente(servicio, cliente):
+    """
+    El mismo `event_id` enviado dos veces por HTTP debe procesarse las dos
+    veces —no se descarta en silencio, cada envío es tráfico legítimo hasta
+    que se demuestre lo contrario— pero no debe producir un segundo incidente.
+
+    `incident_id` en `IncidentStore` es literalmente `event_id` y el alta usa
+    `INSERT OR IGNORE`, así que la idempotencia ya existía en el código; lo que
+    faltaba era una prueba que lo recorriera por la API real en vez de solo
+    comprobar la huella del collector.
+    """
+    antes_procesados = servicio.store.count()
+
+    evento = {
+        "source": "sysmon", "event_id": "dup-e2e-0001",
+        "timestamp": (BASE + timedelta(seconds=900)).isoformat(),
+        "action": "process_create", "host": "WKS-DUP", "user": "ana",
+        "command_line": "powershell.exe -nop -w hidden -enc SQBFAFgA",
+        "process_name": "powershell.exe", "outcome": "success",
+    }
+
+    for _ in range(2):
+        r = cliente.post("/api/v1/events", json={"events": [evento]})
+        assert r.status_code == 202, r.text
+        assert r.json()["accepted"] == 1
+
+    total = _esperar_procesados(servicio, antes_procesados + 2)
+    assert total >= antes_procesados + 2, "ambos envíos deben procesarse, no descartarse"
+
+    con = sqlite3.connect(servicio.incidents.path)
+    con.row_factory = sqlite3.Row
+    filas = con.execute(
+        "SELECT COUNT(*) AS n FROM incidents WHERE incident_id = ?",
+        ("dup-e2e-0001",),
+    ).fetchone()
+    con.close()
+    assert filas["n"] == 1, "el evento duplicado no debe crear un segundo incidente"
 
 
 def test_e2e_la_auditoria_registra_los_hallazgos(servicio):

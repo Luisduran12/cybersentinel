@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 #: Tamaño máximo de un evento crudo. Un solo registro de varios MB suele ser un
 #: error del emisor o un intento de agotar memoria, no telemetría legítima.
-MAX_PAYLOAD_BYTES = 1_048_576          # 1 MiB
+MAX_PAYLOAD_BYTES = 5 * 1024 * 1024    # 5 MiB
 
 #: Longitud máxima de un campo de texto dentro del evento (línea de comandos,
 #: mensaje). Se recorta y se marca, para no perder el resto del evento.
@@ -186,3 +186,20 @@ class Collector(ABC):
             return int(str(valor).strip())
         except (TypeError, ValueError):
             return None
+
+    @staticmethod
+    def decode_bytes(raw: bytes) -> str:
+        """
+        Decodifica un registro crudo, con latin1 como salvavidas.
+
+        La inmensa mayoría de la telemetría es UTF-8, pero un sensor mal
+        configurado (o un Windows con locale regional) puede emitir Latin-1:
+        ahí `errors="replace"` sustituiría cada tilde por `�` y arruinaría el
+        campo. Latin-1 asigna un carácter a los 256 valores de un byte, así que
+        nunca lanza `UnicodeDecodeError`: es el último recurso antes de aceptar
+        pérdida de datos.
+        """
+        try:
+            return raw.decode("utf-8")
+        except UnicodeDecodeError:
+            return raw.decode("latin1")

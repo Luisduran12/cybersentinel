@@ -142,6 +142,16 @@ class CreatedKeyResponse(BaseModel):
                  "Si se pierde, revócala y emite otra.")
 
 
+class ActionRequest(BaseModel):
+    action_type: str = Field(..., description="Tipo de acción a ejecutar")
+    target: dict[str, Any] = Field(..., description="Objetivo de la acción (ej. IP, Host)")
+    justification: str = Field(..., description="Motivo por el que se solicita")
+
+
+class ActionReviewRequest(BaseModel):
+    reason: str = Field(..., description="Justificación de la aprobación o rechazo")
+
+
 # --- Contratos del panel SOC ---------------------------------------------
 class IncidentPatch(BaseModel):
     """
@@ -151,7 +161,9 @@ class IncidentPatch(BaseModel):
     pueden quedarse a medias.
     """
 
-    state: str | None = Field(default=None, description="new | triaged | in_progress | closed")
+    state: str | None = Field(
+        default=None,
+        description="new | triaged | confirmed | false_positive | uncertain | resolved")
     owner: str | None = Field(default=None, max_length=128)
     severity: str | None = Field(default=None, description="low | medium | high | critical")
     resolution: str | None = Field(
@@ -167,17 +179,10 @@ class NoteRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=4000)
 
 
-class DecisionRequest(BaseModel):
+class TriageRequest(BaseModel):
     """
-    Veredicto del analista sobre el incidente (human-in-the-loop).
-
-    Alimenta el mismo almacén de decisiones que la CLI `cybersentinel decide`:
-    el panel no crea un circuito paralelo de etiquetado, porque dos fuentes de
-    verdad sobre lo que un humano decidió son cero fuentes de verdad.
+    Decisión del analista sobre el incidente (human-in-the-loop).
     """
 
-    decision: str = Field(..., description="TRUE_POSITIVE | FALSE_POSITIVE | BENIGN | UNCERTAIN")
+    action: str = Field(..., description="CONFIRM | REJECT | UNCERTAIN | COMMENT")
     reason: str = Field(default="", max_length=2000)
-    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
-    close: bool = Field(default=True,
-                        description="Cerrar el incidente con la resolución equivalente.")

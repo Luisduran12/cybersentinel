@@ -328,7 +328,7 @@ def test_los_fallidos_se_escriben_en_disco(tmp_path):
 def desplegado(tmp_path_factory):
     directorio = tmp_path_factory.mktemp("ha")
     almacen = IdentityStore(directorio / "identities.db")
-    sensor = almacen.create_api_key("sensor-ha", Role.SENSOR)
+    sensor = almacen.create_api_key("sensor-ha", Role.COLLECTOR)
     almacen.create_user("admina", CLAVE, Role.ADMIN)
     abierto = LimitPolicy(10_000, 20_000, 10_000_000, 20_000_000)
     puerta = SecurityGate(SecurityConfig(
@@ -520,3 +520,78 @@ def test_el_modo_wal_esta_activo(tmp_path):
     for ruta in (svc.store.path, svc.incidents.path):
         modo = sqlite3.connect(ruta).execute("PRAGMA journal_mode").fetchone()[0]
         assert modo.lower() == "wal", f"{ruta} no está en modo WAL: {modo}"
+
+
+def test_supervisor_restarts_dead_worker(tmp_path):
+    """
+    Si el hilo del worker muere por un error no capturado,
+    el supervisor lo detecta y lo vuelve a arrancar.
+    """
+    svc = _servicio(tmp_path)
+    svc.start()
+    
+    assert svc.worker.is_running is True
+    
+    # Matamos el hilo artificialmente (simulando un crash) sin activar draining
+    svc.worker._parar.set()
+    svc.worker._hilo.join()
+    assert svc.worker.is_running is False
+    assert svc.draining is False
+    
+    # El supervisor debería detectarlo y rearrancarlo
+    # time.sleep en supervisor es de 5s, esperamos hasta 10s
+    limite = time.time() + 10
+    while time.time() < limite and not svc.worker.is_running:
+        time.sleep(0.5)
+        
+    assert svc.worker.is_running is True, "El supervisor no reinició el worker"
+    svc.stop()
+
+
+def test_duplicate_event_idempotency(tmp_path, monkeypatch):
+    """
+    Si el mismo evento llega dos veces, no se crean dos incidentes.
+    La idempotencia se garantiza usando el event_id.
+    """
+    svc = _servicio(tmp_path)
+    
+    # Modificamos la puntuación híbrida para forzar que supere el umbral
+    def _run_events(eventos):
+        from cybersentinel.pipeline import PipelineReport, IncidentResult
+        from cybersentinel.detection.hybrid import DetectionEvidence
+        from cybersentinel.observability import TraceContext
+        
+        class MockEvidence(DetectionEvidence):
+            @property
+            def hybrid_score(self) -> float:
+                return 95.0
+            @property
+            def detection_status(self) -> str:
+                return "RULE_AND_ANOMALY"
+
+        res = []
+        for e in eventos:
+            evidence = MockEvidence(
+                run_id="run-1", event_ref="ref-1", event_id="evt-1",
+                entity="h1", llm_status="none", fallback_used=False
+            )
+            res.append(IncidentResult(evidence=evidence, narrative="", trace=TraceContext(event_id="evt-1"), recommendations=[]))
+        return PipelineReport(total_events=1, total_findings=1, run_id="run-1", results=res)
+        
+    monkeypatch.setattr(svc.pipeline, "run_events", _run_events)
+    
+    eventos = _crudos(1)
+    svc.ingest(eventos)
+    lote1 = svc.queue.drain(1)
+    # Primera pasada
+    svc.worker._procesar(lote1)
+    
+    # Segunda pasada (mismo lote, simula duplicado procesado)
+    svc.worker._procesar(lote1)
+    
+    # Revisamos incidentes
+    import sqlite3
+    con = sqlite3.connect(svc.incidents.path)
+    cuenta = con.execute("SELECT COUNT(*) FROM incidents WHERE incident_id = 'evt-1'").fetchone()[0]
+    assert cuenta == 1, "La idempotencia falló: se duplicó el incidente"
+    con.close()

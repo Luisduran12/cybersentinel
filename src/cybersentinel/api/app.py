@@ -61,7 +61,7 @@ from ..ingestion import Normalizer
 from ..pipeline import ALERT_THRESHOLD, Pipeline
 from .metrics import IngestMetrics
 from .models import (
-    CreatedKeyResponse, CreateKeyRequest, DecisionRequest, EventBatch,
+    CreatedKeyResponse, CreateKeyRequest, TriageRequest, EventBatch,
     IncidentPatch, IngestResponse, NoteRequest, RawEvent, TokenRequest,
     TokenResponse,
 )
@@ -149,12 +149,31 @@ class IngestService:
         # servicio quedaba en retirada para siempre y con el registro cerrado.
         self.draining = False
         self.wal.reopen()
+        
+        t0 = time.perf_counter()
         recuperados = self.recover()
+        t1 = time.perf_counter()
+        self.metrics.recovery_time_ms = (t1 - t0) * 1000.0
+        
         if recuperados:
             logger.warning(
                 "Recuperados %d eventos aceptados y no procesados del arranque "
                 "anterior. No se perdió nada; se reprocesarán.", recuperados)
         self.worker.start()
+        
+        self._supervisor = threading.Thread(target=self._supervisar, name="supervisor", daemon=True)
+        self._supervisor.start()
+
+    def _supervisar(self) -> None:
+        """
+        Vigila que el worker siga vivo. Si muere por un error no capturado,
+        lo reinicia para no perder eventos silenciosamente.
+        """
+        while not self.draining:
+            time.sleep(5)
+            if not self.worker.is_running and not self.draining:
+                logger.error("Supervisor: El worker ha muerto inesperadamente. Reiniciando...")
+                self.worker.start()
 
     def recover(self) -> int:
         """
@@ -644,38 +663,53 @@ def create_app(svc: IngestService | None = None,
             raise HTTPException(status.HTTP_404_NOT_FOUND,
                                 detail={"error": "no_encontrado", "reason": str(exc)}) from None
 
-    @app.post("/api/v1/incidents/{incident_id}/decision", status_code=status.HTTP_201_CREATED,
-              summary="Veredicto del analista (human-in-the-loop)")
-    async def incident_decision(incident_id: str, cuerpo: DecisionRequest, request: Request,
-                                principal: Principal = Depends(requires(Permission.INCIDENTS_WRITE)),
-                                ) -> dict[str, Any]:
-        """
-        Registra el veredicto en el **mismo** almacén que `cybersentinel decide`.
+    @app.get("/api/v1/incidents/{incident_id}/timeline", summary="Cronología del incidente")
+    async def incident_timeline(incident_id: str, request: Request,
+                                principal: Principal = Depends(requires(Permission.INCIDENTS_READ)),
+                                ) -> list[dict[str, Any]]:
+        incidente = _svc(request).incidents.get(incident_id)
+        if incidente is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                detail={"error": "no_encontrado", "incident_id": incident_id})
+        return _svc(request).incidents.timeline(incident_id)
 
-        El panel no abre un circuito paralelo de etiquetado: dos fuentes de
-        verdad sobre lo que un humano decidió son cero fuentes de verdad. La
-        evidencia que el analista tenía delante se sella dentro de la decisión,
-        de modo que un cambio posterior en las reglas no reescriba lo que vio.
+    @app.post("/api/v1/incidents/{incident_id}/triage", status_code=status.HTTP_201_CREATED,
+              summary="Decisión de triaje del analista (human-in-the-loop)")
+    async def incident_triage(incident_id: str, cuerpo: TriageRequest, request: Request,
+                              principal: Principal = Depends(requires(Permission.INCIDENTS_WRITE)),
+                              ) -> dict[str, Any]:
+        """
+        Registra el veredicto y actualiza el estado.
         """
         servicio, puerta = _svc(request), request.app.state.gate
         incidente = servicio.incidents.get(incident_id)
         if incidente is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND,
                                 detail={"error": "no_encontrado", "incident_id": incident_id})
-        try:
-            veredicto = HumanDecision(cuerpo.decision)
-        except ValueError:
-            raise HTTPException(
-                status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail={"error": "decision_desconocida",
-                        "valid": [d.value for d in HumanDecision]}) from None
+
+        if cuerpo.action == "COMMENT":
+            if not cuerpo.reason:
+                raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Falta el texto del comentario")
+            return servicio.incidents.add_note(incident_id, principal.display, cuerpo.reason)
+
+        estado_destino = ""
+        veredicto_enum = None
+        if cuerpo.action == "CONFIRM":
+            estado_destino = "confirmed"
+            veredicto_enum = HumanDecision.TRUE_POSITIVE
+        elif cuerpo.action == "REJECT":
+            estado_destino = "false_positive"
+            veredicto_enum = HumanDecision.FALSE_POSITIVE
+        elif cuerpo.action == "UNCERTAIN":
+            estado_destino = "uncertain"
+            veredicto_enum = HumanDecision.UNCERTAIN
+        else:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Acción desconocida")
 
         decision = StructuredDecision(
             detection_id=incident_id, event_id=incidente["event_ref"],
-            # Marca del EVENTO, no del etiquetado: usar la segunda introduciría
-            # fuga temporal al construir particiones de entrenamiento.
             timestamp=datetime.fromisoformat(incidente["event_time"]),
-            analyst_decision=veredicto, confidence=cuerpo.confidence,
+            analyst_decision=veredicto_enum, confidence=1.0,
             reason=cuerpo.reason,
             selected_evidence={k: incidente[k] for k in (
                 "incident_id", "run_id", "event_ref", "event_id", "score",
@@ -691,29 +725,23 @@ def create_app(svc: IngestService | None = None,
         if not aceptada:
             raise HTTPException(status.HTTP_409_CONFLICT,
                                 detail={"error": "decision_rechazada",
-                                        "reason": "el gestor de dataset la rechazó "
-                                                  "(¿duplicada?)"})
+                                        "reason": "duplicada"})
 
         servicio.incidents.record_decision(
-            incident_id, principal.display, veredicto.value, cuerpo.reason,
+            incident_id, principal.display, veredicto_enum.value, cuerpo.reason,
             decision.fingerprint())
-        puerta._record(actor=principal.id, action="analyst_decision",
-                       detail={"incident_id": incident_id, "decision": veredicto.value,
-                               "confidence": cuerpo.confidence,
-                               "fingerprint": decision.fingerprint()})
-
-        resultado = servicio.incidents.get(incident_id)
-        motivo = RESOLUCION_POR_VEREDICTO.get(veredicto.value)
-        nota_cierre = None
-        if cuerpo.close and motivo and resultado and resultado["state"] != "closed":
+        
+        try:
             resultado = servicio.incidents.update(
-                incident_id, actor=principal.display, state="closed", resolution=motivo)
-        elif cuerpo.close and not motivo:
-            nota_cierre = ("no se cerró: un veredicto UNCERTAIN no resuelve el "
-                           "incidente, y cerrarlo lo escondería sin que nadie "
-                           "haya decidido")
-        return {"decision": decision.to_dict(), "incident": resultado,
-                "close_note": nota_cierre}
+                incident_id, actor=principal.display, state=estado_destino, note=cuerpo.reason
+            )
+        except IncidentError as exc:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
+
+        puerta._record(actor=principal.id, action="analyst_triage",
+                       detail={"incident_id": incident_id, "decision": cuerpo.action})
+
+        return {"decision": decision.to_dict(), "incident": resultado}
 
     # --- Transporte -------------------------------------------------------
     app.state.transport = transport or TransportPolicy.from_env()
@@ -785,7 +813,7 @@ def create_app(svc: IngestService | None = None,
     async def _errores(request: Request, exc: Exception) -> JSONResponse:
         logger.exception("Error no controlado en %s", request.url.path)
         return JSONResponse(
-            {"error": type(exc).__name__, "detail": str(exc)[:200]},
+            {"error": "internal_error", "detail": "Error interno del servidor"},
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 

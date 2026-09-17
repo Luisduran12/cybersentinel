@@ -137,7 +137,7 @@ def deterministic_explanation(evidence: Any) -> str:
 
     if evidence.rag_context:
         fuentes = ", ".join(sorted({c.source_uri for c in evidence.rag_context}))
-        partes.append(f"Contexto documental recuperado de: {fuentes}.")
+        partes.append(f"[RECUPERADO] Contexto documental recuperado de: {fuentes}.")
     else:
         partes.append("No se recuperó contexto documental relevante.")
 
@@ -149,4 +149,4 @@ def deterministic_explanation(evidence: Any) -> str:
         "Explicación generada de forma determinista a partir de la evidencia: "
         "no intervino ningún modelo de lenguaje."
     )
-    return " ".join(partes)
+    return "[OBSERVADO] " + " ".join(partes)

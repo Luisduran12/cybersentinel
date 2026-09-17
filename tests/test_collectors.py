@@ -399,3 +399,122 @@ def test_ningun_collector_obliga_a_tocar_el_motor():
 
 # Alias para el aserto de tipo de la prueba de corrupción.
 from cybersentinel.collectors.base import CollectorResult as CollectorResultAlias  # noqa: E402
+from cybersentinel.collectors.base import MAX_PAYLOAD_BYTES  # noqa: E402
+
+
+# ==================== GAPS DE LA AUDITORIA: cierre puntual ==================
+def test_el_limite_real_de_payload_es_cinco_megabytes():
+    """
+    El límite de producción (no el que sobreescriben las pruebas anteriores)
+    debe ser 5 MiB: un evento de, por ejemplo, 2 MB es telemetría legítima
+    (una traza de proceso larga, un XML de Sysmon con muchos campos) y no debe
+    rechazarse.
+    """
+    assert MAX_PAYLOAD_BYTES == 5 * 1024 * 1024
+
+    collector = SysmonCollector()
+    cerca_del_limite = json.dumps({
+        "EventID": 1, "Computer": "SRV-APP", "UtcTime": "2025-03-10 10:00:00",
+        "padding": "a" * (2 * 1024 * 1024),
+    })
+    assert len(cerca_del_limite.encode()) < MAX_PAYLOAD_BYTES
+    resultado = collector.collect(cerca_del_limite)
+    assert resultado.ok, resultado.errors
+    assert TAG_OVERSIZED not in resultado.annotations
+
+    demasiado_grande = "x" * (MAX_PAYLOAD_BYTES + 1)
+    rechazado = collector.collect(demasiado_grande)
+    assert not rechazado.ok
+    assert TAG_OVERSIZED in rechazado.annotations
+
+
+@pytest.mark.parametrize("nombre", sorted(COLLECTORS))
+def test_encoding_invalido_cae_a_latin1_en_vez_de_perder_el_dato(nombre):
+    """
+    Un emisor que manda Latin-1 en vez de UTF-8 (típico de un Windows con
+    locale regional) no debe perder el dato: `\\xf1` (0xF1) no es una
+    secuencia UTF-8 válida seguida de un caracter ASCII, así que la decodificación
+    estricta falla y debe caer a Latin-1, donde 0xF1 es 'ñ', en vez de
+    sustituirse por el carácter de reemplazo '\\ufffd'.
+    """
+    entradas: dict[str, tuple[bytes, str, str]] = {
+        "sysmon": (
+            b'{"EventID": 1, "Computer": "SRV-\xf1", "UtcTime": "2025-03-10 10:00:00"}',
+            "host", "SRV-ñ",
+        ),
+        "linux": (
+            b"<38>Mar 10 10:00:00 srv-\xf1 sshd[1]: Accepted password for ana "
+            b"from 10.0.0.5 port 22 ssh2",
+            "host", "srv-ñ",
+        ),
+        "firewall": (
+            b'{"src_ip": "10.0.0.1", "dst_ip": "8.8.8.8", "action": "allow", '
+            b'"host": "fw-\xf1", "timestamp": "2025-03-10T10:00:00Z"}',
+            "host", "fw-ñ",
+        ),
+        "suricata": (
+            b'{"timestamp": "2025-03-10T10:00:00Z", "event_type": "alert", '
+            b'"host": "sensor-\xf1", "alert": {"signature": "x", "severity": 3}}',
+            "host", "sensor-ñ",
+        ),
+    }
+    crudo, campo, esperado = entradas[nombre]
+    with pytest.raises(UnicodeDecodeError):
+        crudo.decode("utf-8")          # confirma que el caso de prueba es real
+
+    resultado = get_collector(nombre).collect(crudo)
+    assert resultado.ok, resultado.errors
+    assert getattr(resultado.event, campo) == esperado
+    assert "�" not in str(getattr(resultado.event, campo))
+
+
+# --- Campos que el spec pedía y no se extraían -------------------------------
+def test_linux_auditd_syscall_expone_uid_gid_y_return_code():
+    linea = ('type=SYSCALL msg=audit(1700000000.123:456): arch=c000003e syscall=59 '
+             'success=yes exit=0 uid=1000 gid=1000 auid=1000 '
+             'comm="curl" exe="/usr/bin/curl"')
+    resultado = LinuxCollector().collect(linea)
+    assert resultado.ok, resultado.errors
+    props = resultado.event.properties
+    assert props["uid"] == "1000"
+    assert props["gid"] == "1000"
+    assert props["return_code"] == 0
+
+
+def test_linux_auditd_path_expone_file_path():
+    linea = ('type=PATH msg=audit(1700000000.123:457): item=0 name="/etc/shadow" '
+             'inode=1234 mode=0100600')
+    resultado = LinuxCollector().collect(linea)
+    assert resultado.ok, resultado.errors
+    assert resultado.event.properties["file_path"] == "/etc/shadow"
+
+
+def test_linux_auditd_netfilter_expone_dst_ip_y_puerto():
+    linea = ('type=NETFILTER_PKT msg=audit(1700000000.123:458): mark=0 saddr=10.0.0.5 '
+             'daddr=203.0.113.5 sport=51000 dport=443 proto=6')
+    resultado = LinuxCollector().collect(linea)
+    assert resultado.ok, resultado.errors
+    assert resultado.event.properties["dst_ip"] == "203.0.113.5"
+    assert resultado.event.properties["dst_port"] == 443
+
+
+def test_linux_journald_expone_uid_gid_y_exe():
+    resultado = LinuxCollector().collect({
+        "MESSAGE": "sesion abierta", "_COMM": "sshd", "_UID": "0", "_GID": "0",
+        "_EXE": "/usr/sbin/sshd", "__REALTIME_TIMESTAMP": "1700000000000000",
+    })
+    assert resultado.ok, resultado.errors
+    props = resultado.event.properties
+    assert props["uid"] == "0"
+    assert props["gid"] == "0"
+    assert props["exe"] == "/usr/sbin/sshd"
+
+
+def test_firewall_expone_packets_in_y_packets_out():
+    crudo = ("srcip=10.0.0.5 dstip=8.8.8.8 dstport=53 action=allow "
+             "sentpkt=12 rcvdpkt=9 timestamp=2025-03-10T10:00:00Z")
+    resultado = FirewallCollector().collect(crudo)
+    assert resultado.ok, resultado.errors
+    props = resultado.event.properties
+    assert props["packets_out"] == 12
+    assert props["packets_in"] == 9

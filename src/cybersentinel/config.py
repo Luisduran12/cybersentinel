@@ -17,9 +17,15 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    load_dotenv = None
 
 #: Raíz del proyecto (…/cybersentinel), tres niveles por encima de este archivo.
 ROOT = Path(__file__).resolve().parents[2]
+if load_dotenv:
+    load_dotenv(ROOT / ".env")
 DEFAULT_CONFIG_PATH = ROOT / "config" / "config.yaml"
 DEFAULT_RULES_DIR = ROOT / "config" / "rules"
 DEFAULT_POLICY_PATH = ROOT / "config" / "governance_policy.yaml"

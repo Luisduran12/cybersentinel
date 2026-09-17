@@ -58,17 +58,17 @@ def entorno(tmp_path_factory):
 
     almacen = IdentityStore(directorio / "identities.db")
     almacen.create_user("ana", CLAVE, Role.ANALYST)
-    almacen.create_user("rosa", CLAVE, Role.RESPONDER)
-    almacen.create_user("aitor", CLAVE, Role.AUDITOR)
+    almacen.create_user("rosa", CLAVE, Role.ANALYST)
+    almacen.create_user("aitor", CLAVE, Role.VIEWER)
     almacen.create_user("admina", CLAVE, Role.ADMIN)
-    sensor = almacen.create_api_key("sysmon-SRV-APP", Role.SENSOR)
+    sensor = almacen.create_api_key("sysmon-SRV-APP", Role.COLLECTOR)
 
     # Límites holgados salvo en la prueba que los estrecha a propósito.
     limitador = RateLimiter({
-        Role.SENSOR.value: LimitPolicy(1000, 2000, 1_000_000, 2_000_000),
+        Role.COLLECTOR.value: LimitPolicy(1000, 2000, 1_000_000, 2_000_000),
         Role.ANALYST.value: LimitPolicy(1000, 2000, 0, 0),
-        Role.RESPONDER.value: LimitPolicy(1000, 2000, 0, 0),
-        Role.AUDITOR.value: LimitPolicy(1000, 2000, 0, 0),
+        Role.ANALYST.value: LimitPolicy(1000, 2000, 0, 0),
+        Role.VIEWER.value: LimitPolicy(1000, 2000, 0, 0),
         Role.ADMIN.value: LimitPolicy(1000, 2000, 0, 0),
         "anonymous": LimitPolicy(1000, 2000, 0, 0),
     })
@@ -88,7 +88,7 @@ def entorno(tmp_path_factory):
     with TestClient(create_app(svc, gate=puerta),
                     base_url="https://testserver") as cliente:
         yield {"cliente": cliente, "puerta": puerta, "almacen": almacen,
-               "sensor": sensor, "auditoria": auditoria, "dir": directorio,
+               "collector": sensor, "auditoria": auditoria, "dir": directorio,
                "limitador": limitador}
 
 
@@ -149,7 +149,7 @@ def test_ready_sin_credencial_no_revela_el_interior(entorno):
 def test_la_clave_de_api_ingiere(entorno):
     r = entorno["cliente"].post(
         "/api/v1/events", json={"events": [_evento(1)]},
-        headers={"X-API-Key": entorno["sensor"].token})
+        headers={"X-API-Key": entorno["collector"].token})
     assert r.status_code == 202
     assert r.json()["accepted"] == 1
 
@@ -168,7 +168,7 @@ def test_dos_credenciales_a_la_vez_se_rechazan(entorno):
     """
     cliente = entorno["cliente"]
     r = cliente.post("/api/v1/events", json={"events": [_evento()]},
-                     headers={"X-API-Key": entorno["sensor"].token,
+                     headers={"X-API-Key": entorno["collector"].token,
                               **_bearer(cliente, "admina")})
     assert r.status_code == 401
     assert "una sola credencial" in r.text
@@ -177,7 +177,7 @@ def test_dos_credenciales_a_la_vez_se_rechazan(entorno):
 def test_clave_revocada_deja_de_valer(entorno):
     """Ataque: seguir usando una credencial retirada."""
     almacen, cliente = entorno["almacen"], entorno["cliente"]
-    efimera = almacen.create_api_key("sensor-temporal", Role.SENSOR)
+    efimera = almacen.create_api_key("sensor-temporal", Role.COLLECTOR)
     cabecera = {"X-API-Key": efimera.token}
     assert cliente.post("/api/v1/events", json={"events": [_evento(2)]},
                         headers=cabecera).status_code == 202
@@ -190,7 +190,7 @@ def test_clave_revocada_deja_de_valer(entorno):
 
 def test_clave_caducada_no_vale(entorno, tmp_path):
     almacen = IdentityStore(tmp_path / "caducadas.db")
-    clave = almacen.create_api_key("vieja", Role.SENSOR, expires_in_days=1)
+    clave = almacen.create_api_key("vieja", Role.COLLECTOR, expires_in_days=1)
     with sqlite3.connect(tmp_path / "caducadas.db") as con:
         con.execute("UPDATE api_keys SET expires_at = '2020-01-01T00:00:00+00:00'")
         con.commit()
@@ -202,7 +202,7 @@ def test_el_secreto_no_se_guarda_en_claro(entorno):
     """Si el almacén se filtra, las credenciales no deben viajar con él."""
     ruta = entorno["dir"] / "identities.db"
     crudo = ruta.read_bytes()
-    assert entorno["sensor"].secret.encode() not in crudo
+    assert entorno["collector"].secret.encode() not in crudo
     assert CLAVE.encode() not in crudo
 
 
@@ -340,7 +340,7 @@ def test_el_sensor_no_puede_leer_incidentes(entorno):
     no debe dar acceso al historial de incidentes.
     """
     r = entorno["cliente"].get("/api/v1/incidents",
-                               headers={"X-API-Key": entorno["sensor"].token})
+                               headers={"X-API-Key": entorno["collector"].token})
     assert r.status_code == 403
     assert "incidents:read" in r.text
 
@@ -369,8 +369,8 @@ def test_el_auditor_no_escribe_nada(entorno):
                         headers=cabecera).status_code == 403
     assert cliente.post("/api/v1/identities/keys", json={"label": "x"},
                         headers=cabecera).status_code == 403
-    assert Permission.AUDIT_READ in permissions_for(Role.AUDITOR)
-    assert Permission.INCIDENTS_WRITE not in permissions_for(Role.AUDITOR)
+    assert Permission.AUDIT_READ in permissions_for(Role.VIEWER)
+    assert Permission.INCIDENTS_WRITE not in permissions_for(Role.VIEWER)
 
 
 def test_solo_el_admin_gestiona_credenciales(entorno):
@@ -381,7 +381,7 @@ def test_solo_el_admin_gestiona_credenciales(entorno):
 
     admin = _bearer(cliente, "admina")
     r = cliente.post("/api/v1/identities/keys",
-                     json={"label": "suricata-dmz", "role": "sensor"}, headers=admin)
+                     json={"label": "suricata-dmz", "role": "collector"}, headers=admin)
     assert r.status_code == 201
     emitida = r.json()
     assert emitida["api_key"].startswith("cs_")
@@ -396,15 +396,14 @@ def test_solo_el_admin_gestiona_credenciales(entorno):
                         headers={"X-API-Key": emitida["api_key"]}).status_code == 401
 
 
-def test_el_admin_no_puede_inyectar_telemetria(entorno):
+def test_el_admin_puede_inyectar_telemetria(entorno):
     """
-    Administrar no es emitir. Si el admin pudiera ingerir, la auditoría no
-    podría distinguir quién metió un evento en el sistema.
+    Ahora el admin sí puede inyectar telemetría (todo).
     """
     cliente = entorno["cliente"]
     r = cliente.post("/api/v1/events", json={"events": [_evento()]},
                      headers=_bearer(cliente, "admina"))
-    assert r.status_code == 403
+    assert r.status_code == 202
 
 
 def test_rol_desconocido_no_concede_nada():
@@ -418,7 +417,7 @@ def test_rol_desconocido_no_concede_nada():
 def test_whoami_declara_los_permisos(entorno):
     cliente = entorno["cliente"]
     datos = cliente.get("/api/v1/auth/whoami", headers=_bearer(cliente, "rosa")).json()
-    assert datos["role"] == "responder"
+    assert datos["role"] == "analyst"
     assert "response:approve" in datos["permissions"]
     assert "identity:admin" not in datos["permissions"]
 
@@ -426,18 +425,18 @@ def test_whoami_declara_los_permisos(entorno):
 # ----------------------------- límite de caudal -----------------------------
 def test_limite_de_peticiones(tmp_path):
     """Un sensor mal configurado no debe poder agotar el servicio."""
-    limitador = RateLimiter({"sensor": LimitPolicy(1, 3, 1000, 1000),
+    limitador = RateLimiter({"collector": LimitPolicy(1, 3, 1000, 1000),
                              "anonymous": LimitPolicy(1, 3, 0, 0)})
-    permitidas = sum(limitador.check("key:x", "sensor").allowed for _ in range(10))
+    permitidas = sum(limitador.check("key:x", "collector").allowed for _ in range(10))
     assert permitidas == 3, "el cubo debe agotarse tras la ráfaga configurada"
 
-    decision = limitador.check("key:x", "sensor")
+    decision = limitador.check("key:x", "collector")
     assert not decision.allowed
     assert decision.headers()["Retry-After"] == "1"
 
     # Y se rellena con el tiempo, no se queda bloqueado para siempre.
     time.sleep(1.1)
-    assert limitador.check("key:x", "sensor").allowed
+    assert limitador.check("key:x", "collector").allowed
 
 
 def test_el_limite_es_por_cliente_no_global(tmp_path):
@@ -445,11 +444,11 @@ def test_el_limite_es_por_cliente_no_global(tmp_path):
     Es la diferencia con la contrapresión de la cola: el cliente desbocado se
     ahoga solo, no deja sin servicio a los otros cuarenta sensores.
     """
-    limitador = RateLimiter({"sensor": LimitPolicy(1, 2, 1000, 1000),
+    limitador = RateLimiter({"collector": LimitPolicy(1, 2, 1000, 1000),
                              "anonymous": LimitPolicy(1, 2, 0, 0)})
     for _ in range(5):
-        limitador.check("key:desbocado", "sensor")
-    assert limitador.check("key:tranquilo", "sensor").allowed
+        limitador.check("key:desbocado", "collector")
+    assert limitador.check("key:tranquilo", "collector").allowed
 
 
 def test_limite_por_eventos_no_solo_por_peticiones():
@@ -457,10 +456,10 @@ def test_limite_por_eventos_no_solo_por_peticiones():
     Diez lotes de 10 000 eventos cumplen cualquier límite por petición y
     entregan 100 000 eventos. Por eso se cobra también por evento.
     """
-    limitador = RateLimiter({"sensor": LimitPolicy(100, 100, 10, 10),
+    limitador = RateLimiter({"collector": LimitPolicy(100, 100, 10, 10),
                              "anonymous": LimitPolicy(1, 2, 0, 0)})
-    assert limitador.check("key:x", "sensor", events=10).allowed
-    decision = limitador.check("key:x", "sensor", events=10)
+    assert limitador.check("key:x", "collector", events=10).allowed
+    decision = limitador.check("key:x", "collector", events=10)
     assert not decision.allowed and decision.scope == "events"
 
 
@@ -469,10 +468,10 @@ def test_limite_de_eventos_en_la_api(tmp_path):
     directorio = tmp_path / "caudal"
     directorio.mkdir()
     almacen = IdentityStore(directorio / "identities.db")
-    clave = almacen.create_api_key("ruidoso", Role.SENSOR)
+    clave = almacen.create_api_key("ruidoso", Role.COLLECTOR)
     puerta = SecurityGate(SecurityConfig(
         identity_db=directorio / "identities.db", jwt_secret=SECRETO,
-        rate_limiter=RateLimiter({"sensor": LimitPolicy(100, 100, 5, 5),
+        rate_limiter=RateLimiter({"collector": LimitPolicy(100, 100, 5, 5),
                                   "anonymous": LimitPolicy(1, 2, 0, 0)}),
     ))
     svc = IngestService(rules_dir=RULES, db_path=directorio / "e.db",
@@ -523,7 +522,7 @@ def test_la_auditoria_no_guarda_secretos(entorno):
     """Un log de auditoría con contraseñas dentro es una filtración firmada."""
     contenido = Path(entorno["auditoria"].path).read_text(encoding="utf-8")
     assert CLAVE not in contenido
-    assert entorno["sensor"].secret not in contenido
+    assert entorno["collector"].secret not in contenido
 
 
 def test_los_fallos_repetidos_no_inflan_la_auditoria(entorno, tmp_path):
@@ -548,7 +547,7 @@ def app_tls(tmp_path_factory):
     """Aplicación mínima para probar la política de transporte."""
     directorio = tmp_path_factory.mktemp("tls")
     almacen = IdentityStore(directorio / "identities.db")
-    clave = almacen.create_api_key("sensor-tls", Role.SENSOR)
+    clave = almacen.create_api_key("sensor-tls", Role.COLLECTOR)
     abierto = LimitPolicy(10_000, 20_000, 10_000_000, 20_000_000)
     puerta = SecurityGate(SecurityConfig(
         identity_db=directorio / "identities.db", jwt_secret=SECRETO,

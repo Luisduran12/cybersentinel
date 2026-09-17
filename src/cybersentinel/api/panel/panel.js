@@ -31,7 +31,8 @@ const $ = (sel) => document.querySelector(sel);
 const estado = { quien: null, incidentes: [], seleccionado: null, puedeEscribir: false };
 
 const ETIQUETA_ESTADO = {
-  new: "Nuevo", triaged: "Triado", in_progress: "En curso", closed: "Cerrado",
+  new: "Nuevo", triaged: "Triado", confirmed: "Confirmado",
+  false_positive: "Falso positivo", uncertain: "Incierto", resolved: "Resuelto",
 };
 const ETIQUETA_SEVERIDAD = {
   critical: "Crítica", high: "Alta", medium: "Media", low: "Baja",
@@ -269,7 +270,7 @@ async function cargarLista() {
 }
 
 function tarjeta(inc) {
-  const n = el("div", `tarjeta ${inc.severity}${inc.state === "closed" ? " cerrado" : ""}`);
+  const n = el("div", `tarjeta ${inc.severity}${inc.state === "resolved" ? " cerrado" : ""}`);
   n.setAttribute("role", "button");
   n.setAttribute("tabindex", "0");
   n.setAttribute("aria-selected", String(estado.seleccionado === inc.incident_id));
@@ -491,7 +492,7 @@ function acciones(inc) {
 
   const sel = el("select");
   sel.append(opcion("", "Cambiar estado…"));
-  for (const s of ["new", "triaged", "in_progress", "closed"]) {
+  for (const s of ["new", "triaged", "confirmed", "false_positive", "uncertain", "resolved"]) {
     if (s !== inc.state) sel.append(opcion(s, ETIQUETA_ESTADO[s]));
   }
 
@@ -507,7 +508,7 @@ function acciones(inc) {
   aplicar.hidden = true;
 
   sel.addEventListener("change", () => {
-    const cerrando = sel.value === "closed";
+    const cerrando = sel.value === "resolved";
     resolucion.hidden = !cerrando;
     aplicar.hidden = !sel.value;
     if (sel.value && !cerrando) {
@@ -515,9 +516,9 @@ function acciones(inc) {
     }
   });
   aplicar.addEventListener("click", () => {
-    if (sel.value !== "closed") return;
+    if (sel.value !== "resolved") return;
     if (!resolucion.value) { avisar("Elige un motivo de cierre.", true); return; }
-    cambiar(inc.incident_id, { state: "closed", resolution: resolucion.value });
+    cambiar(inc.incident_id, { state: "resolved", resolution: resolucion.value });
   });
 
   fila.append(sel, resolucion, aplicar);

@@ -56,10 +56,10 @@ def soc(tmp_path_factory):
     directorio = tmp_path_factory.mktemp("soc")
 
     almacen = IdentityStore(directorio / "identities.db")
-    sensor = almacen.create_api_key("sensor-soc", Role.SENSOR)
-    almacen.create_user("ana", CLAVE, Role.ANALYST)       # solo lee
-    almacen.create_user("rosa", CLAVE, Role.RESPONDER)    # lee y escribe
-    almacen.create_user("aitor", CLAVE, Role.AUDITOR)
+    sensor = almacen.create_api_key("sensor-soc", Role.COLLECTOR)
+    almacen.create_user("ana", CLAVE, Role.VIEWER)        # solo lee
+    almacen.create_user("rosa", CLAVE, Role.ANALYST)      # lee y escribe
+    almacen.create_user("aitor", CLAVE, Role.VIEWER)      # lee, incluida auditoría
 
     abierto = LimitPolicy(10_000, 20_000, 10_000_000, 20_000_000)
     puerta = SecurityGate(SecurityConfig(
@@ -176,8 +176,9 @@ def test_el_analista_lee_pero_no_escribe(soc):
                          json={"state": "triaged"}, headers=ana).status_code == 403
     assert cliente.post(f"/api/v1/incidents/{inc['incident_id']}/notes",
                         json={"text": "no debería poder"}, headers=ana).status_code == 403
-    assert cliente.post(f"/api/v1/incidents/{inc['incident_id']}/decision",
-                        json={"decision": "BENIGN"}, headers=ana).status_code == 403
+    assert cliente.post(f"/api/v1/incidents/{inc['incident_id']}/triage",
+                        json={"action": "CONFIRM", "reason": "no debería poder"},
+                        headers=ana).status_code == 403
 
 
 def test_el_sensor_no_ve_el_panel(soc):
@@ -205,12 +206,12 @@ def test_ciclo_de_vida_completo(soc):
     d = cliente.patch(ruta, json={"owner": "rosa", "state": "triaged"}, headers=rosa).json()
     assert d["owner"] == "rosa" and d["state"] == "triaged"
 
-    d = cliente.patch(ruta, json={"state": "in_progress"}, headers=rosa).json()
-    assert d["state"] == "in_progress"
+    d = cliente.patch(ruta, json={"state": "confirmed"}, headers=rosa).json()
+    assert d["state"] == "confirmed"
 
-    d = cliente.patch(ruta, json={"state": "closed", "resolution": "true_positive"},
+    d = cliente.patch(ruta, json={"state": "resolved", "resolution": "true_positive"},
                       headers=rosa).json()
-    assert d["state"] == "closed" and d["resolution"] == "true_positive"
+    assert d["state"] == "resolved" and d["resolution"] == "true_positive"
     assert d["closed_at"]
 
 
@@ -219,7 +220,7 @@ def test_cerrar_sin_resolucion_se_rechaza(soc, tmp_path):
     almacen = IncidentStore(tmp_path / "ciclo.db")
     _sembrar(almacen, "r1:e1")
     with pytest.raises(IncidentError, match="resolución"):
-        almacen.update("r1:e1", "rosa", state="closed")
+        almacen.update("r1:e1", "rosa", state="resolved")
 
 
 def test_transicion_invalida_se_rechaza_con_422(soc, tmp_path):
@@ -229,9 +230,9 @@ def test_transicion_invalida_se_rechaza_con_422(soc, tmp_path):
     """
     almacen = IncidentStore(tmp_path / "transiciones.db")
     _sembrar(almacen, "r1:e1")
-    almacen.update("r1:e1", "rosa", state="closed", resolution="benign")
+    almacen.update("r1:e1", "rosa", state="resolved", resolution="benign")
     with pytest.raises(IncidentError, match="no se puede pasar"):
-        almacen.update("r1:e1", "rosa", state="in_progress")
+        almacen.update("r1:e1", "rosa", state="confirmed")
 
     reabierto = almacen.update("r1:e1", "rosa", state="triaged")
     assert reabierto["state"] == "triaged"
@@ -287,11 +288,11 @@ def test_reprocesar_no_duplica_ni_pisa_el_trabajo(soc, tmp_path):
     almacen = IncidentStore(tmp_path / "dup.db")
     resultados = [_resultado("r1", "e1", 80.0)]
     assert almacen.save_batch(resultados, umbral=50.0) == 1
-    almacen.update("r1:e1", "rosa", owner="rosa", state="in_progress")
+    almacen.update("r1:e1", "rosa", owner="rosa", state="triaged")
 
     assert almacen.save_batch(resultados, umbral=50.0) == 0
     d = almacen.get("r1:e1")
-    assert d["state"] == "in_progress" and d["owner"] == "rosa"
+    assert d["state"] == "triaged" and d["owner"] == "rosa"
     assert sum(1 for e in d["timeline"] if e["kind"] == "created") == 1
 
 
@@ -334,7 +335,7 @@ def test_los_cerrados_van_al_final(soc, tmp_path):
     almacen = IncidentStore(tmp_path / "orden.db")
     almacen.save_batch([_resultado("r1", "critico", 95.0),
                         _resultado("r1", "medio", 60.0)], umbral=50.0)
-    almacen.update("r1:critico", "rosa", state="closed", resolution="false_positive")
+    almacen.update("r1:critico", "rosa", state="resolved", resolution="false_positive")
     orden = [i["incident_id"] for i in almacen.list(Filtro())["incidents"]]
     assert orden == ["r1:medio", "r1:critico"]
 
@@ -371,9 +372,8 @@ def test_el_veredicto_alimenta_el_mismo_almacen_que_la_cli(soc):
     objetivo = "prueba-veredicto:tp"
     _sembrar(svc.incidents, objetivo)
 
-    r = cliente.post(f"/api/v1/incidents/{objetivo}/decision",
-                     json={"decision": "FALSE_POSITIVE", "reason": "script de inventario",
-                           "confidence": 0.9, "close": True},
+    r = cliente.post(f"/api/v1/incidents/{objetivo}/triage",
+                     json={"action": "REJECT", "reason": "script de inventario"},
                      headers=_cab(cliente, "rosa"))
     assert r.status_code == 201, r.text
     cuerpo = r.json()
@@ -389,9 +389,8 @@ def test_el_veredicto_alimenta_el_mismo_almacen_que_la_cli(soc):
     sellada = next(d for d in lineas if d["detection_id"] == objetivo)["selected_evidence"]
     assert sellada["score"] and "rules" in sellada
 
-    # Y el incidente se cierra con la resolución equivalente.
-    assert cuerpo["incident"]["state"] == "closed"
-    assert cuerpo["incident"]["resolution"] == "false_positive"
+    # Y el incidente refleja el veredicto en su estado.
+    assert cuerpo["incident"]["state"] == "false_positive"
     assert any(e["kind"] == "decision" for e in cuerpo["incident"]["timeline"])
 
 
@@ -401,20 +400,19 @@ def test_un_veredicto_dudoso_no_cierra_el_incidente(soc):
     objetivo = "prueba-veredicto:dudoso"
     _sembrar(soc["svc"].incidents, objetivo)
 
-    r = cliente.post(f"/api/v1/incidents/{objetivo}/decision",
-                     json={"decision": "UNCERTAIN", "reason": "falta contexto", "close": True},
+    r = cliente.post(f"/api/v1/incidents/{objetivo}/triage",
+                     json={"action": "UNCERTAIN", "reason": "falta contexto"},
                      headers=_cab(cliente, "rosa"))
     assert r.status_code == 201
-    assert r.json()["incident"]["state"] != "closed"
-    assert "UNCERTAIN" in r.json()["close_note"]
+    assert r.json()["incident"]["state"] == "uncertain"
 
 
 def test_veredicto_desconocido_se_rechaza(soc):
     cliente, inc = soc["cliente"], _primer_incidente(soc)
-    r = cliente.post(f"/api/v1/incidents/{inc['incident_id']}/decision",
-                     json={"decision": "ME_LO_INVENTO"}, headers=_cab(cliente, "rosa"))
+    r = cliente.post(f"/api/v1/incidents/{inc['incident_id']}/triage",
+                     json={"action": "ME_LO_INVENTO"}, headers=_cab(cliente, "rosa"))
     assert r.status_code == 422
-    assert "TRUE_POSITIVE" in r.text
+    assert "desconocida" in r.text
 
 
 # --------------------------------- el panel ---------------------------------
@@ -533,7 +531,10 @@ class _EvidenciaFalsa:
     """
 
     def __init__(self, run_id, ref, score, entidad, tecnicas):
-        self.run_id, self.event_ref, self.event_id = run_id, ref, ref
+        # `event_id` es lo que `IncidentStore.save_batch` usa como
+        # `incident_id`: debe llevar el mismo valor que usan las pruebas
+        # (`f"{run_id}:{ref}"`), no solo `ref`.
+        self.run_id, self.event_ref, self.event_id = run_id, ref, f"{run_id}:{ref}"
         self.hybrid_score, self.anomaly_score = score, 0.4
         self.entity = entidad
         self.mitre_context, self.mitre_tactics = tecnicas, ["execution"]

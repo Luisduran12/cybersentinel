@@ -177,6 +177,11 @@ class SecurityGate:
             return
         caduca = expires_at or int(time.time() + self.signer.ttl_s)
         self.store.revoke_token(jti, caduca, subject)
+        self._record(
+            actor=subject or f"token:{jti[:8]}", 
+            action="token_revoked", 
+            detail={"jti": jti, "expires_at": caduca}
+        )
 
     # --- Emisión de tokens ------------------------------------------------
     def issue_token(self, username: str, password: str, request: Request) -> dict[str, Any]:

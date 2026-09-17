@@ -50,7 +50,7 @@ class LinuxCollector(Collector):
 
     def parse(self, raw: Any) -> CollectorResult:
         if isinstance(raw, (bytes, bytearray)):
-            raw = raw.decode("utf-8", errors="replace")
+            raw = self.decode_bytes(bytes(raw))
 
         if isinstance(raw, dict):
             return self._journald(raw)
@@ -96,8 +96,14 @@ class LinuxCollector(Collector):
             parent_process=self.first(campos, "_PPID"),
             src_ip=self._ip(str(mensaje)),
             outcome=outcome,
-            properties={"format": "journald", "unit": self.first(campos, "_SYSTEMD_UNIT"),
-                        "priority": self.first(campos, "PRIORITY")},
+            properties={k: v for k, v in {
+                "format": "journald", "unit": self.first(campos, "_SYSTEMD_UNIT"),
+                "priority": self.first(campos, "PRIORITY"),
+                # journald etiqueta cada entrada con el UID/GID real del proceso
+                # que la emitio; no hay que inferirlos del mensaje.
+                "uid": self.first(campos, "_UID"), "gid": self.first(campos, "_GID"),
+                "exe": self.first(campos, "_EXE"),
+            }.items() if v is not None},
             raw=campos, tags=list(anotaciones),
         ), annotations=anotaciones)
 
@@ -202,9 +208,22 @@ class LinuxCollector(Collector):
             command_line=comando,
             src_ip=self.first(campos, "addr", "laddr"),
             outcome=outcome,
-            properties={"format": "auditd", "audit_type": tipo,
-                        "syscall": self.first(campos, "syscall"),
-                        "key": self.first(campos, "key")},
+            properties={k: v for k, v in {
+                "format": "auditd", "audit_type": tipo,
+                "syscall": self.first(campos, "syscall"),
+                "key": self.first(campos, "key"),
+                # uid/gid van aparte de `user`: `user` ya resuelve a la mejor
+                # identidad legible (acct/auid), estos son los identificadores
+                # numéricos crudos tal y como los emite el kernel.
+                "uid": self.first(campos, "uid"), "gid": self.first(campos, "gid"),
+                # El registro PATH de auditd trae la ruta en `name=`.
+                "file_path": self.first(campos, "name"),
+                "dst_ip": self.first(campos, "daddr"),
+                "dst_port": self.to_int(self.first(campos, "dport")),
+                # `exit=` es el codigo de retorno real de la syscall; `success`
+                # ya se resume en `outcome` y no lo sustituye.
+                "return_code": self.to_int(self.first(campos, "exit")),
+            }.items() if v is not None},
             raw={"raw_line": linea, **campos}, tags=list(anotaciones),
         ), annotations=anotaciones)
 

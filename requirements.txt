@@ -35,3 +35,8 @@ faiss-cpu>=1.8
 # La cache ya viene en data/attack/attack_cache.json, asi que no hace falta
 # para usar el sistema.
 # mitreattack-python>=3.0
+
+# Opcional: bus de mensajes NATS JetStream (Fase 1 de docs/PRODUCTION-ARCHITECTURE.md).
+# Sin este paquete, cybersentinel.streaming.bus se importa igual; solo falla
+# al intentar conectar de verdad.
+# nats-py>=2.6

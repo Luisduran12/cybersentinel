@@ -1,0 +1,75 @@
+# Fase 1 (Ingesta y normalizacion) de docs/PRODUCTION-ARCHITECTURE.md.
+#
+#   collectors --raw JSON--> NATS (cybersentinel.raw.<source>)
+#                                |
+#                                v
+#                          normalizer (OCSF)
+#                                |
+#                                v
+#                    NATS (cybersentinel.ocsf.<source>)
+#                                |
+#                                v
+#                    api  --POST /api/v1/events-->  Pipeline real (sin cambios)
+#
+# El normalizador reenruta a OCSF por trazabilidad y para que un consumidor
+# externo (SIEM, otro pipeline) pueda suscribirse al mismo subject sin tocar
+# la API; la API en si sigue aceptando eventos tal cual los mandan los
+# collectors (ver docs/PRODUCTION-ARCHITECTURE.md, Fase 1, para el porque no
+# se hizo de la API un consumidor de NATS todavia).
+#
+# Arrancar solo la Fase 1:
+#   docker compose up --build
+# Probar el bus:
+#   docker compose exec nats nats stream ls
+#
+# CYBERSENTINEL_ALLOW_PLAINTEXT=1 es intencional aqui: el trafico entre
+# contenedores viaja dentro de la red interna de Docker, no expuesta. Un
+# despliegue real termina TLS en un proxy de entrada (ver Fase 5).
+services:
+  nats:
+    image: nats:2.10-alpine
+    command: ["-js", "-m", "8222"]        # JetStream + panel de monitorizacion HTTP
+    ports:
+      - "4222:4222"   # cliente
+      - "8222:8222"   # monitorizacion (http://localhost:8222/varz)
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8222/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - nats_data:/data
+
+  api:
+    build: .
+    command: ["uvicorn", "cybersentinel.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
+    environment:
+      CYBERSENTINEL_ALLOW_PLAINTEXT: "1"
+      CYBERSENTINEL_DB: /data/events.db
+      CYBERSENTINEL_IDENTITY_DB: /data/identities.db
+      CYBERSENTINEL_AUDIT: /data/audit.jsonl
+      CYBERSENTINEL_WAL: /data/wal
+      CYBERSENTINEL_FEEDBACK: /data/decisions.jsonl
+      CYBERSENTINEL_RULES: /app/config/rules
+    volumes:
+      - api_data:/data
+    depends_on:
+      nats:
+        condition: service_healthy
+
+  normalizer:
+    build: .
+    command: ["python", "-m", "cybersentinel.streaming.normalizer_service",
+               "--nats-url", "nats://nats:4222",
+               "--sources", "sysmon", "linux", "firewall", "suricata"]
+    environment:
+      NATS_URL: "nats://nats:4222"
+    depends_on:
+      nats:
+        condition: service_healthy
+
+volumes:
+  nats_data:
+  api_data:

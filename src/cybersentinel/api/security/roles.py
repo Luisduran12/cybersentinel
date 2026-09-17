@@ -39,18 +39,11 @@ class Permission(str, Enum):
 
 class Role(str, Enum):
     """
-    Roles del producto.
-
-    `SENSOR` es una máquina; los otros cuatro son personas. La separación
-    importa porque las credenciales de máquina son largas, no caducan solas y
-    viven en ficheros de configuración: darles permisos de lectura sería
-    regalar el historial a cualquiera que lea un `/etc`.
+    Roles del producto (Fase 8.2 Security).
     """
-
-    SENSOR = "sensor"
+    COLLECTOR = "collector"
+    VIEWER = "viewer"
     ANALYST = "analyst"
-    RESPONDER = "responder"
-    AUDITOR = "auditor"
     ADMIN = "admin"
 
     def __str__(self) -> str:
@@ -59,36 +52,27 @@ class Role(str, Enum):
 
 #: Matriz rol → permisos. Única fuente de verdad de la autorización.
 ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
-    # Máquina: solo escribe. No lee nada, ni siquiera lo que ella misma envió.
-    Role.SENSOR: frozenset({Permission.EVENTS_WRITE}),
+    # Collector: solo ingesta. No lee nada.
+    Role.COLLECTOR: frozenset({Permission.EVENTS_WRITE}),
 
-    # Analista: investiga. Ve incidentes y salud del servicio, no aprueba
-    # respuestas ni toca credenciales.
-    Role.ANALYST: frozenset({
-        Permission.INCIDENTS_READ,
-        Permission.METRICS_READ,
-    }),
-
-    # Responsable: lo del analista, más cerrar incidentes y aprobar respuesta.
-    Role.RESPONDER: frozenset({
-        Permission.INCIDENTS_READ,
-        Permission.INCIDENTS_WRITE,
-        Permission.METRICS_READ,
-        Permission.RESPONSE_APPROVE,
-    }),
-
-    # Auditor: lee la cadena de auditoría y los incidentes, y **no escribe
-    # nada**. Que el auditor pueda modificar lo que audita anula la auditoría.
-    Role.AUDITOR: frozenset({
+    # Viewer: solo GET endpoints de lectura.
+    Role.VIEWER: frozenset({
         Permission.INCIDENTS_READ,
         Permission.METRICS_READ,
         Permission.AUDIT_READ,
     }),
 
-    # Admin: gestiona credenciales. No se le da EVENTS_WRITE: administrar no es
-    # emitir telemetría, y mezclar ambas cosas impide distinguir en la
-    # auditoría quién inyectó un evento.
+    # Analyst: ver + triagear incidentes + HITL.
+    Role.ANALYST: frozenset({
+        Permission.INCIDENTS_READ,
+        Permission.METRICS_READ,
+        Permission.INCIDENTS_WRITE,
+        Permission.RESPONSE_APPROVE,
+    }),
+
+    # Admin: todo + configuración + gestión de reglas.
     Role.ADMIN: frozenset({
+        Permission.EVENTS_WRITE,
         Permission.INCIDENTS_READ,
         Permission.INCIDENTS_WRITE,
         Permission.METRICS_READ,

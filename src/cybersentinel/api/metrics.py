@@ -48,6 +48,7 @@ class IngestMetrics:
         self.failed = 0
         self.annotations: Counter[str] = Counter()
         self.validation_errors: Counter[str] = Counter()
+        self.recovery_time_ms: float = 0.0
 
     # --- Registro ---------------------------------------------------------
     def record_received(self, n: int = 1) -> None:
@@ -112,4 +113,5 @@ class IngestMetrics:
                 },
                 "annotations": dict(self.annotations),
                 "validation_errors": dict(self.validation_errors.most_common(10)),
+                "recovery_time_ms": round(self.recovery_time_ms, 2),
             }

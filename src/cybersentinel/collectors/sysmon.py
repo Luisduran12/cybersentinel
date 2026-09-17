@@ -54,7 +54,7 @@ class SysmonCollector(Collector):
 
     def parse(self, raw: Any) -> CollectorResult:
         if isinstance(raw, (bytes, bytearray)):
-            raw = raw.decode("utf-8", errors="replace")
+            raw = self.decode_bytes(bytes(raw))
 
         if isinstance(raw, str):
             texto = raw.strip()

@@ -25,6 +25,7 @@ dependencies = [
     "uvicorn[standard]>=0.30",      # servidor ASGI
     "httpx>=0.27",                  # cliente HTTP (generador de carga, pruebas)
     "psutil>=5.9",                  # CPU y RAM medidos en el banco de pruebas
+    "python-dotenv>=1.0",           # Gestion de secretos
 ]
 
 [project.optional-dependencies]
@@ -34,6 +35,7 @@ attack = ["mitreattack-python>=3.0"]   # solo para regenerar la cache de ATT&CK
 dev = ["pytest>=7.0", "matplotlib>=3.7"]
 cti = ["stix2>=3.0"]
 rag = ["langchain-core>=0.1", "langchain-community>=0.0", "faiss-cpu>=1.7", "numpy>=1.24"]
+streaming = ["nats-py>=2.6"]           # bus de mensajes (Fase 1: ver docs/PRODUCTION-ARCHITECTURE.md)
 
 [project.scripts]
 cybersentinel = "cybersentinel.cli:main"
@@ -45,3 +47,8 @@ where = ["src"]
 # El panel SOC se sirve desde el propio proceso, asi que sus archivos tienen
 # que viajar dentro del paquete instalado.
 "cybersentinel.api" = ["panel/*.html", "panel/*.css", "panel/*.js"]
+
+[tool.pytest.ini_options]
+markers = [
+    "asyncio: prueba de integración async contra infraestructura real (NATS); no corre en la suite estándar.",
+]

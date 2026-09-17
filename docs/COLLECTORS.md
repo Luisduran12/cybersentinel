@@ -25,8 +25,12 @@ fuente que lo alimenta.
 
 - **`collect()` nunca lanza excepción.** Un registro corrupto devuelve un
   `CollectorResult` con errores. Una fuente no debe poder detener la ingesta.
-- **Payloads > 1 MiB se rechazan** (`MAX_PAYLOAD_BYTES`) con la etiqueta
+- **Payloads > 5 MiB se rechazan** (`MAX_PAYLOAD_BYTES`) con la etiqueta
   `payload_excesivo`, antes de intentar parsear.
+- **La decodificación de bytes prueba UTF-8 y, si falla, cae a Latin-1**
+  (`Collector.decode_bytes`) en vez de sustituir los bytes inválidos por `�`:
+  Latin-1 nunca lanza `UnicodeDecodeError`, así que es el último recurso antes
+  de perder el dato.
 - **Campos > 8.192 caracteres se truncan** (`MAX_FIELD_CHARS`) con la etiqueta
   `campo_truncado`. El truncado queda declarado, no oculto.
 - **Un timestamp ilegible no se inventa**: se usa la hora de ingesta y se marca
@@ -106,12 +110,23 @@ peor que uno que declara sus límites.
 
 ## Pruebas
 
-`tests/test_collectors.py` — 34 pruebas.
+`tests/test_collectors.py` — 44 pruebas.
 
 - **E2E por collector**: telemetría real de cada formato atravesando el `Pipeline`
   real hasta producir evidencia. RAG y LLM se desactivan **solo** por tiempo de
   ejecución; Sigma, ML y correlación corren de verdad.
 - **Negativas, parametrizadas sobre los cuatro**: evento corrupto, campo
-  obligatorio ausente, timestamp inválido, payload excesivo e idempotencia ante
-  duplicados.
+  obligatorio ausente, timestamp inválido, payload excesivo (con el límite real
+  de 5 MiB, no uno rebajado para la prueba) y encoding inválido (Latin-1) sin
+  perder el dato.
+- **Idempotencia end-to-end**: `test_evento_duplicado_se_procesa_pero_no_duplica_el_incidente`
+  en `tests/test_api_ingestion.py` envía el mismo `event_id` dos veces por
+  `POST /api/v1/events` real y comprueba en el `IncidentStore` que solo existe
+  un incidente — no solo que la huella del collector sea estable.
+- **Cobertura de campos que el contrato original no exponía**: `uid`, `gid`,
+  `file_path`, `dst_ip`, `dst_port` y `return_code` en `LinuxCollector`
+  (auditd `SYSCALL`/`PATH`/`NETFILTER_PKT` y journald), y `packets_in`/
+  `packets_out` en `FirewallCollector`. Todos viven en `properties`, no en el
+  esquema de `SecurityEvent`, siguiendo el mismo patrón que ya usaban los
+  `hashes` de Sysmon.
 - **Independencia del motor**: inspección de imports con `ast`.

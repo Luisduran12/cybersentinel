@@ -283,6 +283,23 @@ modelo, Markov ni la correlación, y hay una prueba que lo verifica inspeccionan
 los imports. Formatos soportados y **limitaciones conocidas de cada collector**
 en [`docs/COLLECTORS.md`](docs/COLLECTORS.md).
 
+## Streaming y OCSF (Fase 1 de la hoja de ruta de producción)
+
+Un adaptador OCSF (`ingestion/ocsf.py`) traduce `SecurityEvent` de/hacia el
+[Open Cybersecurity Schema Framework](https://ocsf.io) sin tocar el esquema
+interno, y un normalizador (`streaming/normalizer_service.py`) lo conecta a un
+bus NATS JetStream para desacoplar ingesta de detección:
+
+```bash
+docker compose up --build      # nats + api + normalizer
+pytest tests/test_ocsf.py tests/test_streaming.py -q   # sin infraestructura
+```
+
+Por qué NATS y no Kafka, por qué un normalizador propio y no Substation/Tenzir,
+qué falta para las fases siguientes (detección-as-code, CTI en vivo, RAG con
+pgvector, orquestación con LangGraph, Prometheus/Grafana/K8s) y qué es
+honestamente solo un plan todavía: [`docs/PRODUCTION-ARCHITECTURE.md`](docs/PRODUCTION-ARCHITECTURE.md).
+
 ## Frontera del servicio: autenticación, RBAC y límite de caudal
 
 La API de ingestión no se expone sin credencial. Dos tipos de cliente, dos tipos
