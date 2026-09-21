@@ -188,10 +188,62 @@ def parse_web(record: dict[str, Any]) -> SecurityEvent:
     )
 
 
+def _parse_via_collector(collector_cls, record: dict[str, Any]) -> SecurityEvent:
+    """
+    Delega en un `Collector` real (`collectors/`) en vez de duplicar su
+    lógica de mapeo de campos aquí.
+
+    Hallazgo de la auditoría de producción: `linux`, `suricata` y `wazuh`
+    nunca tuvieron parser propio en este módulo — un evento con
+    `source: "linux"` caía en silencio al parser por defecto (con el aviso de
+    "fuente sin parser" y la etiqueta `fuente_desconocida`), así que la API
+    HTTP real nunca pudo detectar telemetría Linux, Suricata o Wazuh aunque
+    sus collectors ya existían, estaban probados y funcionaban por su cuenta.
+
+    `Collector.collect()` nunca lanza excepción; aquí sí se relanza como
+    `ValueError` cuando falla, porque el contrato de `PARSERS` es devolver un
+    `SecurityEvent` o fallar — `IngestService.ingest()` ya captura esa
+    excepción y la cuenta como rechazo, igual que un JSON malformado.
+    """
+    resultado = collector_cls().collect(record)
+    if not resultado.ok:
+        raise ValueError("; ".join(resultado.errors) or "el collector no produjo un evento")
+    return resultado.event
+
+
+def parse_linux(record: dict[str, Any]) -> SecurityEvent:
+    """
+    Delegado a `LinuxCollector` (journald/syslog/auditd).
+
+    LIMITACIÓN: el contrato JSON de la API (`RawEvent`) exige un objeto, no
+    una cadena — así que solo el modo journald (JSON) de `LinuxCollector` es
+    alcanzable por HTTP. Una línea syslog o auditd cruda no tiene forma de
+    viajar como valor de un campo JSON sin que el cliente la envuelva
+    explícitamente; por ingesta HTTP real, hoy, solo journald funciona.
+    """
+    from ..collectors.linux import LinuxCollector
+    return _parse_via_collector(LinuxCollector, record)
+
+
+def parse_suricata(record: dict[str, Any]) -> SecurityEvent:
+    """Delegado a `SuricataCollector` (EVE JSON: alert/flow)."""
+    from ..collectors.suricata import SuricataCollector
+    return _parse_via_collector(SuricataCollector, record)
+
+
+def parse_wazuh(record: dict[str, Any]) -> SecurityEvent:
+    """Delegado a `WazuhCollector` (alertas Wazuh: rule/agent/data)."""
+    from ..collectors.wazuh import WazuhCollector
+    return _parse_via_collector(WazuhCollector, record)
+
+
 # Registro de parsers por nombre de fuente
 PARSERS: dict[str, Callable[[dict[str, Any]], SecurityEvent]] = {
     "sysmon": parse_sysmon,
     "auth": parse_auth,
+    "linux": parse_linux,
+    "suricata": parse_suricata,
+    "wazuh": parse_wazuh,
     "firewall": parse_firewall,
     "netflow": parse_netflow,
     "web": parse_web,
