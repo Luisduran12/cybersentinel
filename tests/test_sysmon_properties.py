@@ -24,7 +24,11 @@ def test_parse_sysmon_extracts_properties():
 
     # Properties
     assert event.properties["parent_command_line"] == "explorer.exe"
-    assert event.properties["hashes"] == "SHA1=1234567890ABCDEF"
+    # SysmonCollector parsea "ALGO=valor,ALGO=valor" a {algo: valor} -- lo
+    # que ya esperaba cti/enrichment.py (extract_observables hace
+    # hashes.values()); el parser hand-rolled anterior devolvia la cadena
+    # cruda, que habria roto esa llamada con AttributeError.
+    assert event.properties["hashes"] == {"sha1": "1234567890ABCDEF"}
     assert event.properties["current_directory"] == "C:\\Users\\admin\\"
     assert event.properties["original_file_name"] == "Cmd.Exe"
     assert event.properties["integrity_level"] == "High"

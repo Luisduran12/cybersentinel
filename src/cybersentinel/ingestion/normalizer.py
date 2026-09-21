@@ -7,6 +7,11 @@ firewall, web, netflow) al esquema común SecurityEvent.
 Diseño: cada fuente tiene un parser dedicado. Añadir una fuente nueva = añadir
 un parser, sin tocar el resto del pipeline.
 
+Las 5 fuentes que tienen un `Collector` real en `collectors/` (linux, suricata,
+wazuh, sysmon, firewall) delegan en él vía `_parse_via_collector` en vez de
+reimplementar el mapeo de campos aquí — auth/netflow/web no tienen collector
+propio y se normalizan directamente en este módulo.
+
 Principio de esta capa: **nada se descarta ni se falsea en silencio**. Un registro
 con un timestamp ilegible, de una fuente desconocida o con una línea corrupta se
 marca con una etiqueta y se registra en el log. En un SOC real, los datos que se
@@ -62,39 +67,16 @@ def _timestamp(record: dict[str, Any], *keys: str) -> tuple[datetime, list[str]]
 
 
 def parse_sysmon(record: dict[str, Any]) -> SecurityEvent:
-    """Normaliza un evento estilo Sysmon (creación de proceso, red, etc.)."""
-    ts, tags = _timestamp(record, "timestamp", "UtcTime", "@timestamp")
-    
-    properties = {}
-    for key, source_keys in {
-        "parent_command_line": ("ParentCommandLine",),
-        "hashes": ("Hashes",),
-        "original_file_name": ("OriginalFileName",),
-        "current_directory": ("CurrentDirectory",),
-        "integrity_level": ("IntegrityLevel",),
-    }.items():
-        val = _s(record, *source_keys)
-        if val is not None:
-            properties[key] = val
+    """
+    Delegado a `SysmonCollector` (JSON o XML del canal de eventos).
 
-    return SecurityEvent(
-        event_id=str(_s(record, "event_id", "EventID", default="")) or "sysmon",
-        timestamp=ts,
-        source="sysmon",
-        category=_s(record, "category", default="process"),
-        action=_s(record, "action", default="process_create"),
-        host=_s(record, "host", "Computer", "hostname"),
-        user=_s(record, "user", "User", "SubjectUserName"),
-        process_name=_s(record, "process_name", "Image", "process"),
-        command_line=_s(record, "command_line", "CommandLine", "cmdline"),
-        parent_process=_s(record, "parent_process", "ParentImage"),
-        dst_ip=_s(record, "dst_ip", "DestinationIp"),
-        dst_port=_maybe_int(_s(record, "dst_port", "DestinationPort")),
-        outcome=_s(record, "outcome", default="unknown"),
-        properties=properties,
-        raw=record,
-        tags=tags,
-    )
+    Antes normalizaba a mano con un mapeo de campos mucho más pobre que el
+    collector (sin categoría/acción por EventID, sin src_ip/src_port/
+    protocol, sin parseo de hashes ni soporte XML): el mismo patrón de
+    collector huérfano ya corregido para linux/suricata/wazuh.
+    """
+    from ..collectors.sysmon import SysmonCollector
+    return _parse_via_collector(SysmonCollector, record)
 
 
 def parse_auth(record: dict[str, Any]) -> SecurityEvent:
@@ -116,26 +98,16 @@ def parse_auth(record: dict[str, Any]) -> SecurityEvent:
 
 
 def parse_firewall(record: dict[str, Any]) -> SecurityEvent:
-    """Normaliza un log de firewall / conexión de red."""
-    ts, tags = _timestamp(record, "timestamp", "@timestamp")
-    return SecurityEvent(
-        event_id=str(_s(record, "event_id", default="fw")),
-        timestamp=ts,
-        source="firewall",
-        category="network",
-        action=_s(record, "action", default="connection"),
-        host=_s(record, "host", "hostname"),
-        src_ip=_s(record, "src_ip", "source_ip"),
-        dst_ip=_s(record, "dst_ip", "destination_ip"),
-        src_port=_maybe_int(_s(record, "src_port")),
-        dst_port=_maybe_int(_s(record, "dst_port", "port")),
-        protocol=_s(record, "protocol", "proto"),
-        bytes_out=_maybe_int(_s(record, "bytes_out", "bytes_sent")),
-        bytes_in=_maybe_int(_s(record, "bytes_in", "bytes_received")),
-        outcome=_s(record, "outcome", "action", default="unknown"),
-        raw=record,
-        tags=tags,
-    )
+    """
+    Delegado a `FirewallCollector` (JSON o syslog clave=valor, multi-fabricante).
+
+    Antes normalizaba a mano con 1-2 alias por campo y sin los sinónimos de
+    fabricante (Palo Alto/Fortinet/pfSense/Zeek), sin normalizar outcome a
+    success/failure y sin soporte de líneas syslog crudas: el mismo patrón de
+    collector huérfano ya corregido para linux/suricata/wazuh.
+    """
+    from ..collectors.firewall import FirewallCollector
+    return _parse_via_collector(FirewallCollector, record)
 
 
 def parse_netflow(record: dict[str, Any]) -> SecurityEvent:
@@ -204,11 +176,23 @@ def _parse_via_collector(collector_cls, record: dict[str, Any]) -> SecurityEvent
     `ValueError` cuando falla, porque el contrato de `PARSERS` es devolver un
     `SecurityEvent` o fallar — `IngestService.ingest()` ya captura esa
     excepción y la cuenta como rechazo, igual que un JSON malformado.
+
+    Si el registro trae `event_id` explícito, prevalece sobre el identificador
+    nativo que resuelva el collector (p.ej. el `EventID` numérico de Sysmon).
+    `incidents.py` usa `SecurityEvent.event_id` como clave del incidente, y
+    `parse_auth`/`parse_web`/`parse_netflow` ya honran `event_id` del cliente
+    para idempotencia; los collectors priorizan su identificador nativo (útil
+    para telemetría cruda real, que nunca trae `event_id`) por encima de él,
+    lo que sin este ajuste colapsaría en el mismo incidente cualquier par de
+    eventos con el mismo id nativo (p.ej. todos los `EventID=1` de Sysmon).
     """
     resultado = collector_cls().collect(record)
     if not resultado.ok:
         raise ValueError("; ".join(resultado.errors) or "el collector no produjo un evento")
-    return resultado.event
+    event = resultado.event
+    if isinstance(record, dict) and record.get("event_id"):
+        event.event_id = str(record["event_id"])
+    return event
 
 
 def parse_linux(record: dict[str, Any]) -> SecurityEvent:

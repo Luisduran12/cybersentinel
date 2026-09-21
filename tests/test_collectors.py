@@ -26,7 +26,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from cybersentinel.collectors import (  # noqa: E402
     COLLECTORS, Collector, FirewallCollector, LinuxCollector, SuricataCollector,
-    SysmonCollector, get_collector,
+    SysmonCollector, WazuhCollector, get_collector,
 )
 from cybersentinel.collectors.base import (  # noqa: E402
     TAG_INVALID_TIMESTAMP, TAG_OVERSIZED, TAG_TRUNCATED_FIELD,
@@ -529,3 +529,90 @@ def test_firewall_expone_packets_in_y_packets_out():
     props = resultado.event.properties
     assert props["packets_out"] == 12
     assert props["packets_in"] == 9
+
+
+# ==================== DISPATCH: PARSERS[source] == Collector real ===========
+# Regresión del bug de collectors huérfanos: `parse_sysmon`/`parse_firewall`
+# reimplementaban a mano el mapeo de campos en vez de llamar a
+# `SysmonCollector`/`FirewallCollector`, así que la API/CLI/streaming (que solo
+# conocen `PARSERS`) nunca veían la lógica real de los collectors, aunque
+# tests aislados como los de este archivo la probaran y pasaran igual. Si
+# alguien vuelve a hand-rollear un parser paralelo, esta prueba lo detecta:
+# compara el evento que produce PARSERS[source] contra el que produce
+# Collector().collect() para el mismo registro (no .parse(), porque
+# _parse_via_collector llama a .collect(), que además añade el tag de
+# procedencia "collector:<fuente>" y la propiedad source_type).
+from dataclasses import asdict  # noqa: E402
+
+from cybersentinel.ingestion.normalizer import PARSERS  # noqa: E402
+
+_DISPATCH_CASES = {
+    "sysmon": (SysmonCollector, {
+        "EventID": 1, "Computer": "SRV-APP", "User": "admin",
+        "Image": r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe",
+        "CommandLine": "powershell.exe -nop -w hidden -enc SQBFAFgA",
+        "ParentImage": r"C:\Windows\System32\cmd.exe",
+        "Hashes": "SHA256=ABC123,MD5=DEF456",
+        "UtcTime": "2025-03-10 10:00:00",
+    }),
+    "firewall": (FirewallCollector, {
+        "timestamp": "2025-03-10T10:00:00Z", "src_ip": "10.0.0.5", "dst_ip": "8.8.8.8",
+        "src_port": 1234, "dst_port": 53, "protocol": "udp", "action": "allow",
+    }),
+    "linux": (LinuxCollector, {
+        "__REALTIME_TIMESTAMP": "1741600800123456", "_HOSTNAME": "srv-01",
+        "_COMM": "sshd", "PRIORITY": "4",
+        "MESSAGE": "Failed password for root from 10.0.0.5 port 22 ssh2",
+    }),
+    "suricata": (SuricataCollector, {
+        "timestamp": "2025-03-10T10:10:00.000000+0000", "event_type": "alert",
+        "flow_id": 1234567, "src_ip": "203.0.113.66", "dest_ip": "10.0.0.50",
+        "src_port": 4444, "dest_port": 51234, "proto": "TCP",
+        "alert": {"signature": "ET TROJAN Observed Malicious SSL Cert",
+                  "category": "A Network Trojan was detected",
+                  "severity": 1, "signature_id": 2028371},
+        "flow": {"bytes_toserver": 500, "bytes_toclient": 1200},
+    }),
+    "wazuh": (WazuhCollector, {
+        "source": "wazuh", "timestamp": "2025-03-10T10:00:00Z",
+        "rule": {"id": "5710", "level": 10, "description": "sshd: brute force attempt"},
+        "agent": {"id": "001", "name": "SRV-APP"},
+        "data": {"srcip": "203.0.113.5", "srcuser": "root"},
+    }),
+}
+
+
+@pytest.mark.parametrize("fuente", sorted(_DISPATCH_CASES))
+def test_parsers_dispatch_coincide_con_el_collector_real(fuente):
+    """PARSERS[fuente] debe delegar en el Collector real, campo a campo."""
+    collector_cls, crudo = _DISPATCH_CASES[fuente]
+    esperado = collector_cls().collect(crudo)
+    assert esperado.ok, esperado.errors
+
+    obtenido = PARSERS[fuente](crudo)
+    assert asdict(obtenido) == asdict(esperado.event)
+
+
+def test_sysmon_y_firewall_ya_no_estan_huerfanos():
+    """
+    Regresión directa del hallazgo: antes, PARSERS["sysmon"]/PARSERS["firewall"]
+    no llamaban a SysmonCollector/FirewallCollector, así que campos que solo el
+    collector produce (categoría por EventID, src_ip/protocol en sysmon;
+    normalización allow/deny en firewall) faltaban en la salida real del
+    pipeline aunque el collector aislado los expusiera bien.
+    """
+    evento_sysmon = PARSERS["sysmon"]({
+        "EventID": 3, "Computer": "SRV-APP",
+        "SourceIp": "10.0.0.5", "DestinationIp": "8.8.8.8",
+        "UtcTime": "2025-03-10T10:00:00Z",
+    })
+    assert evento_sysmon.category == "network"
+    assert evento_sysmon.action == "network_connection"
+    assert evento_sysmon.src_ip == "10.0.0.5"
+
+    evento_firewall = PARSERS["firewall"]({
+        "srcip": "10.0.0.5", "dstip": "8.8.8.8", "action": "deny",
+        "timestamp": "2025-03-10T10:00:00Z",
+    })
+    assert evento_firewall.src_ip == "10.0.0.5"
+    assert evento_firewall.outcome == "failure"
