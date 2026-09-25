@@ -22,9 +22,13 @@
 # Probar el bus:
 #   docker compose exec nats nats stream ls
 #
-# CYBERSENTINEL_ALLOW_PLAINTEXT=1 es intencional aqui: el trafico entre
-# contenedores viaja dentro de la red interna de Docker, no expuesta. Un
-# despliegue real termina TLS en un proxy de entrada (ver Fase 5).
+# CYBERSENTINEL_ALLOW_PLAINTEXT: SOLO PARA DESARROLLO LOCAL. NUNCA EN PRODUCCION.
+# Con 1, la API acepta credenciales (claves de API, contraseñas, tokens) por
+# HTTP sin cifrar desde cualquier origen. Por defecto vale 0: la API exige TLS
+# a todo lo que no llegue desde loopback. Para habilitarlo en tu maquina:
+#   CYBERSENTINEL_ALLOW_PLAINTEXT=1 docker compose up --build
+# Un despliegue real termina TLS en un proxy de entrada (ver Fase 5) y deja
+# esta variable sin definir o en 0.
 services:
   nats:
     image: nats:2.10-alpine
@@ -46,7 +50,8 @@ services:
     ports:
       - "8000:8000"
     environment:
-      CYBERSENTINEL_ALLOW_PLAINTEXT: "1"
+      # Solo desarrollo local; nunca en produccion (ver comentario de cabecera).
+      CYBERSENTINEL_ALLOW_PLAINTEXT: "${CYBERSENTINEL_ALLOW_PLAINTEXT:-0}"
       CYBERSENTINEL_DB: /data/events.db
       CYBERSENTINEL_IDENTITY_DB: /data/identities.db
       CYBERSENTINEL_AUDIT: /data/audit.jsonl

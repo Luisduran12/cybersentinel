@@ -295,6 +295,19 @@ docker compose up --build      # nats + api + normalizer
 pytest tests/test_ocsf.py tests/test_streaming.py -q   # sin infraestructura
 ```
 
+Por defecto la API del `docker-compose.yml` exige TLS
+(`CYBERSENTINEL_ALLOW_PLAINTEXT=0`): las peticiones con credenciales que
+llegan por HTTP desde fuera del contenedor reciben un 403. Para probarla en
+tu máquina sin certificado, habilita el texto en claro de forma explícita:
+
+```bash
+CYBERSENTINEL_ALLOW_PLAINTEXT=1 docker compose up --build
+```
+
+> **Solo para desarrollo local.** Con esta variable activa, las claves de API,
+> contraseñas y tokens viajan sin cifrar. Nunca la actives en producción: allí
+> TLS lo termina el servicio (`--tls-cert`/`--tls-key`) o un proxy de entrada.
+
 Por qué NATS y no Kafka, por qué un normalizador propio y no Substation/Tenzir,
 qué falta para las fases siguientes (detección-as-code, CTI en vivo, RAG con
 pgvector, orquestación con LangGraph, Prometheus/Grafana/K8s) y qué es
