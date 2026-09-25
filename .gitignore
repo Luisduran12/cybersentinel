@@ -35,3 +35,5 @@ response_actions.db
 
 # Cache autogenerada de graphify
 graphify-out/
+*.db-shm
+*.db-wal
