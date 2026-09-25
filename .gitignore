@@ -26,3 +26,6 @@ data/runtime/
 
 # macOS
 .DS_Store
+
+# Resultado UNSW-NB15 (134 MB, supera el limite de 100 MB de GitHub)
+reports/unsw_result.json
