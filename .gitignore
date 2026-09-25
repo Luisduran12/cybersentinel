@@ -29,3 +29,9 @@ data/runtime/
 
 # Resultado UNSW-NB15 (134 MB, supera el limite de 100 MB de GitHub)
 reports/unsw_result.json
+
+# Base de datos local de acciones de respuesta
+response_actions.db
+
+# Cache autogenerada de graphify
+graphify-out/
