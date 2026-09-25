@@ -23,7 +23,7 @@ from ..schema import SecurityEvent
 
 #: Fuentes con parser dedicado. Otras se aceptan, pero el evento queda
 #: etiquetado por el normalizador como `fuente_desconocida`.
-KNOWN_SOURCES = {"sysmon", "auth", "firewall", "netflow", "web"}
+KNOWN_SOURCES = {"sysmon", "auth", "firewall", "netflow", "web", "linux", "suricata", "wazuh"}
 
 
 class RawEvent(BaseModel):

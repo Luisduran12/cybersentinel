@@ -47,6 +47,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from ..config import DEFAULT_ANOMALY_THRESHOLD
+
 logger = logging.getLogger(__name__)
 
 #: Estados del ciclo de vida. Cortos y en número mínimo: cada estado que nadie
@@ -192,7 +194,7 @@ def _titulo(evidencia: Any, evento: Any) -> str:
     """
     if evidencia.rule_matches:
         base = evidencia.rule_matches[0].rule.title
-    elif evidencia.anomaly_score >= 0.5:
+    elif evidencia.anomaly_score >= DEFAULT_ANOMALY_THRESHOLD:
         base = "Anomalía sin regla asociada"
     else:
         base = "Detección"

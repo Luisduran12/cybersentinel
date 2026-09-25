@@ -1164,8 +1164,9 @@ def main(argv: list[str] | None = None) -> int:
     p_cu = _comunes(sub_au.add_parser("create-user", help="Da de alta a una persona."))
     p_cu.add_argument("--username", required=True)
     p_cu.add_argument("--role", required=True,
-                      choices=("analyst", "responder", "auditor", "admin"),
-                      help="sensor no se admite aquí: los sensores usan clave de API.")
+                      choices=("viewer", "analyst", "admin"),
+                      help="'collector' no se admite aquí: los sensores usan clave de API "
+                           "(ver create-key), no cuenta de persona.")
     p_cu.add_argument("--password-stdin", action="store_true",
                       help="Leer la contraseña de la entrada estándar en vez de pedirla.")
     p_cu.add_argument("--replace", action="store_true",
@@ -1175,8 +1176,8 @@ def main(argv: list[str] | None = None) -> int:
     p_ck = _comunes(sub_au.add_parser("create-key", help="Emite una clave para un sensor."))
     p_ck.add_argument("--label", required=True,
                       help="Para qué sensor es. Aparece en la auditoría.")
-    p_ck.add_argument("--role", default="sensor",
-                      choices=("sensor", "analyst", "responder", "auditor", "admin"))
+    p_ck.add_argument("--role", default="collector",
+                      choices=("collector", "viewer", "analyst", "admin"))
     p_ck.add_argument("--expires-days", type=int, default=365)
     p_ck.add_argument("--no-expiry", action="store_true",
                       help="Sin caducidad. Desaconsejado: la credencial sobrevive "

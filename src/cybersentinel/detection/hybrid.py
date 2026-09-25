@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
+from ..config import DEFAULT_ANOMALY_THRESHOLD
 from .rules_engine import RuleHit
 from .temporal import CorrelatedIncident
 from cybersentinel.cti.models import ThreatIntelHit
@@ -111,11 +112,11 @@ class DetectionEvidence:
         detectó una regla determinista, lo señaló solo el modelo, o no lo vio
         nadie.
         """
-        if self.rule_matches and self.anomaly_score >= 0.5:
+        if self.rule_matches and self.anomaly_score >= DEFAULT_ANOMALY_THRESHOLD:
             return "RULE_AND_ANOMALY"
         if self.rule_matches:
             return "RULE_MATCH"
-        if self.anomaly_score >= 0.5:
+        if self.anomaly_score >= DEFAULT_ANOMALY_THRESHOLD:
             return "ANOMALY_ONLY"
         if self.behavioral_deviations:
             return "BEHAVIORAL_ANOMALY"
@@ -143,9 +144,10 @@ class DetectionEvidence:
         if self.rule_matches:
             base += 50.0
 
-        # 2. El ML modula el riesgo basado en cuán raro es
-        # anomaly_score está en [0, 1]. Si es mayor a 0.5 es anómalo.
-        ml_boost = max(0, (self.anomaly_score - 0.5) * 40.0)
+        # 2. El ML modula el riesgo basado en cuán raro es.
+        # anomaly_score está en [0, 1]; DEFAULT_ANOMALY_THRESHOLD (calibrado,
+        # ver config.py) es el punto a partir del cual se considera anómalo.
+        ml_boost = max(0, (self.anomaly_score - DEFAULT_ANOMALY_THRESHOLD) * 40.0)
         base += ml_boost
 
         # 3. Contexto temporal (ej. secuencias previas) aporta confianza extra

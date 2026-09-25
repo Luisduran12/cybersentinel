@@ -1,0 +1,42 @@
+{
+  "descripcion": "Evidencia real de Fase 1 (auditoria de produccion): evento Windows/Sysmon enviado por curl a POST /api/v1/events contra un servidor uvicorn real, trazado hasta el incidente persistido y consultado via GET /api/v1/incidents/{id}.",
+  "curl_enviado": {
+    "source": "sysmon",
+    "event_id": "test-001",
+    "timestamp": "2026-09-17T10:00:00Z",
+    "EventID": 4688,
+    "Image": "C:\\Windows\\System32\\cmd.exe",
+    "CommandLine": "powershell.exe -enc SQBFAFgA",
+    "ParentImage": "C:\\Windows\\explorer.exe",
+    "User": "DOMAIN\\analyst",
+    "Computer": "SRV-APP"
+  },
+  "nota_formato": "El formato EXACTO del prompt de auditoria (source_type + raw_event anidado) fue rechazado con 422 Field required 'source'. El contrato real de la API usa 'source' y campos planos, no 'source_type'/'raw_event'. Ver hallazgo H-06 del informe.",
+  "respuesta_post_events": {"accepted": 1, "rejected": 0, "queued": 1, "annotations": {}, "errors": []},
+  "incidente_creado": {
+    "incident_id": "test-001",
+    "title": "PowerShell ofuscado o codificado \u00b7 SRV-APP",
+    "score": 50.0,
+    "severity": "low",
+    "detection_status": "RULE_MATCH",
+    "techniques": ["T1059", "T1059.001"],
+    "tactics": ["execution"],
+    "rules_disparadas": [
+      {"rule_id": "RULE-0002", "title": "PowerShell ofuscado o codificado", "motor": "propio (config/rules/)"},
+      {"rule_id": "3d6d4b49-5f2e-4e29-9e37-a1b7f3e5aa01", "title": "PowerShell Encoded Command (CyberSentinel Adaptation)", "motor": "pySigma (config/sigma_rules/selected/)"}
+    ],
+    "llm_status": "UNAVAILABLE",
+    "fallback_used": true,
+    "narrativa_generada": "[OBSERVADO] Reglas de detecci\u00f3n activadas: RULE-0002 (PowerShell ofuscado o codificado), 3d6d4b49-5f2e-4e29-9e37-a1b7f3e5aa01 (PowerShell Encoded Command (CyberSentinel Adaptation)). El detector de anomal\u00edas punt\u00faa 0.000, por debajo de la frontera de decisi\u00f3n: no lo considera an\u00f3malo. T\u00e9cnicas MITRE ATT&CK asociadas: T1059, T1059.001 (t\u00e1cticas: execution). Sin coincidencias en la inteligencia de amenazas cargada (CTI_MATCH=NONE). [RECUPERADO] Contexto documental recuperado de T1059.md, T1690.md. Puntuaci\u00f3n h\u00edbrida resultante: 50.0/100 (estado: RULE_MATCH). Explicaci\u00f3n generada de forma determinista a partir de la evidencia: no intervino ning\u00fan modelo de lenguaje."
+  },
+  "acciones_de_respuesta_disparadas": [
+    {"action_type": "enviar_webhook", "status": "completed", "dry_run": true},
+    {"action_type": "crear_ticket", "status": "completed", "dry_run": true}
+  ],
+  "auditoria": [
+    "action_executing/action_completed: enviar_webhook",
+    "action_executing/action_completed: crear_ticket",
+    "incident_analyzed: entity=SRV-APP hybrid_score=50.0",
+    "authz_denied: key collector intentando leer /api/v1/metrics (403 correcto)"
+  ]
+}

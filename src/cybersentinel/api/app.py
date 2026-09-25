@@ -19,7 +19,8 @@ Endpoints:
     GET  /api/v1/incidents/{id}   incidente con su evidencia   · incidents:read
     PATCH /api/v1/incidents/{id}  estado, propietario, cierre  · incidents:write
     POST /api/v1/incidents/{id}/notes     anotar               · incidents:write
-    POST /api/v1/incidents/{id}/decision  veredicto HITL       · incidents:write
+    GET  /api/v1/incidents/{id}/timeline  cronología           · incidents:read
+    POST /api/v1/incidents/{id}/triage    veredicto HITL       · incidents:write
     POST /api/v1/drain            retirada ordenada            · identity:admin
     GET  /soc/                    panel del analista           · público (estático)
 
@@ -97,17 +98,6 @@ IDENTITY_DB = os.environ.get(
 WAL_DIR = os.environ.get("CYBERSENTINEL_WAL", str(ROOT / "data" / "runtime" / "wal"))
 FEEDBACK_STORE = os.environ.get(
     "CYBERSENTINEL_FEEDBACK", str(ROOT / "data" / "feedback" / "decisions.jsonl"))
-
-#: Cómo se traduce el veredicto del analista a motivo de cierre. `UNCERTAIN`
-#: no aparece a propósito: un incidente sobre el que el analista duda no está
-#: resuelto, y cerrarlo automáticamente lo escondería del panel sin que nadie
-#: haya decidido nada.
-RESOLUCION_POR_VEREDICTO = {
-    "TRUE_POSITIVE": "true_positive",
-    "FALSE_POSITIVE": "false_positive",
-    "BENIGN": "benign",
-}
-
 
 class IngestService:
     """Estado del servicio: pipeline real, cola, almacén, worker y métricas."""

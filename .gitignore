@@ -18,3 +18,11 @@ data/feedback/
 # Dataset UNSW-NB15: no se versiona (aprox. 640 MB)
 data/unsw_nb15/
 data/runtime/
+
+# Secretos y variables de entorno
+.env
+.env.*
+!.env.example
+
+# macOS
+.DS_Store

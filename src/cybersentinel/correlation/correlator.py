@@ -25,6 +25,7 @@ from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import Any
 
+from ..config import DEFAULT_ANOMALY_THRESHOLD
 from ..detection.anomaly import AnomalyResult, severity_from_anomaly
 from ..detection.rules_engine import RuleHit
 from ..schema import SecurityEvent, Severity
@@ -198,7 +199,7 @@ class Correlator:
         self,
         rule_hits: list[RuleHit],
         anomalies: list[AnomalyResult],
-        anomaly_threshold: float = 0.6,
+        anomaly_threshold: float = DEFAULT_ANOMALY_THRESHOLD,
     ) -> list[Finding]:
         findings: list[Finding] = []
         for hit in rule_hits:

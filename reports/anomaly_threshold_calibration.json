@@ -1,0 +1,1166 @@
+{
+  "metodologia": {
+    "dataset": "1020 eventos sintéticos, semilla 42 (idéntico al test de carga real)",
+    "n_eventos": 1020,
+    "n_sospechosos_reales": 46,
+    "train": {
+      "n": 510,
+      "sospechosos": 23
+    },
+    "validation": {
+      "n": 254,
+      "sospechosos": 11
+    },
+    "test": {
+      "n": 256,
+      "sospechosos": 12
+    },
+    "objetivo_fpr": 0.15,
+    "objetivo_recall": 0.6
+  },
+  "umbral_anterior_0_5": {
+    "umbral": 0.5,
+    "fpr_validation": 0.3045,
+    "recall_validation": 1.0
+  },
+  "umbral_calibrado": {
+    "umbral": 0.602,
+    "cumple_ambos_objetivos_en_validation": true,
+    "fpr_validation": 0.0206,
+    "recall_validation": 1.0,
+    "fpr_test_holdout": 0.0287,
+    "recall_test_holdout": 0.6667
+  },
+  "barrido_completo_validation": [
+    {
+      "umbral": 0.0,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.01,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.02,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.03,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.04,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.05,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.06,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.07,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.08,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.09,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.1,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.11,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.12,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.13,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.14,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.15,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.16,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.17,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.18,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.19,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.2,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.21,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.22,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.23,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.24,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.25,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.26,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.27,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.28,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.29,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.3,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.31,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.32,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.33,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.34,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.35,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.36,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.37,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.38,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.39,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.4,
+      "fpr_validation": 1.0,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.407,
+      "fpr_validation": 0.9959,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.409,
+      "fpr_validation": 0.9918,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.41,
+      "fpr_validation": 0.9918,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.414,
+      "fpr_validation": 0.9877,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.415,
+      "fpr_validation": 0.9753,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.416,
+      "fpr_validation": 0.9712,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.418,
+      "fpr_validation": 0.963,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.419,
+      "fpr_validation": 0.9547,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.42,
+      "fpr_validation": 0.9506,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.421,
+      "fpr_validation": 0.9506,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.423,
+      "fpr_validation": 0.9342,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.426,
+      "fpr_validation": 0.93,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.427,
+      "fpr_validation": 0.9218,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.428,
+      "fpr_validation": 0.9136,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.429,
+      "fpr_validation": 0.9136,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.43,
+      "fpr_validation": 0.9095,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.431,
+      "fpr_validation": 0.9053,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.432,
+      "fpr_validation": 0.893,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.433,
+      "fpr_validation": 0.8889,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.435,
+      "fpr_validation": 0.8765,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.436,
+      "fpr_validation": 0.8683,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.437,
+      "fpr_validation": 0.8601,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.438,
+      "fpr_validation": 0.8477,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.439,
+      "fpr_validation": 0.8436,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.44,
+      "fpr_validation": 0.8313,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.441,
+      "fpr_validation": 0.8148,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.444,
+      "fpr_validation": 0.8107,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.445,
+      "fpr_validation": 0.8025,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.446,
+      "fpr_validation": 0.786,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.447,
+      "fpr_validation": 0.7737,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.449,
+      "fpr_validation": 0.7654,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.45,
+      "fpr_validation": 0.7449,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.452,
+      "fpr_validation": 0.7407,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.453,
+      "fpr_validation": 0.7284,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.454,
+      "fpr_validation": 0.7243,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.455,
+      "fpr_validation": 0.716,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.456,
+      "fpr_validation": 0.6996,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.457,
+      "fpr_validation": 0.6749,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.458,
+      "fpr_validation": 0.6667,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.459,
+      "fpr_validation": 0.6502,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.46,
+      "fpr_validation": 0.6337,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.461,
+      "fpr_validation": 0.6255,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.462,
+      "fpr_validation": 0.6132,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.463,
+      "fpr_validation": 0.6049,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.464,
+      "fpr_validation": 0.5926,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.465,
+      "fpr_validation": 0.5761,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.466,
+      "fpr_validation": 0.5638,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.467,
+      "fpr_validation": 0.5556,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.468,
+      "fpr_validation": 0.535,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.469,
+      "fpr_validation": 0.5267,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.47,
+      "fpr_validation": 0.5062,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.472,
+      "fpr_validation": 0.4979,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.473,
+      "fpr_validation": 0.4938,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.474,
+      "fpr_validation": 0.4815,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.475,
+      "fpr_validation": 0.465,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.476,
+      "fpr_validation": 0.4568,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.477,
+      "fpr_validation": 0.4527,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.478,
+      "fpr_validation": 0.4486,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.479,
+      "fpr_validation": 0.4362,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.48,
+      "fpr_validation": 0.4321,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.481,
+      "fpr_validation": 0.4321,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.482,
+      "fpr_validation": 0.4198,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.483,
+      "fpr_validation": 0.4115,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.484,
+      "fpr_validation": 0.4074,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.485,
+      "fpr_validation": 0.3951,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.486,
+      "fpr_validation": 0.3868,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.487,
+      "fpr_validation": 0.3704,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.488,
+      "fpr_validation": 0.3663,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.489,
+      "fpr_validation": 0.358,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.49,
+      "fpr_validation": 0.3539,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.492,
+      "fpr_validation": 0.3539,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.493,
+      "fpr_validation": 0.3416,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.494,
+      "fpr_validation": 0.3333,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.495,
+      "fpr_validation": 0.3292,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.496,
+      "fpr_validation": 0.321,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.498,
+      "fpr_validation": 0.321,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.499,
+      "fpr_validation": 0.3045,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.5,
+      "fpr_validation": 0.3045,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.501,
+      "fpr_validation": 0.2922,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.502,
+      "fpr_validation": 0.284,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.503,
+      "fpr_validation": 0.2675,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.504,
+      "fpr_validation": 0.2675,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.505,
+      "fpr_validation": 0.2593,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.506,
+      "fpr_validation": 0.251,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.507,
+      "fpr_validation": 0.2387,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.508,
+      "fpr_validation": 0.2305,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.509,
+      "fpr_validation": 0.2222,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.51,
+      "fpr_validation": 0.2222,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.512,
+      "fpr_validation": 0.2181,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.513,
+      "fpr_validation": 0.2099,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.515,
+      "fpr_validation": 0.2016,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.516,
+      "fpr_validation": 0.1934,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.518,
+      "fpr_validation": 0.1893,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.519,
+      "fpr_validation": 0.1811,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.52,
+      "fpr_validation": 0.1811,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.521,
+      "fpr_validation": 0.1811,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.524,
+      "fpr_validation": 0.1728,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.525,
+      "fpr_validation": 0.1728,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.526,
+      "fpr_validation": 0.1646,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.527,
+      "fpr_validation": 0.1605,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.53,
+      "fpr_validation": 0.1523,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.532,
+      "fpr_validation": 0.1481,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.533,
+      "fpr_validation": 0.144,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.534,
+      "fpr_validation": 0.144,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.535,
+      "fpr_validation": 0.1317,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.536,
+      "fpr_validation": 0.1276,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.538,
+      "fpr_validation": 0.1193,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.539,
+      "fpr_validation": 0.1152,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.54,
+      "fpr_validation": 0.107,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.544,
+      "fpr_validation": 0.1029,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.546,
+      "fpr_validation": 0.0988,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.548,
+      "fpr_validation": 0.0988,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.55,
+      "fpr_validation": 0.0947,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.552,
+      "fpr_validation": 0.0864,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.555,
+      "fpr_validation": 0.0823,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.558,
+      "fpr_validation": 0.0782,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.56,
+      "fpr_validation": 0.0782,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.562,
+      "fpr_validation": 0.0741,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.563,
+      "fpr_validation": 0.0741,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.568,
+      "fpr_validation": 0.0658,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.57,
+      "fpr_validation": 0.0658,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.572,
+      "fpr_validation": 0.0617,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.575,
+      "fpr_validation": 0.0617,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.576,
+      "fpr_validation": 0.0494,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.58,
+      "fpr_validation": 0.0453,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.581,
+      "fpr_validation": 0.0453,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.587,
+      "fpr_validation": 0.0412,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.588,
+      "fpr_validation": 0.0288,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.59,
+      "fpr_validation": 0.0288,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.591,
+      "fpr_validation": 0.0288,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.6,
+      "fpr_validation": 0.0247,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.602,
+      "fpr_validation": 0.0206,
+      "recall_validation": 1.0
+    },
+    {
+      "umbral": 0.604,
+      "fpr_validation": 0.0206,
+      "recall_validation": 0.9091
+    },
+    {
+      "umbral": 0.609,
+      "fpr_validation": 0.0206,
+      "recall_validation": 0.7273
+    },
+    {
+      "umbral": 0.61,
+      "fpr_validation": 0.0206,
+      "recall_validation": 0.7273
+    },
+    {
+      "umbral": 0.612,
+      "fpr_validation": 0.0206,
+      "recall_validation": 0.7273
+    },
+    {
+      "umbral": 0.62,
+      "fpr_validation": 0.0206,
+      "recall_validation": 0.6364
+    },
+    {
+      "umbral": 0.63,
+      "fpr_validation": 0.0206,
+      "recall_validation": 0.6364
+    },
+    {
+      "umbral": 0.64,
+      "fpr_validation": 0.0206,
+      "recall_validation": 0.6364
+    },
+    {
+      "umbral": 0.644,
+      "fpr_validation": 0.0165,
+      "recall_validation": 0.6364
+    },
+    {
+      "umbral": 0.65,
+      "fpr_validation": 0.0165,
+      "recall_validation": 0.6364
+    },
+    {
+      "umbral": 0.655,
+      "fpr_validation": 0.0165,
+      "recall_validation": 0.6364
+    },
+    {
+      "umbral": 0.66,
+      "fpr_validation": 0.0123,
+      "recall_validation": 0.6364
+    },
+    {
+      "umbral": 0.67,
+      "fpr_validation": 0.0123,
+      "recall_validation": 0.6364
+    },
+    {
+      "umbral": 0.671,
+      "fpr_validation": 0.0123,
+      "recall_validation": 0.6364
+    },
+    {
+      "umbral": 0.672,
+      "fpr_validation": 0.0123,
+      "recall_validation": 0.5455
+    },
+    {
+      "umbral": 0.673,
+      "fpr_validation": 0.0082,
+      "recall_validation": 0.5455
+    },
+    {
+      "umbral": 0.68,
+      "fpr_validation": 0.0041,
+      "recall_validation": 0.5455
+    },
+    {
+      "umbral": 0.689,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.4545
+    },
+    {
+      "umbral": 0.69,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.4545
+    },
+    {
+      "umbral": 0.691,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.4545
+    },
+    {
+      "umbral": 0.7,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.3636
+    },
+    {
+      "umbral": 0.703,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.3636
+    },
+    {
+      "umbral": 0.71,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.2727
+    },
+    {
+      "umbral": 0.715,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.1818
+    },
+    {
+      "umbral": 0.72,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.1818
+    },
+    {
+      "umbral": 0.724,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0909
+    },
+    {
+      "umbral": 0.73,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0909
+    },
+    {
+      "umbral": 0.74,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0909
+    },
+    {
+      "umbral": 0.75,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0909
+    },
+    {
+      "umbral": 0.76,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0909
+    },
+    {
+      "umbral": 0.77,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0909
+    },
+    {
+      "umbral": 0.78,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0
+    },
+    {
+      "umbral": 0.79,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0
+    },
+    {
+      "umbral": 0.8,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0
+    },
+    {
+      "umbral": 0.81,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0
+    },
+    {
+      "umbral": 0.82,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0
+    },
+    {
+      "umbral": 0.83,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0
+    },
+    {
+      "umbral": 0.84,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0
+    },
+    {
+      "umbral": 0.85,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0
+    },
+    {
+      "umbral": 0.86,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0
+    },
+    {
+      "umbral": 0.87,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0
+    },
+    {
+      "umbral": 0.88,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0
+    },
+    {
+      "umbral": 0.89,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0
+    },
+    {
+      "umbral": 0.9,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0
+    },
+    {
+      "umbral": 0.91,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0
+    },
+    {
+      "umbral": 0.92,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0
+    },
+    {
+      "umbral": 0.93,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0
+    },
+    {
+      "umbral": 0.94,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0
+    },
+    {
+      "umbral": 0.95,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0
+    },
+    {
+      "umbral": 0.96,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0
+    },
+    {
+      "umbral": 0.97,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0
+    },
+    {
+      "umbral": 0.98,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0
+    },
+    {
+      "umbral": 0.99,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0
+    },
+    {
+      "umbral": 1.0,
+      "fpr_validation": 0.0,
+      "recall_validation": 0.0
+    }
+  ]
+}

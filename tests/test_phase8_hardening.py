@@ -166,13 +166,18 @@ class TestDT02MLRealConnected:
 
     def test_pipeline_ml_contributes_to_hybrid_score_when_fitted(self):
         """
-        Cuando el modelo ML está entrenado y la anomaly_score > 0.5,
-        el hybrid_score debe ser > 0.
+        Cuando el modelo ML está entrenado y la anomaly_score supera el
+        umbral calibrado (DEFAULT_ANOMALY_THRESHOLD, ver config.py), el
+        hybrid_score debe ser > 0. No se hardcodea el umbral aquí: este
+        test verifica la fórmula del boost, no un valor de umbral concreto
+        que ya cambió una vez (auditoría de producción, hallazgo H-08) y
+        podría volver a calibrarse.
         """
+        from cybersentinel.config import DEFAULT_ANOMALY_THRESHOLD
         from cybersentinel.detection.hybrid import DetectionEvidence
         # Simulate a fitted ML score that is anomalous
         ev = DetectionEvidence(event_id="ml_boost", anomaly_score=0.85)
-        expected_boost = max(0, (0.85 - 0.5) * 40.0)  # 14.0
+        expected_boost = max(0, (0.85 - DEFAULT_ANOMALY_THRESHOLD) * 40.0)
         assert abs(ev.hybrid_score - expected_boost) < 0.001
 
     def test_pipeline_ml_disabled_gives_zero_score(self):

@@ -12,6 +12,7 @@ Cualquier valor puede sobreescribirse por CLI; la precedencia es:
 """
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Any
@@ -38,6 +39,34 @@ DEFAULT_POLICY_PATH = ROOT / "config" / "governance_policy.yaml"
 #: no existe, el Correlator cae a CanonicalBaseline (su propio default).
 DEFAULT_MARKOV_MODEL_PATH = ROOT / "models" / "markov_tactics.json"
 
+#: Umbral de decisión sobre `anomaly_score` (0..1) a partir del cual el
+#: detector de anomalías cuenta como señal para `detection_status`/
+#: `hybrid_score` (detection/hybrid.py) y para el hallazgo agregado del
+#: correlador (correlation/correlator.py). NO es el `contamination` de
+#: Isolation Forest (eso decide `is_anomaly` de forma independiente); es el
+#: punto de corte que decide si esa puntuación mueve el veredicto híbrido.
+#:
+#: Calibrado el 2026-09-18 (auditoría de producción, hallazgo H-08) contra
+#: los 1.020 eventos sintéticos del test de carga real (semilla 42, 5%
+#: sospechosos), con partición train/validation/test 50/25/25 sin fuga de
+#: datos — ver `scripts/calibrate_anomaly_threshold.py` y
+#: `reports/anomaly_threshold_calibration.json` para el método completo y
+#: el barrido de umbrales.
+#:
+#:   Umbral anterior (0.5, sin calibrar): FPR=30.5%  Recall=100.0% (validation)
+#:   Umbral calibrado (0.602):            FPR=2.1%   Recall=100.0% (validation)
+#:                                        FPR=2.9%   Recall=66.7%  (test, holdout)
+#:
+#: Ambos objetivos (FPR<15%, Recall>60%) se cumplen en validation Y en el
+#: conjunto de prueba nunca visto durante la selección. La muestra es
+#: pequeña (~46 eventos sospechosos en total, ~11-12 por partición): el
+#: recall en test cae de 100% a 66.7% frente a validation, lo que refleja
+#: varianza de muestra pequeña, no que el umbral esté mal elegido — un solo
+#: evento de más o de menos mueve el recall ~8 puntos con este tamaño de
+#: muestra. Esta es la mejor estimación honesta disponible hoy, no un
+#: número ajustado a mano.
+DEFAULT_ANOMALY_THRESHOLD = float(os.environ.get("CYBERSENTINEL_ANOMALY_THRESHOLD", "0.602"))
+
 
 @dataclass
 class DetectionSettings:
@@ -47,8 +76,10 @@ class DetectionSettings:
     #: proporción de anomalías por construcción, haya ataques o no.
     anomaly_contamination: float | str = "auto"
 
-    #: None = usar el umbral sugerido por la línea base (percentil 99).
-    anomaly_threshold: float | None = None
+    #: Umbral de decisión sobre anomaly_score. Ver DEFAULT_ANOMALY_THRESHOLD
+    #: para la calibración; None solo si se quiere forzar explícitamente el
+    #: umbral sugerido por la línea base (percentil 99) en vez del calibrado.
+    anomaly_threshold: float | None = DEFAULT_ANOMALY_THRESHOLD
 
 
 @dataclass

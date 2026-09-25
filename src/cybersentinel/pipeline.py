@@ -32,7 +32,7 @@ import numpy as np
 from .analytics.deviation import DeviationDetector
 from .analytics.profiler import EntityProfiler
 from .analytics.risk_score import PROACTIVE_ALERT_THRESHOLD, RiskScoreTracker
-from .config import DEFAULT_MARKOV_MODEL_PATH, ROOT, Settings
+from .config import DEFAULT_ANOMALY_THRESHOLD, DEFAULT_MARKOV_MODEL_PATH, ROOT, Settings
 from .correlation import mitre
 from .correlation.correlator import Correlator, Finding
 from .correlation.sequence_model import CanonicalBaseline, MarkovChainModel, SequenceModel
@@ -650,7 +650,9 @@ class Pipeline:
             # gratuita (1.000/día) en minutos y no es lo que pide el prompt:
             # "cuando CyberSentinel detecta un evento sospechoso".
             live_cti_hits: list[Any] = []
-            hay_senal_previa = bool(rule_hits) or anomaly_score >= 0.5 or bool(desviaciones)
+            hay_senal_previa = (
+                bool(rule_hits) or anomaly_score >= DEFAULT_ANOMALY_THRESHOLD or bool(desviaciones)
+            )
             if not self.enable_live_cti or not self.live_cti_enricher:
                 trace.skipped("live_cti")
             elif not hay_senal_previa:

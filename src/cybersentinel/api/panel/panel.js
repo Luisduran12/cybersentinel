@@ -574,14 +574,28 @@ async function cambiar(id, cambio) {
   } catch (e) { avisar(e.message, true); }
 }
 
+// Mapa al vocabulario real de la API: /triage solo entiende
+// CONFIRM|REJECT|UNCERTAIN (ver TriageRequest en api/models.py). "BENIGN" no
+// es una transición de /triage — es una resolución de cierre, así que va por
+// PATCH /incidents/{id} (la misma ruta que ya usa `cambiar()` más arriba).
+// Auditoría de producción (2026-09-18): esta función llamaba a una ruta de
+// "veredicto" con otro nombre que nunca llegó a implementarse en el backend
+// (quedó documentada en un comentario y en código muerto, pero no como
+// endpoint real) — los cuatro botones de veredicto devolvían 404 en el panel
+// real, sin ningún aviso hasta que se probó a mano en el navegador.
+const ACCION_TRIAGE = { TRUE_POSITIVE: "CONFIRM", FALSE_POSITIVE: "REJECT", UNCERTAIN: "UNCERTAIN" };
+
 async function decidir(id, decision, motivo) {
+  const razon = (motivo || "").trim();
+  if (decision === "BENIGN") {
+    return cambiar(id, { state: "resolved", resolution: "benign", note: razon });
+  }
   try {
-    const r = await api(`/incidents/${encodeURIComponent(id)}/decision`, {
+    const r = await api(`/incidents/${encodeURIComponent(id)}/triage`, {
       method: "POST",
-      body: JSON.stringify({ decision, reason: (motivo || "").trim(),
-                             confidence: 1.0, close: true }),
+      body: JSON.stringify({ action: ACCION_TRIAGE[decision], reason: razon }),
     });
-    avisar(r.close_note || "Veredicto registrado.");
+    avisar("Veredicto registrado.");
     if (r.incident) pintarDetalle(r.incident);
     await Promise.all([cargarCifras(), cargarLista()]);
   } catch (e) { avisar(e.message, true); }

@@ -1,0 +1,7 @@
+{
+  "samples": 70,
+  "cpu_max_pct": 44.0,
+  "cpu_avg_pct": 11.83,
+  "rss_max_mb": 333.0,
+  "rss_avg_mb": 329.5
+}
