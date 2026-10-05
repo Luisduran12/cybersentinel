@@ -117,7 +117,7 @@ Para ejecutarla: `pip install -e ".[streaming]"` y `docker-compose up nats`.
 |---|---|---|
 | `origin/main` | `ad622c2` | Incluye los 2 commits de documentación de Copilot |
 | `fix/orphaned-collectors-sysmon-firewall` (activa) | `ad622c2` | Sigue a `origin/main`; idéntica a ella antes de este commit |
-| `main` (local) | `a469608` | Commit inicial, **33 commits por detrás** de `origin/main`; conviene actualizarla |
+| `main` (local) | `a469608` | Commit inicial, **31 commits por detrás** de `origin/main`; conviene actualizarla |
 
 ---
 
