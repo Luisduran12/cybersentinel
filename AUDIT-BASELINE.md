@@ -110,17 +110,16 @@ Conclusión: el repositorio tiene una suite amplia y ambiciosa, con cobertura de
 
 ### 3.1 Estado de ejecución real
 
-No fue posible ejecutar una suite `pytest` en esta sesión desde los medios disponibles del entorno de auditoría. Esto debe indicarse explícitamente: no existe una verificación ejecutada real del proyecto en esta sesión.
+La primera versión de esta auditoría se redactó sin ejecutar `pytest`. Después se ejecutó la suite (ver `docs/BASELINE-EXECUTION-REPORT.md`):
 
-Por lo tanto, la línea base a continuación se basa en:
+```
+PYTHONPATH=src .venv/bin/python -m pytest -q -p no:cacheprovider
+677 passed, 1 skipped, 4 warnings in 133.65s   (Python 3.11.15, commit ad622c2)
+```
 
-- inventario de archivos,
-- inspección directa de módulos,
-- documentación del proyecto,
-- contenido de tests,
-- arquitectura y contratos de integración.
+El único test omitido es `tests/test_streaming.py:59`, que requiere un servidor NATS real.
 
-Esto es una línea base válida para un primer diagnóstico, pero no sustituye a una ejecución real.
+Que la suite esté en verde demuestra que los módulos están conectados y cumplen sus contratos con datos sintéticos y servicios externos simulados. Sigue sin ser una validación sobre telemetría real ni en un despliegue productivo.
 
 ## 4) Matriz de estado por módulo
 
@@ -150,16 +149,19 @@ Estos módulos están presentes y claramente conectados o pensados para conectar
 - `src/cybersentinel/response/*.py`
 - `src/cybersentinel/cli.py`
 - `src/cybersentinel/pipeline.py`
+- `src/cybersentinel/governance/dataset_manager.py` — `DatasetManager`, el almacén del feedback humano (HITL). Lo instancian `pipeline.py:315`, `api/app.py:141` (con persistencia JSONL) y los subcomandos de feedback de `cli.py`. No es un placeholder: es la pieza que cierra el bucle analista → dataset, con splits temporales que usan el timestamp del evento para evitar fuga de datos.
+- `src/cybersentinel/api/security/*` — autenticación JWT y RBAC (ver §13.1)
+- `src/cybersentinel/collectors/*` — 5 colectores registrados en `COLLECTORS` y enrutados desde `ingestion/normalizer.py`: Sysmon (Windows), Linux, Firewall, Suricata (IDS) y Wazuh
 
 ### 4.2 PARCIAL
 
 Estos módulos están implementados, pero no están del todo integrados o están acotados a un subconjunto de funcionamiento:
 
-- `src/cybersentinel/api/*` — hay API, pero no es el eje central del pipeline observado en `pipeline.py`
-- `src/cybersentinel/collectors/*` — existe soporte para múltiples colectores, pero no queda claro que todos estén validados en producción real
+- `src/cybersentinel/api/*` — la API ingiere eventos, persiste incidentes y sirve el panel SOC con HITL; tiene tests (vía `TestClient`) que pasan. No está **lista para producción**: falta validarla detrás de TLS real, bajo carga y con el bus NATS (ver §13).
+- `src/cybersentinel/collectors/*` — normalización probada con fixtures; falta validarla con telemetría real de producción
 - `src/cybersentinel/cti/abuseipdb.py` / `cti/otx.py` — implementados, pero están sujetos a API real y a configuración externa
+- `src/cybersentinel/cti/cisa_kev.py` — cliente real del catálogo CISA KEV (ver §12.1). Funciona y tiene tests, pero **no lo importa ningún módulo de `src/`**: hoy no forma parte del pipeline.
 - `src/cybersentinel/response/executor.py` — existen decisiones y acciones, pero la ejecución real final debe revisarse contra la política y el modo dry-run
-- `src/cybersentinel/governance/dataset_manager.py` — parece un sumidero / infraestructura para HITL, pero no es un flujo principal claro
 
 ### 4.3 EXPERIMENTAL
 
@@ -175,8 +177,6 @@ Estos módulos se entienden como exploratorios o de laboratorio, no como compone
 
 Módulos que existen, pero no se observa una integración funcional completa o reaprovechable:
 
-- `src/cybersentinel/governance/dataset_manager.py`
-- varios módulos de `api/` cuya conexión real al pipeline no queda clara
 - varios módulos de integración de response / monitorización / panel que están documentados pero no verificados como parte del flujo principal
 
 ### 4.5 NO INTEGRADO
@@ -383,6 +383,9 @@ La estructura de ML está presente y debe considerarse como una base sólida, pe
 - STIX ingestor está implementado y se usa en `pipeline.py`.
 - Live CTI existe, pero con conectividad real a feeds externos.
 - Esto es un componente EXPERIMENTAL / no necesariamente apropiado para una ejecución automática sin configuración y sin control.
+- **CISA KEV** (`cti/cisa_kev.py`, clase `CisaKevFeed`): descarga el catálogo público de vulnerabilidades explotadas activamente (sin API key), lo cachea y lo consulta localmente por CVE. Los tests lo cubren con `httpx.MockTransport`. Tiene dos limitaciones, documentadas en el propio módulo:
+  - ningún colector normaliza un CVE ni una versión de software en `SecurityEvent`, así que no hay un campo de origen para correlacionar automáticamente;
+  - por lo mismo, ningún módulo de `src/` lo importa. Hoy es una capacidad aislada, no una etapa del pipeline.
 
 ### 12.2 RAG
 
@@ -420,15 +423,33 @@ El repositorio tiene un diseño de API y streaming muy orientado a producción f
 - streaming / NATS,
 - OCSF adapter.
 
-Sin embargo:
+### 13.1 Autenticación y autorización (`api/security/`)
 
-- la integración real con `pipeline.py` no parece ser el flujo principal del conjunto de actualización documentado,
-- hay mucha infraestructura incluidas, pero no todas aparecen conectadas y validadas en ejecución real.
+- **JWT HS256** (`tokens.py`) implementado con la biblioteca estándar (sin dependencia externa). Los tokens se emiten en `guard.py` (`issue_token`) y se pueden revocar (tabla `revoked_tokens` en `identity.py`). Las credenciales de los colectores tienen caducidad.
+- **RBAC de 4 roles** (`roles.py`). El código pregunta por permisos, nunca por roles, y `ROLE_PERMISSIONS` es la única fuente de verdad:
+
+| Rol | Permisos |
+|---|---|
+| `collector` | `events:write` (solo ingesta; no puede leer nada) |
+| `viewer` | `incidents:read`, `metrics:read`, `audit:read` |
+| `analyst` | `incidents:read`, `incidents:write`, `metrics:read`, `response:approve` (triage + HITL) |
+| `admin` | todos, incluido `identity:admin` |
+
+- Un rol desconocido recibe el conjunto vacío de permisos (falla cerrado).
+- Además: `ratelimit.py` (limitación de peticiones) y `transport.py` (exigencia de transporte seguro).
+- Observación por revisar: `viewer` tiene `audit:read` y `analyst` no. Puede ser intencional, pero conviene confirmarlo.
+
+### 13.2 Estado de la API
+
+La API **no está lista para producción**, aunque sí está conectada y probada:
+
+- ingesta → cola/WAL → worker → `Pipeline` → `store` de incidentes → panel SOC con HITL. Los tests de `test_api_*`, `test_soc_panel.py` y `test_human_feedback.py` lo cubren y pasan con `TestClient`;
+- falta: un despliegue real detrás de TLS, pruebas de carga, operación con el bus NATS (el test correspondiente se omite sin broker), rotación de secretos JWT en un entorno real y migrar `HTTP_422_UNPROCESSABLE_ENTITY`, que está deprecado.
 
 Conclusión:
 
-- el proyecto tiene una base de arquitectura avanzada,
-- pero aún no está demostrado que todo ese nivel de producción esté realmente integrado y estabilizado.
+- el proyecto tiene una base de arquitectura avanzada y una API funcional bajo test,
+- pero aún no está demostrado que ese nivel de producción esté estabilizado en un despliegue real.
 
 ## 14) Documentación y reproducibilidad
 
