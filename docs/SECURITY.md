@@ -313,7 +313,9 @@ curl http://localhost:8000/api/v1/incidents -H "Authorization: Bearer $TOKEN"
 | `CYBERSENTINEL_JWT_SECRET` | *(efímero + aviso)* | Firma de los tokens. ≥32 bytes |
 | `CYBERSENTINEL_IDENTITY_DB` | `data/runtime/identities.db` | Almacén de credenciales |
 | `CYBERSENTINEL_TOKEN_TTL` | `3600` | Vida del token, en segundos |
-| `CYBERSENTINEL_TRUST_FORWARDED_FOR` | `0` | Creer `X-Forwarded-For` y `X-Forwarded-Proto` |
+| `CYBERSENTINEL_TRUST_FORWARDED_FOR` | `0` | Creer `X-Forwarded-For` y `X-Forwarded-Proto` (solo desde proxies de confianza) |
+| `CYBERSENTINEL_TRUSTED_PROXIES` | `127.0.0.1/32,::1/128` | IPs/CIDR de los proxies cuyas cabeceras reenviadas se creen |
+| `CYBERSENTINEL_TRUSTED_PROXY_HOPS` | `1` | Proxies de confianza encadenados; se lee el N-ésimo valor por la derecha |
 | `CYBERSENTINEL_ALLOW_PLAINTEXT` | `0` | Aceptar credenciales sin cifrar desde cualquier origen |
 | `CYBERSENTINEL_RL_SENSOR_RPS` / `_BURST` | `50` / `100` | Peticiones por sensor |
 | `CYBERSENTINEL_RL_SENSOR_EPS` / `_BURST` | `20000` / `40000` | Eventos por sensor |
@@ -321,7 +323,10 @@ curl http://localhost:8000/api/v1/incidents -H "Authorization: Bearer $TOKEN"
 
 `CYBERSENTINEL_TRUST_FORWARDED_FOR` viene **desactivado** a propósito: confiar en
 esas cabeceras sin un proxy delante permite a cualquiera falsificar su origen
-—para saltarse el límite por IP— y declararse seguro sin estarlo.
+—para saltarse el límite por IP— y declararse seguro sin estarlo. Aun activado,
+solo se creen si la conexión TCP llega desde `CYBERSENTINEL_TRUSTED_PROXIES`, y
+se lee el valor que añadió el proxy (por la derecha), nunca el primero, que lo
+escribe el cliente.
 
 ---
 

@@ -261,19 +261,14 @@ class IdentityStore:
         if fila["disabled"]:
             raise AuthError("cuenta deshabilitada")
 
-        if fila["locked_until"]:
-            hasta = datetime.fromisoformat(fila["locked_until"])
-            restante = (hasta - datetime.now(tz=timezone.utc)).total_seconds()
-            if restante > 0:
-                raise AuthError(
-                    f"cuenta bloqueada tras {MAX_FAILED_ATTEMPTS} intentos fallidos",
-                    retry_after=int(restante) + 1,
-                )
+        # El intento se cobra **antes** de derivar: así N peticiones simultáneas
+        # no pueden leer todas «0 fallos» y probar N contraseñas antes de que
+        # la primera anote el suyo. Si la contraseña es buena, se descuenta.
+        self._reserve_attempt(username)
 
         esperado = fila["password_hash"]
         obtenido = self._derive(password or "", bytes.fromhex(fila["salt"]))
         if not hmac.compare_digest(esperado, obtenido):
-            self._record_failure(username, fila["failed_attempts"] + 1)
             raise AuthError("credenciales inválidas")
 
         with self._lock, closing(self._connect()) as con:
@@ -289,17 +284,44 @@ class IdentityStore:
             permissions=permissions_for(rol), kind="user",
         )
 
-    def _record_failure(self, username: str, intentos: int) -> None:
-        bloqueo = None
-        if intentos >= MAX_FAILED_ATTEMPTS:
-            bloqueo = (datetime.now(tz=timezone.utc)
-                       + timedelta(seconds=LOCKOUT_S)).isoformat(timespec="seconds")
+    def _reserve_attempt(self, username: str) -> None:
+        """
+        Comprueba el bloqueo y anota el intento en una sola transacción.
+
+        `BEGIN IMMEDIATE` toma el candado de escritura de SQLite antes de leer,
+        así que ni otro hilo ni otra réplica sobre el mismo archivo pueden
+        intercalarse entre la lectura del contador y su incremento.
+        """
+        ahora = datetime.now(tz=timezone.utc)
         with self._lock, closing(self._connect()) as con:
-            con.execute(
-                "UPDATE users SET failed_attempts = ?, locked_until = ? WHERE username = ?",
-                (intentos, bloqueo, username),
-            )
-            con.commit()
+            con.execute("BEGIN IMMEDIATE")
+            try:
+                fila = con.execute(
+                    "SELECT failed_attempts, locked_until FROM users WHERE username = ?",
+                    (username,)).fetchone()
+                if fila is None:
+                    raise AuthError("credenciales inválidas")
+                if fila["locked_until"]:
+                    restante = (datetime.fromisoformat(fila["locked_until"])
+                                - ahora).total_seconds()
+                    if restante > 0:
+                        raise AuthError(
+                            f"cuenta bloqueada tras {MAX_FAILED_ATTEMPTS} intentos fallidos",
+                            retry_after=int(restante) + 1,
+                        )
+                intentos = fila["failed_attempts"] + 1
+                bloqueo = None
+                if intentos >= MAX_FAILED_ATTEMPTS:
+                    bloqueo = (ahora + timedelta(seconds=LOCKOUT_S)).isoformat(
+                        timespec="seconds")
+                con.execute(
+                    "UPDATE users SET failed_attempts = ?, locked_until = ? WHERE username = ?",
+                    (intentos, bloqueo, username),
+                )
+                con.commit()
+            except BaseException:
+                con.rollback()
+                raise
 
     def set_disabled(self, username: str, disabled: bool = True) -> bool:
         with self._lock, closing(self._connect()) as con:

@@ -619,9 +619,10 @@ def test_x_forwarded_proto_no_se_cree_sin_proxy_declarado(app_tls):
 
 
 def test_con_proxy_declarado_si_se_admite_x_forwarded_proto(app_tls, monkeypatch):
-    politica = TransportPolicy(allow_plaintext=False, trust_forwarded=True)
+    politica = TransportPolicy(allow_plaintext=False, trust_forwarded=True,
+                               trusted_proxies=("10.0.0.0/8",))
     monkeypatch.setattr(app_tls["app"].state, "transport", politica, raising=False)
-    r = _cliente(app_tls).post("/api/v1/events", json={"events": [_evento()]},
+    r = _cliente(app_tls, origen=("10.0.0.5", 4444)).post("/api/v1/events", json={"events": [_evento()]},
                                headers={"X-API-Key": app_tls["key"],
                                         "X-Forwarded-Proto": "https"})
     assert r.status_code == 202, r.text

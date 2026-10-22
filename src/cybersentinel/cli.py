@@ -995,6 +995,10 @@ def cmd_serve(args: argparse.Namespace) -> int:
         os.environ["CYBERSENTINEL_ALLOW_PLAINTEXT"] = "1"
     if args.trust_proxy:
         os.environ["CYBERSENTINEL_TRUST_FORWARDED_FOR"] = "1"
+    if args.trusted_proxies:
+        os.environ["CYBERSENTINEL_TRUSTED_PROXIES"] = args.trusted_proxies
+    if args.proxy_hops:
+        os.environ["CYBERSENTINEL_TRUSTED_PROXY_HOPS"] = str(args.proxy_hops)
 
     esquema = "https" if cert else "http"
     console.print(f"[green]Panel SOC:[/green] {esquema}://{args.host}:{args.port}/soc/")
@@ -1145,6 +1149,11 @@ def main(argv: list[str] | None = None) -> int:
     p_sv.add_argument("--trust-proxy", action="store_true",
                       help="Creer X-Forwarded-Proto y X-Forwarded-For. Actívalo solo "
                            "si hay un proxy de confianza delante.")
+    p_sv.add_argument("--trusted-proxies",
+                      help="IPs/CIDR (separadas por comas) de los proxies cuyas cabeceras "
+                           "X-Forwarded-* se creen. Por defecto, solo el bucle local.")
+    p_sv.add_argument("--proxy-hops", type=int,
+                      help="Número de proxies de confianza encadenados (por defecto 1).")
     p_sv.add_argument("--log-level", default="info",
                       choices=("critical", "error", "warning", "info", "debug"))
     p_sv.set_defaults(func=cmd_serve)

@@ -17,6 +17,7 @@ manejador de la API cambian.
 """
 from .guard import SecurityConfig, SecurityGate, charge_events, limit_anonymous, requires  # noqa: F401
 from .identity import AuthError, IdentityStore, IssuedKey, Principal  # noqa: F401
+from .proxies import ProxyTrust
 from .ratelimit import Decision, LimitPolicy, RateLimiter  # noqa: F401
 from .roles import Permission, Role, permissions_for, role_matrix  # noqa: F401
 from .tokens import TokenError, TokenSigner, load_secret  # noqa: F401
@@ -24,7 +25,7 @@ from .transport import TransportPolicy  # noqa: F401
 
 __all__ = [
     "AuthError", "Decision", "IdentityStore", "IssuedKey", "LimitPolicy",
-    "Permission", "Principal", "RateLimiter", "Role", "SecurityConfig",
+    "Permission", "Principal", "ProxyTrust", "RateLimiter", "Role", "SecurityConfig",
     "SecurityGate", "TokenError", "TokenSigner", "charge_events",
     "limit_anonymous", "load_secret", "permissions_for", "requires", "role_matrix",
     "TransportPolicy",

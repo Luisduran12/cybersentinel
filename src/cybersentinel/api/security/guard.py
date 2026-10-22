@@ -26,7 +26,6 @@ están las métricas y el almacén de eventos.
 from __future__ import annotations
 
 import logging
-import os
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -35,6 +34,7 @@ from typing import Any, Callable
 from fastapi import HTTPException, Request, status
 
 from .identity import AuthError, IdentityStore, Principal
+from .proxies import ProxyTrust
 from .ratelimit import RateLimiter
 from .roles import Permission, Role, permissions_for, role_matrix
 from .tokens import TokenError, TokenSigner
@@ -45,11 +45,10 @@ logger = logging.getLogger(__name__)
 HEADER_API_KEY = "X-API-Key"
 HEADER_AUTH = "Authorization"
 
-#: Si el servicio está detrás de un proxy de confianza, la IP real viaja en
-#: `X-Forwarded-For`. Confiar en esa cabecera **sin** un proxy delante permite
-#: a cualquiera falsificar su origen y saltarse el límite por IP: por eso está
-#: desactivado por defecto y hay que activarlo a conciencia.
-TRUST_FORWARDED = os.environ.get("CYBERSENTINEL_TRUST_FORWARDED_FOR", "").lower() in {"1", "true", "yes"}
+#: La IP real detrás de un proxy viaja en `X-Forwarded-For`; quién puede
+#: contarla y cuántos saltos se creen lo decide `ProxyTrust` (ver `proxies.py`).
+#: Desactivado por defecto: confiar sin proxy delante permite falsificar el
+#: origen y saltarse el límite por IP.
 
 #: Cada cuánto se vuelve a auditar el fallo de un mismo cliente. Sin esta
 #: ventana, un atacante que dispara credenciales falsas escribe él mismo el
@@ -66,6 +65,7 @@ class SecurityConfig:
     token_ttl_s: int | None = None
     audit_log: Any = None            # governance.AuditLog, opcional
     rate_limiter: RateLimiter | None = None
+    proxy_trust: ProxyTrust | None = None   # None = desde el entorno
 
 
 @dataclass
@@ -84,6 +84,7 @@ class SecurityGate:
             kwargs["ttl_s"] = config.token_ttl_s
         self.signer = TokenSigner(**kwargs)
         self.limiter = config.rate_limiter or RateLimiter()
+        self.proxies = config.proxy_trust or ProxyTrust.from_env()
         self.audit = config.audit_log
         self._failures: dict[str, _FailureCounter] = {}
         # Las revocaciones ya no viven aquí: están en el almacén, para que
@@ -122,13 +123,9 @@ class SecurityGate:
         cont.since = 0
 
     # --- Identificación del origen ---------------------------------------
-    @staticmethod
-    def client_ip(request: Request) -> str:
-        if TRUST_FORWARDED:
-            reenviada = request.headers.get("x-forwarded-for", "")
-            if reenviada:
-                return reenviada.split(",")[0].strip()
-        return request.client.host if request.client else "desconocida"
+    def client_ip(self, request: Request) -> str:
+        par = request.client.host if request.client else "desconocida"
+        return self.proxies.client_ip(par, request.headers.get("x-forwarded-for", ""))
 
     # --- Autenticación ----------------------------------------------------
     def authenticate(self, request: Request) -> Principal:

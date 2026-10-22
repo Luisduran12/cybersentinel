@@ -35,8 +35,10 @@ from __future__ import annotations
 
 import logging
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
+
+from .proxies import ProxyTrust
 
 logger = logging.getLogger(__name__)
 
@@ -60,12 +62,24 @@ class TransportPolicy:
 
     allow_plaintext: bool = False
     trust_forwarded: bool = False
+    #: IPs/CIDR de los proxies que pueden declarar `X-Forwarded-Proto`.
+    #: `None` = solo bucle local. Solo cuenta si `trust_forwarded` es cierto.
+    trusted_proxies: tuple[str, ...] | None = None
+    proxy_hops: int = 1
+    proxies: ProxyTrust = field(init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        self.proxies = ProxyTrust.build(self.trust_forwarded, self.trusted_proxies,
+                                        self.proxy_hops)
 
     @classmethod
     def from_env(cls) -> TransportPolicy:
+        entorno = ProxyTrust.from_env()
         politica = cls(
             allow_plaintext=_flag("CYBERSENTINEL_ALLOW_PLAINTEXT"),
-            trust_forwarded=_flag("CYBERSENTINEL_TRUST_FORWARDED_FOR"),
+            trust_forwarded=entorno.enabled,
+            trusted_proxies=tuple(str(r) for r in entorno.networks),
+            proxy_hops=entorno.hops,
         )
         if politica.allow_plaintext:
             logger.warning(
@@ -87,16 +101,16 @@ class TransportPolicy:
         """
         ¿La conexión llega cifrada?
 
-        `X-Forwarded-Proto` solo se mira si hay un proxy declarado como de
-        confianza: sin esa condición, cualquiera se declara seguro añadiendo
-        una cabecera y la comprobación no sirve de nada.
+        `X-Forwarded-Proto` solo se mira si la conexión llega desde un proxy
+        declarado como de confianza, y se lee el valor que añadió ese proxy
+        (por la derecha): sin esa condición, cualquiera se declara seguro
+        añadiendo una cabecera y la comprobación no sirve de nada.
         """
         if request.url.scheme == "https":
             return True
-        if self.trust_forwarded:
-            reenviado = request.headers.get("x-forwarded-proto", "")
-            return reenviado.split(",")[0].strip().lower() == "https"
-        return False
+        proto = self.proxies.forwarded_proto(
+            self.client_host(request), request.headers.get("x-forwarded-proto", ""))
+        return proto == "https"
 
     # --- Veredicto --------------------------------------------------------
     def refusal_reason(self, request: Any) -> str | None:
@@ -107,7 +121,8 @@ class TransportPolicy:
             "esta API exige TLS desde orígenes remotos: las credenciales "
             "viajarían en claro. Termina TLS en el servicio "
             "(uvicorn --ssl-certfile --ssl-keyfile) o en un proxy que declare "
-            "X-Forwarded-Proto y activa CYBERSENTINEL_TRUST_FORWARDED_FOR."
+            "X-Forwarded-Proto, activa CYBERSENTINEL_TRUST_FORWARDED_FOR y "
+            "declara su IP en CYBERSENTINEL_TRUSTED_PROXIES."
         )
 
     def response_headers(self, request: Any) -> dict[str, str]:
@@ -129,6 +144,7 @@ class TransportPolicy:
             "plaintext_allowed_from": "solo bucle local" if not self.allow_plaintext
                                       else "cualquier origen (ALLOW_PLAINTEXT activo)",
             "trusts_forwarded_proto": self.trust_forwarded,
+            "forwarded_headers": self.proxies.status(),
             "warning": (
                 "CYBERSENTINEL_ALLOW_PLAINTEXT está activo: se aceptan "
                 "credenciales sin cifrar desde cualquier origen"
