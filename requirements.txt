@@ -19,7 +19,7 @@ psutil>=5.9          # CPU y RAM del banco de pruebas; sin el se degrada
 # RAG: segmentacion, indice vectorial y contrato de embeddings.
 # Los embeddings por defecto son locales (LSA sobre TF-IDF con scikit-learn):
 # no hacen falta descargas ni red en tiempo de ejecucion.
-langchain-core>=0.3
+langchain-core>=1.2.22
 langchain-community>=0.3
 langchain-text-splitters>=0.3
 faiss-cpu>=1.8
