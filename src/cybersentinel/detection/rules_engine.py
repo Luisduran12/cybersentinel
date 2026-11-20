@@ -319,7 +319,8 @@ class RulesEngine:
         condición se cumple, y conserva las huellas de los demás como evidencia.
         """
         agg = rule.aggregation
-        assert agg is not None
+        if agg is None:
+            raise AssertionError
 
         matching = [e for e in events if rule.matches(e)]
         if not matching:
