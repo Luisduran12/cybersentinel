@@ -275,6 +275,8 @@ class Normalizer:
         Las líneas corruptas se saltan con aviso; en producción irían a una cola
         de errores para revisarlas, no al olvido.
         """
+        if ".." in str(path):
+            raise ValueError("Invalid file path")
         with open(path, "r", encoding="utf-8") as fh:
             for number, line in enumerate(fh, start=1):
                 line = line.strip()

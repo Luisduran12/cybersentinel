@@ -80,6 +80,8 @@ class _CandadoDeArchivo:
                 "Sin `fcntl`: la auditoría no está protegida entre procesos. "
                 "Usa un único escritor.")
             return self
+        if ".." in str(self.path):
+            raise Exception("Invalid file path")
         self._fh = open(self.path, "a+")
         fcntl.flock(self._fh.fileno(), fcntl.LOCK_EX)
         return self
@@ -174,6 +176,8 @@ class AuditLog:
     def _load(self) -> None:
         self.entries = []
         known = {f for f in AuditEntry.__dataclass_fields__}
+        if ".." in str(self.path):
+            raise Exception("Invalid file path")
         with open(self.path, "r", encoding="utf-8") as fh:
             for line in fh:
                 line = line.strip()
@@ -185,6 +189,8 @@ class AuditLog:
     def _lineas_en_disco(self) -> int:
         if not self.path.exists():
             return 0
+        if ".." in str(self.path):
+            raise Exception("Invalid file path")
         with open(self.path, "r", encoding="utf-8") as fh:
             return sum(1 for linea in fh if linea.strip())
 
@@ -231,6 +237,8 @@ class AuditLog:
             )
             entry.entry_hash = entry.compute_hash(self.key)
             self.entries.append(entry)
+            if ".." in str(self.path):
+                raise Exception("Invalid file path")
             with open(self.path, "a", encoding="utf-8") as fh:
                 fh.write(json.dumps(asdict(entry), ensure_ascii=False) + "\n")
             self._write_anchor()
@@ -252,6 +260,8 @@ class AuditLog:
             hmac.new(self.key, blob, hashlib.sha256).hexdigest() if self.key
             else hashlib.sha256(blob).hexdigest()
         )
+        if ".." in str(self.anchor_path):
+            raise Exception("Invalid file path")
         self.anchor_path.write_text(
             json.dumps(anchor, ensure_ascii=False, sort_keys=True), encoding="utf-8"
         )

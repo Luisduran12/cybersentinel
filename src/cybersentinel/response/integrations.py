@@ -153,9 +153,15 @@ class TicketWriter:
                     "detail": "Falta directorio de salida para tickets.", "at": _ahora()}
         self.output_dir.mkdir(parents=True, exist_ok=True)
         ruta = self.output_dir / f"ticket-{ticket.get('action_id', _ahora())}.json"
-        ruta.write_text(json.dumps(ticket, indent=2, ensure_ascii=False), encoding="utf-8")
-        return {"status": STATUS_OK, "detail": f"Ticket escrito en {ruta}",
-                "path": str(ruta), "at": _ahora()}
+        base_dir = self.output_dir.resolve()
+        ruta_resolved = ruta.resolve()
+        try:
+            ruta_resolved.relative_to(base_dir)
+        except ValueError:
+            raise Exception("Invalid file path")
+        ruta_resolved.write_text(json.dumps(ticket, indent=2, ensure_ascii=False), encoding="utf-8")
+        return {"status": STATUS_OK, "detail": f"Ticket escrito en {ruta_resolved}",
+                "path": str(ruta_resolved), "at": _ahora()}
 
 
 class IOCBlocklist:
@@ -181,6 +187,8 @@ class IOCBlocklist:
         if not self.path:
             return {"status": STATUS_NOT_CONFIGURED,
                     "detail": "Falta ruta de la lista de bloqueo.", "at": _ahora()}
+        if ".." in str(self.path):
+            raise Exception("Invalid file path")
         actuales = self._leer()
         if any(e["type"] == ioc_type and e["value"] == value for e in actuales):
             return {"status": STATUS_OK, "detail": "IOC ya estaba en la lista (idempotente).",

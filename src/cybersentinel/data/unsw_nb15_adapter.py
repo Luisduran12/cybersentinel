@@ -207,6 +207,8 @@ class UNSWNB15Adapter:
         y hay que aplicar los nombres canónicos por posición.
         """
         path = Path(path)
+        if ".." in str(path):
+            raise Exception("Invalid file path")
         with open(path, "r", encoding="utf-8", errors="replace", newline="") as fh:
             reader = csv.reader(fh)
             try:

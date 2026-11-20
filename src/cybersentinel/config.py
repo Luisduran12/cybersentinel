@@ -123,7 +123,11 @@ class Settings:
         path = Path(path) if path else DEFAULT_CONFIG_PATH
         if not path.exists():
             return cls()
-        with open(path, "r", encoding="utf-8") as fh:
+        base_real = os.path.realpath(ROOT / "config")
+        target_real = os.path.realpath(path)
+        if os.path.commonpath([base_real, target_real]) != base_real:
+            raise Exception("Invalid file path")
+        with open(target_real, "r", encoding="utf-8") as fh:
             data = yaml.safe_load(fh) or {}
         return cls.from_dict(data)
 
