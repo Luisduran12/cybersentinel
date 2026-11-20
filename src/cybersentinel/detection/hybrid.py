@@ -90,6 +90,11 @@ class DetectionEvidence:
     #: para saber sobre qué se propone actuar.
     entity: str = ""
 
+    #: Umbral de decisión sobre `anomaly_score` aplicado a esta evidencia. El
+    #: pipeline inyecta el valor configurado (Settings/Pipeline); el valor por
+    #: defecto solo aplica a quien construya la evidencia sin configuración.
+    anomaly_threshold: float = DEFAULT_ANOMALY_THRESHOLD
+
     @property
     def tactics(self) -> list[str]:
         """Alias de mitre_tactics para la capa de respuesta."""
@@ -112,11 +117,11 @@ class DetectionEvidence:
         detectó una regla determinista, lo señaló solo el modelo, o no lo vio
         nadie.
         """
-        if self.rule_matches and self.anomaly_score >= DEFAULT_ANOMALY_THRESHOLD:
+        if self.rule_matches and self.anomaly_score >= self.anomaly_threshold:
             return "RULE_AND_ANOMALY"
         if self.rule_matches:
             return "RULE_MATCH"
-        if self.anomaly_score >= DEFAULT_ANOMALY_THRESHOLD:
+        if self.anomaly_score >= self.anomaly_threshold:
             return "ANOMALY_ONLY"
         if self.behavioral_deviations:
             return "BEHAVIORAL_ANOMALY"
@@ -145,9 +150,10 @@ class DetectionEvidence:
             base += 50.0
 
         # 2. El ML modula el riesgo basado en cuán raro es.
-        # anomaly_score está en [0, 1]; DEFAULT_ANOMALY_THRESHOLD (calibrado,
-        # ver config.py) es el punto a partir del cual se considera anómalo.
-        ml_boost = max(0, (self.anomaly_score - DEFAULT_ANOMALY_THRESHOLD) * 40.0)
+        # anomaly_score está en [0, 1]; self.anomaly_threshold (configurado, o
+        # el calibrado de config.py por defecto) es el punto a partir del cual
+        # se considera anómalo.
+        ml_boost = max(0, (self.anomaly_score - self.anomaly_threshold) * 40.0)
         base += ml_boost
 
         # 3. Contexto temporal (ej. secuencias previas) aporta confianza extra
