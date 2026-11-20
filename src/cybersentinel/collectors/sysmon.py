@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import logging
 import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as DefusedET
 from typing import Any
 
 from ..schema import SecurityEvent
@@ -83,7 +84,7 @@ class SysmonCollector(Collector):
         `tag.rpartition('}')` para no depender de su URI, que cambia entre
         versiones de Windows.
         """
-        raiz = ET.fromstring(texto)
+        raiz = DefusedET.fromstring(texto)
         campos: dict[str, Any] = {}
 
         for nodo in raiz.iter():
