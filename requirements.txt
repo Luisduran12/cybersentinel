@@ -1,3 +1,4 @@
+--extra-index-url https://pypi.aikido.io/2bb330313723e1d3c35e8
 scikit-learn>=1.3
 numpy>=1.24
 pandas>=2.0
@@ -40,3 +41,5 @@ faiss-cpu>=1.8
 # Sin este paquete, cybersentinel.streaming.bus se importa igual; solo falla
 # al intentar conectar de verdad.
 # nats-py>=2.6
+
+starlette==0.38.6+aikido.1
