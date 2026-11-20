@@ -221,7 +221,17 @@ class Pipeline:
         self.enable_llm = enable_llm
         self.enable_behavior = enable_behavior
         self.enable_live_cti = enable_live_cti
-        self.anomaly_threshold = anomaly_threshold or self.settings.detection.anomaly_threshold
+        self.anomaly_threshold = (
+            anomaly_threshold if anomaly_threshold is not None
+            else self.settings.detection.anomaly_threshold
+        )
+        # Umbral efectivo 0..1 que consumen la evidencia, la puerta de CTI en
+        # vivo y el correlador. Si la configuración es None (umbral sugerido
+        # por la línea base), se recurre al umbral calibrado por defecto.
+        self._effective_anomaly_threshold: float = (
+            float(self.anomaly_threshold) if self.anomaly_threshold is not None
+            else DEFAULT_ANOMALY_THRESHOLD
+        )
 
         self.component_status: dict[str, str] = {}
 
@@ -651,7 +661,9 @@ class Pipeline:
             # "cuando CyberSentinel detecta un evento sospechoso".
             live_cti_hits: list[Any] = []
             hay_senal_previa = (
-                bool(rule_hits) or anomaly_score >= DEFAULT_ANOMALY_THRESHOLD or bool(desviaciones)
+                bool(rule_hits)
+                or anomaly_score >= self._effective_anomaly_threshold
+                or bool(desviaciones)
             )
             if not self.enable_live_cti or not self.live_cti_enricher:
                 trace.skipped("live_cti")
@@ -676,6 +688,7 @@ class Pipeline:
                 entity=self._entity_of(ev),
                 rule_matches=rule_hits,
                 anomaly_score=anomaly_score,
+                anomaly_threshold=self._effective_anomaly_threshold,
                 temporal_context=temp_context,
                 mitre_context=tecnicas,
                 mitre_tactics=tacticas,
@@ -820,12 +833,12 @@ class Pipeline:
         proactive_alerts: list[dict[str, Any]] = []
         _t = _time.perf_counter()
         if self.enable_kill_chain_prediction and self.correlator:
-            # No se pasa self.anomaly_threshold: ese es el umbral de contaminación
-            # del detector ("auto" incluido, puede ser None), un concepto
-            # distinto del umbral 0..1 que build_findings necesita para decidir
-            # qué anomalía es lo bastante severa como para ser un Finding.
-            # Se deja el default de build_findings (0.6).
-            findings = self.correlator.build_findings(todos_los_hits, resultados_anomalia)
+            # Se propaga el umbral 0..1 configurado (Settings/Pipeline); no es
+            # el `contamination` del detector, que es un concepto distinto.
+            findings = self.correlator.build_findings(
+                todos_los_hits, resultados_anomalia,
+                anomaly_threshold=self._effective_anomaly_threshold,
+            )
             if findings:
                 incidentes_kc = self.correlator.correlate(
                     findings, apt_flagged_entities=apt_flagged_entities)
