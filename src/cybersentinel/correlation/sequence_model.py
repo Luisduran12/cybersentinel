@@ -111,6 +111,8 @@ class SequenceModel(ABC):
     def save(self, path: str | Path) -> Path:
         """Persiste el modelo en JSON (auditable a ojo, a diferencia de un pickle)."""
         path = Path(path)
+        if ".." in str(path):
+            raise Exception("Invalid file path")
         path.write_text(
             json.dumps(self.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8"
         )

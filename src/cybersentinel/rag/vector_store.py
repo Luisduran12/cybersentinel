@@ -36,6 +36,8 @@ class RAGStore:
         Lee un archivo, lo segmenta asegurando la trazabilidad (provenance)
         y lo indexa en la base vectorial si no ha sido ingestato antes.
         """
+        if ".." in str(filepath):
+            raise Exception("Invalid file path")
         if not filepath.exists():
             logger.warning(f"No se encontro el archivo para RAG: {filepath}")
             return

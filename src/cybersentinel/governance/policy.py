@@ -83,6 +83,8 @@ class GovernancePolicy:
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> "GovernancePolicy":
+        if ".." in str(path):
+            raise Exception("Invalid file path")
         with open(path, "r", encoding="utf-8") as fh:
             return cls(yaml.safe_load(fh))
 

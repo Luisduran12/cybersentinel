@@ -71,6 +71,8 @@ class RiskScoreTracker:
     def __init__(self, decay_per_hour: float = DEFAULT_DECAY_PER_HOUR,
                 path: str | Path | None = None) -> None:
         self.decay_per_hour = decay_per_hour
+        if path and ".." in str(path):
+            raise Exception("Invalid file path")
         self.path = Path(path) if path else None
         self._lock = threading.Lock()
         self._risks: dict[str, EntityRisk] = {}
